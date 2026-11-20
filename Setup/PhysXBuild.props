@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <HitoriPhysXVariant>$(HitoriPhysXDebug)</HitoriPhysXVariant>
+    <HitoriDebugRuntime>MultiThreadedDLL</HitoriDebugRuntime>
+    <HitoriDebugFbx>release</HitoriDebugFbx>
+    <HitoriDebugDefine>NDEBUG</HitoriDebugDefine>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug' and '$(HitoriPhysXDebug)' == 'debug'">
+    <HitoriDebugRuntime>MultiThreadedDebugDLL</HitoriDebugRuntime>
+    <HitoriDebugFbx>debug</HitoriDebugFbx>
+    <HitoriDebugDefine>_DEBUG</HitoriDebugDefine>
+  </PropertyGroup>
+  <PropertyGroup>
+    <HitoriPhysXVariant Condition="'$(Configuration)' == 'Release'">$(HitoriPhysXRelease)</HitoriPhysXVariant>
+    <HitoriPhysXDefines Condition="'$(HitoriPhysXVariant)' == 'debug'">PX_DEBUG=1;PX_CHECKED=1;PX_SUPPORT_PVD=1</HitoriPhysXDefines>
+    <HitoriPhysXDefines Condition="'$(HitoriPhysXVariant)' == 'checked'">PX_CHECKED=1;PX_SUPPORT_PVD=1</HitoriPhysXDefines>
+    <HitoriPhysXDefines Condition="'$(HitoriPhysXVariant)' == 'profile'">PX_PROFILE=1;PX_SUPPORT_PVD=1</HitoriPhysXDefines>
+    <HitoriPhysXDefines Condition="'$(HitoriPhysXVariant)' == 'release'">PX_SUPPORT_PVD=0</HitoriPhysXDefines>
+  </PropertyGroup>
+  <Target Name="ValidateHitoriPhysXOptions" BeforeTargets="PrepareForBuild">
+    <Error Condition="'$(Configuration)' == 'Debug' and '$(HitoriPhysXDebug)' != 'debug' and '$(HitoriPhysXDebug)' != 'checked'" Text="Property Manager > PhysXOptions > User Macros: HitoriPhysXDebug must be debug or checked." />
+    <Error Condition="'$(Configuration)' == 'Release' and '$(HitoriPhysXRelease)' != 'checked' and '$(HitoriPhysXRelease)' != 'profile' and '$(HitoriPhysXRelease)' != 'release'" Text="Property Manager > PhysXOptions > User Macros: HitoriPhysXRelease must be checked, profile or release." />
+  </Target>
+</Project>

@@ -26,36 +26,49 @@ if not FbxSdkRoot or FbxSdkRoot == "" then
 end
 FbxSdkRoot = path.translate(FbxSdkRoot, "/")
 
--- These choices apply when SlnGenerator regenerates the VS projects.
-local DebugPhysX = os.getenv("HITORI_PHYSX_DEBUG") or "debug"
-local ReleasePhysX = os.getenv("HITORI_PHYSX_RELEASE") or "checked"
-if DebugPhysX ~= "debug" and DebugPhysX ~= "checked" then
-	error("HITORI_PHYSX_DEBUG must be debug or checked.")
-end
-if ReleasePhysX ~= "checked" and ReleasePhysX ~= "profile" and ReleasePhysX ~= "release" then
-	error("HITORI_PHYSX_RELEASE must be checked, profile, or release.")
+-- Property Manager edits one local copy shared by all Hitori projects.
+if _ACTION and _ACTION:match("^vs") then
+	require("vstudio")
+	local vc = premake.vstudio.vc2010
+	premake.override(vc, "propertySheets", function(base, cfg)
+		base(cfg)
+		if cfg.project.name == "Shaders" or (cfg.buildcfg ~= "Debug" and cfg.buildcfg ~= "Release") then
+			return
+		end
+		local directory = path.join(_MAIN_SCRIPT_DIR, "Build/PhysX")
+		local sheet = path.join(directory, "PhysXOptions.props")
+		os.mkdir(directory)
+		if not os.isfile(sheet) then
+			assert(os.copyfile(path.join(_MAIN_SCRIPT_DIR, "Setup/PhysXOptions.props"), sheet))
+		end
+		premake.push('<ImportGroup Label="PropertySheets" %s>', vc.condition(cfg))
+		premake.w('<Import Project="%s" />', path.getrelative(cfg.project.location, sheet))
+		premake.pop('</ImportGroup>')
+		premake.w('<Import Project="%s" %s />', path.getrelative(cfg.project.location, path.join(_MAIN_SCRIPT_DIR, "Setup/PhysXBuild.props")), vc.condition(cfg))
+	end)
+	premake.override(vc, "runtimeLibrary", function(base, cfg)
+		if cfg.buildcfg == "Debug" and cfg.project.name ~= "Shaders" then
+			premake.w('<RuntimeLibrary>$(HitoriDebugRuntime)</RuntimeLibrary>')
+		else
+			base(cfg)
+		end
+	end)
 end
 
 local function PhysXSettings(linkFinalExecutable)
 	local checkout = "Intermediate/PhysX-4.1"
-	local sdkConfigs = { Debug = DebugPhysX, Release = ReleasePhysX, Shipping = "release" }
-	local sdkDefines = {
-		debug = { "PX_DEBUG=1", "PX_CHECKED=1", "PX_SUPPORT_PVD=1" },
-		checked = { "PX_CHECKED=1", "PX_SUPPORT_PVD=1" },
-		profile = { "PX_PROFILE=1", "PX_SUPPORT_PVD=1" },
-		release = { "PX_SUPPORT_PVD=0" },
-	}
+	local sdkConfigs = { Debug = "$(HitoriPhysXDebug)", Release = "$(HitoriPhysXRelease)", Shipping = "release" }
 	local sharedModules = { "PhysX_64", "PhysXFoundation_64", "PhysXCommon_64", "PhysXCooking_64" }
 
 	for config, sdkConfig in pairs(sdkConfigs) do
 		filter ("configurations:" .. config)
 			includedirs { checkout .. "/physx/include", checkout .. "/pxshared/include" }
 			defines { "WITH_PHYSX=1" }
-			defines (sdkDefines[sdkConfig])
+			defines { config == "Shipping" and "PX_SUPPORT_PVD=0" or "$(HitoriPhysXDefines)" }
 
 			if linkFinalExecutable then
 				-- PhysX 4.1's CMake uses this directory name even with the v145 toolset.
-				local binDir = path.join(checkout, "physx/bin/win.x86_64.vc142.md", sdkConfig)
+				local binDir = checkout .. "/physx/bin/win.x86_64.vc142.md/" .. sdkConfig
 				libdirs { binDir }
 				links { "PhysXExtensions_static_64", "PhysXPvdSDK_static_64", "PhysXVehicle_static_64" }
 				for _, module in ipairs(sharedModules) do
@@ -113,13 +126,8 @@ function CommonSettings()
 
 	filter "configurations:Debug"
 		defines { "ENGINE_DEBUG" }
-		if DebugPhysX == "checked" then
-			defines { "NDEBUG" }
-			runtime "Release"
-		else
-			defines { "_DEBUG" }
-			runtime "Debug"
-		end
+		defines { "$(HitoriDebugDefine)" }
+		runtime "Debug"
 		symbols  "on"
 
 	filter "configurations:Release"
@@ -300,9 +308,12 @@ project "HitoriEditor"
 	links { "libfbxsdk.lib" }
 
 	for _, Config in ipairs({ "Debug", "Release", "Shipping", "ObjViewer", "Benchmark", "Benchmark_Debug", "DebugPublishSymbols", "ReleasePublishSymbols"}) do
-		local DebugCRT = (Config == "Debug" and DebugPhysX == "debug") or Config == "Benchmark_Debug" or Config == "DebugPublishSymbols"
+		local DebugCRT = Config == "Benchmark_Debug" or Config == "DebugPublishSymbols"
 		local SdkConfig = DebugCRT and "debug" or "release"
-		local SdkLibDir = path.join(FbxSdkRoot, "lib/x64", SdkConfig)
+		if Config == "Debug" then
+			SdkConfig = "$(HitoriDebugFbx)"
+		end
+		local SdkLibDir = FbxSdkRoot .. "/lib/x64/" .. SdkConfig
 		local Commands = { '{COPYFILE} "' .. path.join(SdkLibDir, "libfbxsdk.dll") .. '" "%{cfg.targetdir}"' }
 
 		if Config == "DebugPublishSymbols" or Config == "ReleasePublishSymbols" then

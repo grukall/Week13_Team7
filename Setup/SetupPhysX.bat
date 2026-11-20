@@ -4,17 +4,6 @@ set "Checkout=%~dp0..\Intermediate\PhysX-4.1"
 set "Sdk=%Checkout%\physx"
 set "Patch=%~dp0PhysX4.1-VS2026"
 set "ExpectedRevision=a2c0428acab643e60618c681b501e86f7fd558cc"
-if not defined HITORI_PHYSX_DEBUG set "HITORI_PHYSX_DEBUG=debug"
-if not defined HITORI_PHYSX_RELEASE set "HITORI_PHYSX_RELEASE=checked"
-if not "%HITORI_PHYSX_DEBUG%"=="debug" if not "%HITORI_PHYSX_DEBUG%"=="checked" (
-    echo HITORI_PHYSX_DEBUG must be debug or checked. 1>&2
-    exit /b 1
-)
-if not "%HITORI_PHYSX_RELEASE%"=="checked" if not "%HITORI_PHYSX_RELEASE%"=="profile" if not "%HITORI_PHYSX_RELEASE%"=="release" (
-    echo HITORI_PHYSX_RELEASE must be checked, profile or release. 1>&2
-    exit /b 1
-)
-
 if not exist "%Checkout%\.git" (
     git clone --depth 1 --branch 4.1 https://github.com/NVIDIAGameWorks/PhysX.git "%Checkout%"
     if errorlevel 1 exit /b 1
@@ -47,14 +36,10 @@ if not exist "%CMakeExe%" (
     exit /b 1
 )
 
-rem Each project generation prepares the SDK variants used by Debug, Release and Shipping.
-for %%C in (debug checked profile release) do set "Build_%%C="
-for %%C in (%HITORI_PHYSX_DEBUG% %HITORI_PHYSX_RELEASE% release) do (
-    if not defined Build_%%C (
-        echo Building PhysX 4.1 SDK [%%C]...
-        "%CMakeExe%" --build "%BuildDir%" --config %%C --target PhysXExtensions PhysXCooking PhysXVehicle --parallel 2
-        if errorlevel 1 exit /b 1
-        set "Build_%%C=done"
-    )
+rem Build all GUI-selectable variants, reusing up-to-date SDK targets.
+for %%C in (debug checked profile release) do (
+    echo Building PhysX 4.1 SDK [%%C]...
+    "%CMakeExe%" --build "%BuildDir%" --config %%C --target PhysXExtensions PhysXCooking PhysXVehicle --parallel 2
+    if errorlevel 1 exit /b 1
 )
 exit /b 0

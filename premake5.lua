@@ -26,6 +26,49 @@ if not FbxSdkRoot or FbxSdkRoot == "" then
 end
 FbxSdkRoot = path.translate(FbxSdkRoot, "/")
 
+-- These choices apply when SlnGenerator regenerates the VS projects.
+local DebugPhysX = os.getenv("HITORI_PHYSX_DEBUG") or "debug"
+local ReleasePhysX = os.getenv("HITORI_PHYSX_RELEASE") or "checked"
+if DebugPhysX ~= "debug" and DebugPhysX ~= "checked" then
+	error("HITORI_PHYSX_DEBUG must be debug or checked.")
+end
+if ReleasePhysX ~= "checked" and ReleasePhysX ~= "profile" and ReleasePhysX ~= "release" then
+	error("HITORI_PHYSX_RELEASE must be checked, profile, or release.")
+end
+
+local function PhysXSettings(linkFinalExecutable)
+	local checkout = "Intermediate/PhysX-4.1"
+	local sdkConfigs = { Debug = DebugPhysX, Release = ReleasePhysX, Shipping = "release" }
+	local sdkDefines = {
+		debug = { "PX_DEBUG=1", "PX_CHECKED=1", "PX_SUPPORT_PVD=1" },
+		checked = { "PX_CHECKED=1", "PX_SUPPORT_PVD=1" },
+		profile = { "PX_PROFILE=1", "PX_SUPPORT_PVD=1" },
+		release = { "PX_SUPPORT_PVD=0" },
+	}
+	local sharedModules = { "PhysX_64", "PhysXFoundation_64", "PhysXCommon_64", "PhysXCooking_64" }
+
+	for config, sdkConfig in pairs(sdkConfigs) do
+		filter ("configurations:" .. config)
+			includedirs { checkout .. "/physx/include", checkout .. "/pxshared/include" }
+			defines { "WITH_PHYSX=1" }
+			defines (sdkDefines[sdkConfig])
+
+			if linkFinalExecutable then
+				-- PhysX 4.1's CMake uses this directory name even with the v145 toolset.
+				local binDir = path.join(checkout, "physx/bin/win.x86_64.vc142.md", sdkConfig)
+				libdirs { binDir }
+				links { "PhysXExtensions_static_64", "PhysXPvdSDK_static_64", "PhysXVehicle_static_64" }
+				for _, module in ipairs(sharedModules) do
+					links { module }
+					postbuildcommands { '{COPYFILE} "%{wks.location}/' .. binDir .. '/' .. module .. '.dll" "%{cfg.targetdir}" || exit 1' }
+				end
+			end
+	end
+	filter { "configurations:not Debug", "configurations:not Release", "configurations:not Shipping" }
+		defines { "WITH_PHYSX=0" }
+	filter {}
+end
+
 IncludeDir = {}
 IncludeDir["ImGui"] = "Source/ThirdParty/ImGui"
 IncludeDir["ImGuiNodeEditor"] = "Source/ThirdParty/ImGuiNodeEditor"
@@ -69,8 +112,14 @@ function CommonSettings()
 		defines { "ENGINE_PLATFORM_WINDOWS" }
 
 	filter "configurations:Debug"
-		defines { "ENGINE_DEBUG", "_DEBUG" }
-		runtime  "Debug"
+		defines { "ENGINE_DEBUG" }
+		if DebugPhysX == "checked" then
+			defines { "NDEBUG" }
+			runtime "Release"
+		else
+			defines { "_DEBUG" }
+			runtime "Debug"
+		end
 		symbols  "on"
 
 	filter "configurations:Release"
@@ -190,6 +239,7 @@ project "HitoriEngine"
 	location "Source/Runtime"
 	kind     "StaticLib"
 	CommonSettings()
+	PhysXSettings(false)
 
 	pchheader "EnginePCH.h"
 	pchsource "Source/Runtime/EnginePCH.cpp"
@@ -242,6 +292,7 @@ project "HitoriEditor"
 	location "Source/Editor"
 	kind     "WindowedApp"
 	CommonSettings()
+	PhysXSettings(true)
 
 	-- FBX 해석은 Editor에서 수행하고 Runtime/Game은 SDK에 의존하지 않는다.
 	includedirs { path.join(FbxSdkRoot, "include") }
@@ -249,7 +300,8 @@ project "HitoriEditor"
 	links { "libfbxsdk.lib" }
 
 	for _, Config in ipairs({ "Debug", "Release", "Shipping", "ObjViewer", "Benchmark", "Benchmark_Debug", "DebugPublishSymbols", "ReleasePublishSymbols"}) do
-		local SdkConfig = (Config == "Debug" or Config == "Benchmark_Debug" or Config == "DebugPublishSymbols") and "debug" or "release"
+		local DebugCRT = (Config == "Debug" and DebugPhysX == "debug") or Config == "Benchmark_Debug" or Config == "DebugPublishSymbols"
+		local SdkConfig = DebugCRT and "debug" or "release"
 		local SdkLibDir = path.join(FbxSdkRoot, "lib/x64", SdkConfig)
 		local Commands = { '{COPYFILE} "' .. path.join(SdkLibDir, "libfbxsdk.dll") .. '" "%{cfg.targetdir}"' }
 
@@ -330,6 +382,7 @@ project "HitoriGame"
 	location "Source/Game"
 	kind     "WindowedApp"
 	CommonSettings()
+	PhysXSettings(true)
 	targetname "HitoriGame"
 
 	pchheader "EnginePCH.h"

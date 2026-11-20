@@ -292,6 +292,7 @@ void FEngineLoop::Exit()
 			GEngine->PreExit();
 		}
 		GEngine->ShutdownAudioDevice();   // 믹서 스레드를 먼저 멈춘 뒤 USoundWave를 지운다
+		GEngine->ShutdownClothManager();
 	}
 
 	// UAssetManager도 UObject이므로 일괄 삭제 전에 종료한다.

@@ -5,6 +5,7 @@
 #include "Engine/Level.h"
 #include "Camera/CameraActor.h"
 #include "Audio/AudioDevice.h"
+#include "Physics/NvClothManager.h"
 
 #include "Serialization/JsonArchive.h"
 
@@ -14,6 +15,7 @@ bool UEngine::Init()
 {
 	// 모든 엔진 모드가 공통으로 쓰는 것만 여기서 준비한다. 월드와 뷰포트는 서브클래스의 Init이 만든다.
 	InitializeAudioDevice();          // 실패해도 엔진은 계속 (UE도 장치가 없으면 Null 디바이스로 돈다)
+	InitializeClothManager();
 	return true;
 }
 
@@ -34,6 +36,16 @@ void UEngine::ShutdownAudioDevice()
 	MainAudioDevice->Teardown();      // 오디오 스레드 종료. 이후 USoundWave를 지워도 안전
 	delete MainAudioDevice;
 	MainAudioDevice = nullptr;
+}
+
+void UEngine::InitializeClothManager()
+{
+	FNvClothManager::Get().Initialize();
+}
+
+void UEngine::ShutdownClothManager()
+{
+	FNvClothManager::Get().Shutdown();
 }
 
 FWorldContext& UEngine::CreateNewWorldContext(EWorldType WorldType)

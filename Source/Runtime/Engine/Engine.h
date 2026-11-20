@@ -107,6 +107,9 @@ public:
 	void InitializeAudioDevice();     // UE UEngine::InitializeAudioDeviceManager
 	void ShutdownAudioDevice();
 
+	void InitializeClothManager();
+	void ShutdownClothManager();
+
 	// 창, 스왑체인, 렌더러를 가진 엔진 루프. UE에서는 전역 GEngineLoop로 어디서나 접근한다.
 	FEngineLoop& GetEngineLoop() const { return *EngineLoop; }
 

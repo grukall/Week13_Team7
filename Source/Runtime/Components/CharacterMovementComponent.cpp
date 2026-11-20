@@ -150,10 +150,9 @@ bool UCharacterMovementComponent::FindFloor(float ExtraDistance, FHitResult& Out
 {
 	if (!CanUseFloor()) return false;
 
-	// 반지름 0 Sweep = 아래 방향 레이. 메시는 AABB 윗면, 스킨드 메시는 삼각형에 닿는다
 	const FVector Start = UpdatedComponent->GetWorldLocation();
 	const float TraceLength = GetCapsuleHalfHeight() + std::max(ExtraDistance, 0.0f);
-	return GetOwner()->GetWorld()->SweepSingle(FRay(Start, FVector(0.0f, 0.0f, -1.0f)), TraceLength, 0.0f, OutHit, GetOwner());
+	return GetOwner()->GetWorld()->LineTraceSingleByChannel(OutHit, Start, Start - FVector(0, 0, TraceLength), ECollisionChannel::ECC_Pawn, GetOwner());
 }
 
 float UCharacterMovementComponent::GetCapsuleHalfHeight() const
@@ -294,17 +293,10 @@ void UCharacterMovementComponent::CalcVelocity(float DeltaTime, float Friction, 
 
 void UCharacterMovementComponent::SafeMoveWithSlide(const FVector& Delta, const FRotator& NewRotation)
 {
-	const FVector Start = UpdatedComponent->GetWorldLocation();
 	FHitResult Hit(1.0f);
-	if (MoveUpdatedComponent(Delta, NewRotation, true, &Hit)) return;
-
-	// 시작부터 겹쳐 있던 표면(예: 캡슐이 묻힌 바닥)이 이동 방향을 막지 않으면 Sweep 없이 원래 Delta만큼 간다.
-	// MoveComponent가 막힌 위치에 법선 방향으로 살짝 밀어 두므로 그만큼을 빼서 Start + Delta에 맞춘다.
-	if (Hit.Time <= KINDA_SMALL_NUMBER && Hit.ImpactNormal.Dot(Delta) >= 0.0f)
-	{
-		MoveUpdatedComponent(Start + Delta - UpdatedComponent->GetWorldLocation(), NewRotation, false, nullptr);
+	MoveUpdatedComponent(Delta, NewRotation, true, &Hit);
+	if (!Hit.bBlockingHit)
 		return;
-	}
 
 	HandleImpact(Hit, 0.0f, Delta);
 

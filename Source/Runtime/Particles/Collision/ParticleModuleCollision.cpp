@@ -82,11 +82,7 @@ void UParticleModuleCollision::Update(FParticleEmitterInstance* Owner, int32 Off
 			const FVector Start = Particle.Location;
 			const FVector Direction = Particle.Velocity.Normalized();
 			const float SizeAhead = DirScalar > 0.0f ? (Direction * Particle.Size).Size() / DirScalar : 0.0f;
-			const bool bBlocked = World->SweepSingle(
-				FRay(Start, Direction),
-				Particle.Velocity.Size() * DeltaTime + SizeAhead,
-				0.0f, Result, Component->GetOwner()
-			);
+			const bool bBlocked = World->LineTraceSingleByChannel(Result, Start, Start + Direction * (Particle.Velocity.Size() * DeltaTime + SizeAhead), ECollisionChannel::ECC_Visibility, Component->GetOwner());
 
 			if (bBlocked)
 			{

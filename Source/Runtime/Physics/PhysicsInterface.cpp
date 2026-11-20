@@ -83,7 +83,12 @@ void FPhysicsInterface::CreateActor(const FActorCreationParams& Params, FPhysics
 	if (Params.bStatic)
 		Handle.SyncActor = Physics.createRigidStatic(Pose);
 	else
-		Handle.SyncActor = Physics.createRigidDynamic(Pose);
+	{
+		auto* Dynamic = Physics.createRigidDynamic(Pose);
+		if (Dynamic)
+			Dynamic->setRigidBodyFlag(PxRigidBodyFlag::eUSE_KINEMATIC_TARGET_FOR_SCENE_QUERIES, true);
+		Handle.SyncActor = Dynamic;
+	}
 }
 
 void FPhysicsInterface::SetIsKinematic_AssumesLocked(const FPhysicsActorHandle& Handle, bool bIsKinematic)

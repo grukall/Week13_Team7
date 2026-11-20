@@ -6,7 +6,7 @@ class UPrimitiveComponent;
 
 struct FHitResult
 {
-	int32 FaceIndex; // Hitted face index
+	int32 FaceIndex = -1; // Hitted face index
 
 	float Time; // For swept
 	float Distance = FLT_MAX;
@@ -19,10 +19,10 @@ struct FHitResult
 	FVector TraceStart;
 	FVector TraceEnd;
 
-	float PenetrationDepth;
+	float PenetrationDepth = 0.f;
 
 	bool bBlockingHit = false;
-	bool bStartPentrating = false;
+	bool bStartPenetrating = false;
 
 	UPrimitiveComponent* HitComponent = nullptr;
 

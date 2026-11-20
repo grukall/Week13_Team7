@@ -48,6 +48,10 @@ public:
 	UPROPERTY(EditAnywhere)
 	FBodyInstance BodyInstance;
 
+	void SetCollisionEnabled(ECollisionEnabled Enabled);
+	void SetCollisionObjectType(ECollisionChannel Channel);
+	void SetCollisionResponseToChannel(ECollisionChannel Channel, ECollisionResponse Response);
+	void SetNotifyRigidBodyCollision(bool bNotify);
 	void SetSimulatePhysics(bool bSimulate) { BodyInstance.SetInstanceSimulatePhysics(bSimulate); }
 	void OnUpdateTransform() override;
 	virtual UBodySetup* GetBodySetup() { return nullptr; }
@@ -110,7 +114,8 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	bool bGenerateOverlapEvents = true;
-	UPROPERTY(EditAnywhere)
+	// Read by the version 4 scene migration.
+	UPROPERTY()
 	bool bBlockComponent = false;
 
 	UPROPERTY(EditAnywhere)

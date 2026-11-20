@@ -14,6 +14,7 @@
 #include "Camera/CameraActor.h"
 #include "Asset/LOD/StaticMeshLODSelector.h"
 #include "Engine/EngineTypes.h"
+#include "Collision/CollisionShape.h"
 #include "Render/SceneRenderData.h"
 #include "Script/CoroutineScheduler.h"
 #include "World.generated.h"
@@ -97,9 +98,10 @@ public:
 	// 현재 World의 Component에 Ray를 전달하고 가장 가까운 유효 교차를 반환한다.
 	bool LineTraceSingle(const FRay& WorldRay, FHitResult& OutHit,
 		FBillboardTraceTransform ResolveBillboard = nullptr, const void* ViewContext = nullptr);
-	// bBlockingOnly: bBlockComponent인 도형/메시만 검사한다. 기본값은 기존 투사체 동작을 유지한다.
-	bool SweepSingle(const FRay& WorldRay, float MaxDistance, float Radius, FHitResult& OutHit, AActor* IgnoreActor = nullptr,
-		bool bBlockingOnly = false);
+	bool SweepSingleByChannel(FHitResult& OutHit, const FVector& Start, const FVector& End, const FQuat& Rotation, ECollisionChannel Channel, const FCollisionShape& CollisionShape, const AActor* IgnoreActor = nullptr) const;
+	bool LineTraceSingleByChannel(FHitResult& OutHit, const FVector& Start, const FVector& End, ECollisionChannel Channel, const AActor* IgnoreActor = nullptr) const;
+	bool ComponentSweepMulti(TArray<FHitResult>& Hits, const UPrimitiveComponent* Component, const FVector& Start, const FVector& End, const FQuat& Rotation) const;
+	void ComponentOverlapMulti(TArray<UPrimitiveComponent*>& Overlaps, const UPrimitiveComponent* Component) const;
 
 	void BeginPlay();
 	void EndPlay();

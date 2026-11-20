@@ -132,11 +132,18 @@ namespace
 		UStaticMesh* Mesh = NewObject<UStaticMesh>();
 		Mesh->MeshData = std::move(Optimized);
 
+		Mesh->CreateBodySetup();
 		if (!Mesh->MeshData.ConvexElems.IsEmpty())
 		{
-			Mesh->CreateBodySetup();
 			Mesh->GetBodySetup()->AggGeom.ConvexElems = std::move(Mesh->MeshData.ConvexElems);
 			Mesh->GetBodySetup()->CookedFormatData = std::move(Mesh->MeshData.CookedFormatData);
+		}
+		else
+		{
+			// Preserve the simple query volume of meshes imported before authored collision.
+			const auto& Bounds = Mesh->MeshData.AABB;
+			const FVector Size = Bounds.Max - Bounds.Min;
+			Mesh->GetBodySetup()->AggGeom.BoxElems.Add({std::max(Size.X, 0.001f), std::max(Size.Y, 0.001f), std::max(Size.Z, 0.001f), (Bounds.Min + Bounds.Max) * 0.5f});
 		}
 
 		// Vertex/Index GPU 업로드

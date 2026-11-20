@@ -19,6 +19,11 @@ for %%F in (generate_projects.bat buildtools\cmake_generate_projects.py buildtoo
     copy /y "%Patch%\%%F" "%Sdk%\%%F" >nul
     if errorlevel 1 exit /b 1
 )
+git -C "%Checkout%" apply --reverse --check "%Patch%\ccd-slerp.patch" >nul 2>&1
+if errorlevel 1 (
+    git -C "%Checkout%" apply "%Patch%\ccd-slerp.patch"
+    if errorlevel 1 exit /b 1
+)
 pushd "%Sdk%" || exit /b 1
 call generate_projects.bat vc18win64
 set "GenerateExitCode=%ERRORLEVEL%"

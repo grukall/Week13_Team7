@@ -6,6 +6,8 @@
 #include "Physics/BodyInstance.h"
 #include "Components/PrimitiveComponent.h"
 #include "Tasks/TaskScheduler.h"
+#include "UObject/UObjectHash.h"
+#include "Physics/PhysicsFiltering.h"
 #include <PxPhysicsAPI.h>
 
 class FPhysXCPUDispatcher final : public physx::PxCpuDispatcher
@@ -29,6 +31,80 @@ private:
 		// release가 후속 task를 실행 가능하게 하므로 run이 끝난 뒤 호출한다.
 		Task.release();
 	}
+};
+
+namespace
+{
+	using namespace physx;
+
+	PxFilterFlags PhysXSimFilterShader(PxFilterObjectAttributes, PxFilterData A, PxFilterObjectAttributes, PxFilterData B, PxPairFlags& Flags, const void*, PxU32)
+	{
+		const PxU32 ChannelA = static_cast<uint32>(GetCollisionChannel(A.word3));
+		const PxU32 ChannelB = static_cast<uint32>(GetCollisionChannel(B.word3));
+		if (!(A.word1 & (1u << ChannelB)) || !(B.word1 & (1u << ChannelA)))
+			return PxFilterFlag::eSUPPRESS;
+		Flags = PxPairFlag::eCONTACT_DEFAULT;
+		if ((A.word3 | B.word3) & EPDF_CCD)
+			Flags |= PxPairFlag::eDETECT_CCD_CONTACT;
+		if ((A.word3 | B.word3) & EPDF_ContactNotify)
+			Flags |= PxPairFlag::eNOTIFY_TOUCH_FOUND | PxPairFlag::eNOTIFY_TOUCH_CCD;
+		return PxFilterFlag::eDEFAULT;
+	}
+}
+
+class FPhysXSimEventCallback final : public physx::PxSimulationEventCallback
+{
+	struct FNotify
+	{
+		UPrimitiveComponent* Receiver;
+		UPrimitiveComponent* Other;
+		uint32 ReceiverId, OtherId;
+		bool operator==(const FNotify&) const = default;
+	};
+	TArray<FNotify> Pending;
+
+public:
+	void onContact(const physx::PxContactPairHeader& Header, const physx::PxContactPair* Pairs, physx::PxU32 Count) override
+	{
+		using namespace physx;
+		if (Header.flags & (PxContactPairHeaderFlag::eREMOVED_ACTOR_0 | PxContactPairHeaderFlag::eREMOVED_ACTOR_1))
+			return;
+		bool Notify = false;
+		for (PxU32 Index = 0; Index < Count; ++Index)
+			Notify |= bool(Pairs[Index].events & (PxPairFlag::eNOTIFY_TOUCH_FOUND | PxPairFlag::eNOTIFY_TOUCH_CCD));
+		if (!Notify)
+			return;
+		for (int Index = 0; Index < 2; ++Index)
+		{
+			auto* Body = static_cast<FBodyInstance*>(Header.actors[Index]->userData);
+			auto* Peer = static_cast<FBodyInstance*>(Header.actors[1 - Index]->userData);
+			if (Body && Peer && Body->bNotifyRigidBodyCollision)
+			{
+				auto* A = Body->GetOwnerComponent();
+				auto* B = Peer->GetOwnerComponent();
+				Pending.AddUnique({A, B, A->GetUUID(), B->GetUUID()});
+			}
+		}
+	}
+
+	void DispatchPhysNotifications()
+	{
+		auto Notifications = std::move(Pending);
+		for (const auto& Hit : Notifications)
+		{
+			uint32 Id;
+			if (TryGetLiveObjectUUID(Hit.Receiver, nullptr, Id) && Id == Hit.ReceiverId &&
+				TryGetLiveObjectUUID(Hit.Other, nullptr, Id) && Id == Hit.OtherId &&
+				Hit.Receiver->IsRegistered() && Hit.Other->IsRegistered())
+				Hit.Receiver->DispatchHit(Hit.Other);
+		}
+	}
+
+	void onConstraintBreak(physx::PxConstraintInfo*, physx::PxU32) override {}
+	void onWake(physx::PxActor**, physx::PxU32) override {}
+	void onSleep(physx::PxActor**, physx::PxU32) override {}
+	void onTrigger(physx::PxTriggerPair*, physx::PxU32) override {}
+	void onAdvance(const physx::PxRigidBody* const*, const physx::PxTransform*, physx::PxU32) override {}
 };
 
 bool FPhysXRuntime::Init()
@@ -78,7 +154,10 @@ bool FPhysScene::Init(const FPhysXRuntime& Runtime)
 	Desc.gravity = physx::PxVec3(0.0f, 0.0f, -9.81f);
 	CPUDispatcher = new FPhysXCPUDispatcher();
 	Desc.cpuDispatcher = CPUDispatcher;
-	Desc.filterShader = physx::PxDefaultSimulationFilterShader;
+	Desc.flags |= physx::PxSceneFlag::eENABLE_CCD;
+	Desc.filterShader = PhysXSimFilterShader;
+	SimEventCallback = new FPhysXSimEventCallback();
+	Desc.simulationEventCallback = SimEventCallback;
 	Scene = Runtime.Physics->createScene(Desc);
 	return Scene != nullptr;
 }
@@ -94,6 +173,7 @@ FPhysScene::~FPhysScene()
 	WaitPhysScenes();
 	if (Scene)
 		Scene->release();
+	delete SimEventCallback;
 	delete CPUDispatcher;
 }
 
@@ -182,5 +262,5 @@ void FPhysScene::WaitPhysScenes()
 
 void FPhysScene::EndFrame()
 {
-	// 후속 collision notification을 전달할 시점. Pose는 ProcessPhysScene에서 반영한다.
+	SimEventCallback->DispatchPhysNotifications();
 }

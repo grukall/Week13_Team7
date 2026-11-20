@@ -21,6 +21,7 @@ template<typename T> class TArray;
 
 class FPhysXRuntime;
 class FPhysXCPUDispatcher;
+class FPhysXSimEventCallback;
 
 class FPhysScene
 {
@@ -39,6 +40,8 @@ public:
 private:
 	friend class FPhysicsInterface;
 	friend struct FBodyInstance;
+	friend class UWorld;
+	FPhysXSimEventCallback* SimEventCallback = nullptr;
 	bool FetchSubstepResults();
 	TSet<FBodyInstance*> ActiveBodies;
 	TMap<FBodyInstance*, FTransform> PendingKinematicTargets;

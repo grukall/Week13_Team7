@@ -4,6 +4,8 @@
 #include "Engine/World.h"
 #include "Engine/Level.h"
 #include "Components/PrimitiveComponent.h"
+#include "Components/ShapeComponent.h"
+#include "GameFramework/Character.h"
 #include "GameFramework/Actor.h"
 #include "UObject/UObjectHash.h"
 #include "GameFramework/Actor/StaticMeshActor.h"
@@ -21,7 +23,7 @@
 
 namespace
 {
-	constexpr int32 SceneVersion = 4;   // 포맷이 바뀌었으므로 올린다
+	constexpr int32 SceneVersion = 5;   // 포맷이 바뀌었으므로 올린다
 }
 
 bool FJsonArchive::SaveWorldToBytes(UWorld* World, TArray<uint8>& OutBytes)
@@ -65,7 +67,7 @@ bool FJsonArchive::LoadWorldFromBytes(UWorld* World, const TArray<uint8>& Bytes)
 
 	int32 Version = 0;
 	Root << SA_VALUE("Version", Version);
-	if (Version != SceneVersion)
+	if (Version != 4 && Version != SceneVersion)
 	{
 		HTR_LOG(Error, "Load: scene version {} is not supported (expected {})", Version, SceneVersion);
 		return false;                               
@@ -75,6 +77,32 @@ bool FJsonArchive::LoadWorldFromBytes(UWorld* World, const TArray<uint8>& Bytes)
 	World->Serialize(Root.EnterRecord("World"));
 	Ar.Close();
 
+	if (Version == 4)
+	{
+		for (auto* Level : World->GetLevels())
+			for (auto* Actor : Level->GetActors())
+				for (auto* Component : Actor->GetComponents())
+					if (auto* Primitive = Cast<UPrimitiveComponent>(Component))
+					{
+						auto& Body = Primitive->BodyInstance;
+						Body.ObjectType = Primitive->Mobility == EComponentMobility::Static ? ECollisionChannel::ECC_WorldStatic : ECollisionChannel::ECC_WorldDynamic;
+						const bool CharacterCapsule = Cast<ACharacter>(Actor) && Primitive == Actor->GetRootComponent();
+						if (CharacterCapsule)
+							Body.ObjectType = ECollisionChannel::ECC_Pawn;
+						if (!Primitive->bBlockComponent)
+						{
+							Body.CollisionResponses.Camera = ECollisionResponse::ECR_Ignore;
+							if (!CharacterCapsule && Cast<UShapeComponent>(Primitive) && Primitive->bGenerateOverlapEvents && !Body.bSimulatePhysics)
+							{
+								Body.CollisionResponses.Pawn = ECollisionResponse::ECR_Overlap;
+								Body.CollisionResponses.WorldDynamic = ECollisionResponse::ECR_Overlap;
+								Body.CollisionResponses.WorldStatic = ECollisionResponse::ECR_Overlap;
+							}
+						}
+						Body.bNotifyRigidBodyCollision = Primitive->bBlockComponent;
+						Body.UpdatePhysicsFilterData();
+					}
+	}
 	World->GetScene().BuildBVH();
 	return !Reader.IsError();
 }

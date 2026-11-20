@@ -731,7 +731,7 @@ namespace
 				};
 
 				FHitResult Hit;
-				if (!World->LineTraceSingle(Ray, Hit))
+				if (!World->LineTraceSingleByChannel(Hit, Origin, Ray.PointAt(1000000.f), ECollisionChannel::ECC_Visibility, Owner))
 				{
 					return sol::nullopt;
 				}

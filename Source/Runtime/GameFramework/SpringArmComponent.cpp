@@ -100,7 +100,7 @@ void USpringArmComponent::UpdateDesiredArmLocation(
 
 		FHitResult Hit;
 		if (Len > 1.e-4f &&
-			GetWorld()->SweepSingle(FRay(ArmOrigin, ToCamera / Len), Len, ProbeSize, Hit, GetOwner(), true))
+			GetWorld()->SweepSingleByChannel(Hit, ArmOrigin, DesiredLoc, FQuat::Identity(), ECollisionChannel::ECC_Camera, FCollisionShape::MakeSphere(ProbeSize), GetOwner()))
 		{
 			ResultLoc = Hit.Location;
 			bCollisionHit = true;

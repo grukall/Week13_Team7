@@ -16,6 +16,14 @@
 enum class EAttachmentRule;
 
 
+void AActor::SetActorEnableCollision(bool bEnabled)
+{
+	bActorEnableCollision = bEnabled;
+	for (auto* Component : GetComponents())
+		if (auto* Primitive = Cast<UPrimitiveComponent>(Component))
+			Primitive->BodyInstance.UpdatePhysicsFilterData();
+}
+
 AActor::AActor()
 {
 	PrimaryActorTick.Target = this;

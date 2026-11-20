@@ -1,0 +1,8 @@
+{
+  "Properties": {
+    "Friction": 0.4,
+    "Restitution": 0.85,
+    "bOverrideRestitutionCombineMode": true,
+    "RestitutionCombineMode": "Max"
+  }
+}

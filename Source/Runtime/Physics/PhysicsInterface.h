@@ -3,11 +3,18 @@
 #include "Math/Transform.h"
 
 struct FKAggregateGeom;
-namespace physx { class PxRigidActor; class PxGeometry; class PxTransform; }
+class UPhysicalMaterial;
+namespace physx { class PxMaterial; class PxRigidActor; class PxGeometry; class PxTransform; }
 class UWorld;
 class UPrimitiveComponent;
 struct FHitResult;
 template<typename T> class TArray;
+
+struct FPhysicsMaterialHandle
+{
+	physx::PxMaterial* Material = nullptr;
+	bool IsValid() const { return Material != nullptr; }
+};
 
 struct FPhysicsActorHandle
 {
@@ -24,12 +31,16 @@ struct FActorCreationParams
 struct FGeometryAddParams
 {
 	const FKAggregateGeom* Geometry = nullptr;
+	UPhysicalMaterial* SimpleMaterial = nullptr;
 	FVector Scale = FVector::OneVector;
 };
 
 class FPhysicsInterface
 {
 public:
+	static FPhysicsMaterialHandle CreateMaterial(UPhysicalMaterial* Material);
+	static void UpdateMaterial(const FPhysicsMaterialHandle& Handle, const UPhysicalMaterial& Material);
+	static void ReleaseMaterial(FPhysicsMaterialHandle& Handle);
 	static void CreateActor(const FActorCreationParams& Params, FPhysicsActorHandle& Handle);
 	static void SetIsKinematic_AssumesLocked(const FPhysicsActorHandle& Handle, bool bIsKinematic);
 	static bool AddGeometry(const FPhysicsActorHandle& Handle, const FGeometryAddParams& Params);

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Physics/PhysicalMaterial.h"
 #include "Containers/Array.h"
 #include "Math/Transform.h"
 #include "UObject/Object.h"
@@ -54,6 +55,8 @@ class UBodySetup : public UObject
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(EditAnywhere)
+	UPhysicalMaterial* PhysMaterial = nullptr;
 	FKAggregateGeom AggGeom;
 	TArray<std::array<TArray<uint8>, 2>> CookedFormatData;
 	static bool CookConvex(const FKConvexElem& Hull, std::array<TArray<uint8>, 2>& Streams);

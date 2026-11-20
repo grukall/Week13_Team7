@@ -54,6 +54,8 @@ void UMeshComponent::SetMaterial(int32 SlotIndex, UMaterial* InMaterial)
 		OverrideMaterials.Add(nullptr);
 	}
 	OverrideMaterials[SlotIndex] = InMaterial;
+	if (SlotIndex == 0)
+		BodyInstance.UpdatePhysicalMaterials();
 	MarkRenderStateDirty();
 }
 

@@ -13,6 +13,7 @@
 #include "UI/UIRenderer.h"
 #include "Engine.generated.h"
 
+class UPhysicalMaterial;
 class UGameInstance;
 class FGameViewportClient;
 class FAudioDevice;
@@ -75,6 +76,7 @@ public:
 
 	// Device·Window·Swapchain·AssetManager가 준비된 뒤 호출된다.
 	virtual bool Init();
+	UPhysicalMaterial* DefaultPhysMaterial = nullptr;
 	const FPhysXRuntime& GetPhysXRuntime() const { return PhysXRuntime; }
 	// Init이 끝난 뒤 게임을 시작한다. UE의 UEngine::Start와 같은 자리다.
 	// 게임 엔진은 여기서 시작 맵을 연다. 실패하면 false를 돌려주고 실행을 끝낸다.

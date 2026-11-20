@@ -120,16 +120,11 @@ bool FPhysXRuntime::Init()
 	if (!Physics)
 		return false;
 	Cooking = PxCreateCooking(PX_PHYSICS_VERSION, *Foundation, physx::PxCookingParams(Physics->getTolerancesScale()));
-	if (!Cooking)
-		return false;
-	DefaultMaterial = Physics->createMaterial(0.5f, 0.5f, 0.0f);
-	return DefaultMaterial != nullptr;
+	return Cooking != nullptr;
 }
 
 FPhysXRuntime::~FPhysXRuntime()
 {
-	if (DefaultMaterial)
-		DefaultMaterial->release();
 	if (Cooking)
 		Cooking->release();
 	if (Physics)

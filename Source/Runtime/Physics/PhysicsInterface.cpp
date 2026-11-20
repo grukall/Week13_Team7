@@ -71,6 +71,40 @@ namespace
 	}
 }
 
+FPhysicsMaterialHandle FPhysicsInterface::CreateMaterial(UPhysicalMaterial* Material)
+{
+	if (!GEngine || !GEngine->GetPhysXRuntime().Physics)
+		return {};
+	const float Friction = std::max(0.f, Material->Friction);
+	auto* SDKMaterial = GEngine->GetPhysXRuntime().Physics->createMaterial(Friction, Friction, std::clamp(Material->Restitution, 0.f, 1.f));
+	if (SDKMaterial)
+		SDKMaterial->userData = Material;
+	return {SDKMaterial};
+}
+
+void FPhysicsInterface::UpdateMaterial(const FPhysicsMaterialHandle& Handle, const UPhysicalMaterial& Material)
+{
+	if (!Handle.IsValid())
+		return;
+	using Mode = physx::PxCombineMode;
+	const float Friction = std::max(0.f, Material.Friction);
+	Handle.Material->setStaticFriction(Friction);
+	Handle.Material->setDynamicFriction(Friction);
+	Handle.Material->setRestitution(std::clamp(Material.Restitution, 0.f, 1.f));
+	Handle.Material->setFrictionCombineMode(Material.bOverrideFrictionCombineMode ? static_cast<Mode::Enum>(Material.FrictionCombineMode) : Mode::eAVERAGE);
+	Handle.Material->setRestitutionCombineMode(Material.bOverrideRestitutionCombineMode ? static_cast<Mode::Enum>(Material.RestitutionCombineMode) : Mode::eAVERAGE);
+}
+
+void FPhysicsInterface::ReleaseMaterial(FPhysicsMaterialHandle& Handle)
+{
+	if (Handle.IsValid())
+	{
+		Handle.Material->userData = nullptr;
+		Handle.Material->release();
+		Handle.Material = nullptr;
+	}
+}
+
 void FPhysicsInterface::CreateActor(const FActorCreationParams& Params, FPhysicsActorHandle& Handle)
 {
 	using namespace physx;
@@ -99,7 +133,8 @@ void FPhysicsInterface::SetIsKinematic_AssumesLocked(const FPhysicsActorHandle& 
 
 bool FPhysicsInterface::AddGeometry(const FPhysicsActorHandle& Handle, const FGeometryAddParams& Params)
 {
-	return AttachShapes(*Handle.SyncActor, *Params.Geometry, Params.Scale, *GEngine->GetPhysXRuntime().DefaultMaterial);
+	auto* Material = Params.SimpleMaterial->GetPhysicsMaterial().Material;
+	return Material && AttachShapes(*Handle.SyncActor, *Params.Geometry, Params.Scale, *Material);
 }
 
 bool FPhysicsInterface::IsInScene(const FPhysicsActorHandle& Handle)

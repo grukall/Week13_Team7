@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Physics/PhysicalMaterial.h"
 #include "UObject/Class.h"
 #include "Physics/PhysicsInterface.h"
 #include "BodyInstance.generated.h"
@@ -82,6 +83,11 @@ struct FBodyInstance
 	UPROPERTY(EditAnywhere)
 	bool bNotifyRigidBodyCollision = false;
 
+	UPROPERTY(EditAnywhere)
+	UPhysicalMaterial* PhysMaterialOverride = nullptr;
+	UPhysicalMaterial* GetSimplePhysicalMaterial() const;
+	void SetPhysMaterialOverride(UPhysicalMaterial* Material);
+	void UpdatePhysicalMaterials();
 	void UpdatePhysicsFilterData();
 	UPrimitiveComponent* GetOwnerComponent() const { return OwnerComponent; }
 	// Only configuration is serialized. Each registered World gets its own runtime actor.
@@ -95,6 +101,8 @@ struct FBodyInstance
 
 private:
 	friend class FPhysScene;
+	bool UpdateMassProperties() const;
+	UBodySetup* BodySetup = nullptr;
 	UPrimitiveComponent* OwnerComponent = nullptr;
 	FPhysScene* PhysicsScene = nullptr;
 	bool bSyncingComponent = false;

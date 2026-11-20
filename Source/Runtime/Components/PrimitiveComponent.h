@@ -48,6 +48,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	FBodyInstance BodyInstance;
 
+	void SetPhysMaterialOverride(UPhysicalMaterial* Material) { BodyInstance.SetPhysMaterialOverride(Material); }
 	void SetCollisionEnabled(ECollisionEnabled Enabled);
 	void SetCollisionObjectType(ECollisionChannel Channel);
 	void SetCollisionResponseToChannel(ECollisionChannel Channel, ECollisionResponse Response);

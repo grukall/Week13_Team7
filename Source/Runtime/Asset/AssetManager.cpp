@@ -1,5 +1,8 @@
 #include "EnginePCH.h"
 #include "AssetManager.h"
+#include "Physics/PhysicalMaterial.h"
+#include "Serialization/MemoryReader.h"
+#include "Serialization/Formatter/JsonArchiveInputFormatter.h"
 #include "Render/Buffer.h"
 #include "Render/Material.h"
 
@@ -49,6 +52,8 @@ namespace
 		if (Extension == ".png" || Extension == ".dds") {
 			return EAssetType::Texture;
 		}
+		if (Extension == ".physmat")
+			return EAssetType::PhysicalMaterial;
 		if (Extension == ".json") {
 			return EAssetType::Font;
 		}
@@ -274,6 +279,31 @@ void UAssetManager::LoadAsset(const FString& Key, const FString& Path) {
 	case EAssetType::Texture:
 		LoadTexture(Path);
 		break;
+	case EAssetType::PhysicalMaterial:
+	{
+		std::ifstream File(FPaths::FromUtf8(FPaths::ResolveContentPath(Path)), std::ios::binary | std::ios::ate);
+		const std::streamoff Size = File.tellg();
+		if (!File || Size <= 0 || Size > INT32_MAX)
+			break;
+		TArray<uint8> Bytes;
+		Bytes.SetNum(static_cast<int32>(Size));
+		File.seekg(0);
+		if (!File.read(reinterpret_cast<char*>(Bytes.GetData()), Size))
+			break;
+		FMemoryReader Reader(Bytes, true);
+		FJsonArchiveInputFormatter Formatter(Reader);
+		if (Reader.IsError())
+			break;
+		FStructuredArchive Archive(Formatter);
+		auto* Material = NewObject<UPhysicalMaterial>();
+		Material->Serialize(Archive.Open().EnterRecord());
+		Archive.Close();
+		if (Reader.IsError())
+			delete Material;
+		else
+			RegisterAsset(Key, Material);
+		break;
+	}
 	case EAssetType::Font:
 		LoadFontAtlas(Path, fs::path{ Path }.replace_extension(".png").string());
 		break;

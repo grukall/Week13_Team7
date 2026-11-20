@@ -130,6 +130,7 @@ bool UBodySetup::AddShapesToRigidActor_AssumesLocked(FBodyInstance* OwningInstan
 		return false;
 	FGeometryAddParams Params;
 	Params.Geometry = &AggGeom;
+	Params.SimpleMaterial = OwningInstance->GetSimplePhysicalMaterial();
 	Params.Scale = Scale3D;
 	return FPhysicsInterface::AddGeometry(OwningInstance->ActorHandle, Params);
 }

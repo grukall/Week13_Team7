@@ -5,6 +5,9 @@
 #include "Physics/PhysScene.h"
 #include "GameFramework/Actor.h"
 #include "Physics/PhysicsFiltering.h"
+#include "Engine/Engine.h"
+#include "Render/Material.h"
+#include "Components/MeshComponent.h"
 #include <PxPhysicsAPI.h>
 
 namespace
@@ -75,6 +78,64 @@ void FBodyInstance::UpdatePhysicsFilterData()
 		Dynamic->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, bUseCCD && bSimulatePhysics);
 }
 
+UPhysicalMaterial* FBodyInstance::GetSimplePhysicalMaterial() const
+{
+	if (PhysMaterialOverride)
+		return PhysMaterialOverride;
+	if (OwnerComponent && OwnerComponent->BodyInstance.PhysMaterialOverride)
+		return OwnerComponent->BodyInstance.PhysMaterialOverride;
+	if (BodySetup && BodySetup->PhysMaterial)
+		return BodySetup->PhysMaterial;
+	if (auto* Mesh = Cast<UMeshComponent>(OwnerComponent))
+		if (auto* Material = Mesh->GetMaterial(0))
+			if (auto* PhysicalMaterial = Material->GetPhysicalMaterial())
+				return PhysicalMaterial;
+	return GEngine->DefaultPhysMaterial;
+}
+
+bool FBodyInstance::UpdateMassProperties() const
+{
+	auto* Dynamic = ActorHandle.SyncActor->is<physx::PxRigidDynamic>();
+	if (!Dynamic)
+		return true;
+	const auto* Material = GetSimplePhysicalMaterial();
+	// Density is authored in g/cm3. PhysX geometry in Hitori is measured in metres.
+	const float Density = std::max(0.09f, Material->Density * 1000.f);
+	if (!physx::PxRigidBodyExt::updateMassAndInertia(*Dynamic, Density, nullptr, true))
+		return false;
+	const float BaseMass = Dynamic->getMass();
+	const float Mass = std::pow(BaseMass, std::clamp(Material->RaiseMassToPower, KINDA_SMALL_NUMBER, 1.f));
+	Dynamic->setMassSpaceInertiaTensor(Dynamic->getMassSpaceInertiaTensor() * (Mass / BaseMass));
+	Dynamic->setMass(Mass);
+	return true;
+}
+
+void FBodyInstance::SetPhysMaterialOverride(UPhysicalMaterial* Material)
+{
+	PhysMaterialOverride = Material;
+	UpdatePhysicalMaterials();
+	if (IsValidBodyInstance() && !UpdateMassProperties())
+		HTR_LOG(Warning, "PhysX could not update body mass after material override");
+}
+
+void FBodyInstance::UpdatePhysicalMaterials()
+{
+	if (!IsValidBodyInstance())
+		return;
+	PhysicsScene->WaitPhysScenes();
+	auto* Material = GetSimplePhysicalMaterial()->GetPhysicsMaterial().Material;
+	auto* Actor = ActorHandle.SyncActor;
+	if (!Material)
+		return;
+	physx::PxSceneWriteLock Lock(*Actor->getScene());
+	for (physx::PxU32 Index = 0; Index < Actor->getNbShapes(); ++Index)
+	{
+		physx::PxShape* Shape;
+		Actor->getShapes(&Shape, 1, Index);
+		Shape->setMaterials(&Material, 1);
+	}
+}
+
 void FBodyInstance::InitBody(UBodySetup* Setup, const FTransform& Transform, UPrimitiveComponent* PrimComp, FPhysScene* InRBScene)
 {
 	if (IsValidBodyInstance() || !Setup || !PrimComp || !InRBScene)
@@ -90,18 +151,19 @@ void FBodyInstance::InitBody(UBodySetup* Setup, const FTransform& Transform, UPr
 	if (!Params.bStatic)
 		FPhysicsInterface::SetIsKinematic_AssumesLocked(ActorHandle, !bSimulatePhysics);
 
+	OwnerComponent = PrimComp;
+	BodySetup = Setup;
 	if (!Setup->AddShapesToRigidActor_AssumesLocked(this, Transform.Scale))
 	{
 		TermBody();
 		return;
 	}
-	if (!Params.bStatic && !physx::PxRigidBodyExt::updateMassAndInertia(*ActorHandle.SyncActor->is<physx::PxRigidDynamic>(), 1.0f))
+	if (!UpdateMassProperties())
 	{
 		TermBody();
 		return;
 	}
 
-	OwnerComponent = PrimComp;
 	UpdatePhysicsFilterData();
 	InRBScene->AddActorsToScene_AssumesLocked({ ActorHandle });
 	if (!FPhysicsInterface::IsInScene(ActorHandle))
@@ -122,6 +184,7 @@ void FBodyInstance::TermBody()
 		PhysicsScene->PendingKinematicTargets.Remove(this);
 	}
 	FPhysicsInterface::ReleaseActor(ActorHandle);
+	BodySetup = nullptr;
 	OwnerComponent = nullptr;
 	PhysicsScene = nullptr;
 }

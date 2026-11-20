@@ -68,5 +68,4 @@ private:
 	physx::PxFoundation* Foundation = nullptr;
 	physx::PxPhysics* Physics = nullptr;
 	physx::PxCooking* Cooking = nullptr;
-	physx::PxMaterial* DefaultMaterial = nullptr;
 };

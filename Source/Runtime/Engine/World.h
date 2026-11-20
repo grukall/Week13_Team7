@@ -19,6 +19,7 @@
 #include "World.generated.h"
 
 class ULevel;
+class FPhysScene;
 class FLineBatcher;
 class UBillboardComponent;
 class APawn;
@@ -37,6 +38,7 @@ public:
 	virtual ~UWorld();
 
 	bool Init();
+	FPhysScene* GetPhysicsScene() const { return PhysicsScene.get(); }
 
 	// 이 월드의 디버그 선(충돌 도형, 라이트 범위, 본 등)을 모아 그리는 도구. Init에서 만든다.
 	// UE의 UWorld::LineBatcher와 같은 자리이고 UE에서도 public 멤버다.
@@ -137,6 +139,7 @@ public:
 	void SetCinematicTimeDilation(float InDilation) { CinematicTimeDilation = InDilation; }
 
 private:
+	bool CreatePhysicsScene();
 
 	void GameWorldTick(float DeltaTime);
 	void EditorWorldTick(float DeltaTime);
@@ -175,6 +178,7 @@ private:
 	TArray<ULevel*> Levels;
 
 	FScene Scene;
+	TUniquePtr<FPhysScene> PhysicsScene;
 
 	// GatherRenderPackets가 매 프레임 채우는 컬링 결과. 용량을 재사용한다.
 	TArray<FPrimitiveSceneProxy*> VisibleProxies;

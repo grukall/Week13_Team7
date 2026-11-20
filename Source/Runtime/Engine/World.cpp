@@ -1,6 +1,7 @@
 #include "EnginePCH.h"
 #include "Render/LineBatcher.h"
 #include "World.h"
+#include "Engine/Engine.h"
 #include "Level.h"
 
 #include "Core/EngineStatics.h"
@@ -79,6 +80,11 @@ UWorld::~UWorld()
 
 bool UWorld::Init()
 {
+	if (IsGameWorld() && !CreatePhysicsScene())
+	{
+		HTR_LOG(Error, "Failed to create World physics scene");
+		return false;
+	}
 	// Spawn Actor로 카메라 생성하고 세팅하기
 	PersistentLevel = NewObject<ULevel>(this);
 
@@ -956,7 +962,11 @@ UWorld* UWorld::CreateWorld(const EWorldType InWorldType, bool bInformEngineOfWo
 	UWorld* NewWorld = NewObject<UWorld>(nullptr, WorldName);
 	NewWorld->SetFlags(EObjectFlags::RF_Transactional);
 	NewWorld->WorldType = InWorldType;
-	NewWorld->Init();
+	if (!NewWorld->Init())
+	{
+		delete NewWorld;
+		return nullptr;
+	}
 
 	return NewWorld;
 }
@@ -969,6 +979,8 @@ UWorld* UWorld::GetDuplicatedWorldForPIE(UWorld * InWorld)
 	}
 
 	UWorld* PIEWorld = CreateWorld(EWorldType::PIE, false);
+	if (!PIEWorld)
+		return nullptr;
 
 	FObjectDuplicationParameters Params(InWorld, nullptr);
 	Params.DuplicationSeed.Add(InWorld, PIEWorld);

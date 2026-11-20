@@ -12,6 +12,11 @@ UEngine* GEngine = nullptr;
 
 bool UEngine::Init()
 {
+	if (!PhysXRuntime.Init())
+	{
+		HTR_LOG(Error, "Failed to initialize PhysX runtime");
+		return false;
+	}
 	// 모든 엔진 모드가 공통으로 쓰는 것만 여기서 준비한다. 월드와 뷰포트는 서브클래스의 Init이 만든다.
 	InitializeAudioDevice();          // 실패해도 엔진은 계속 (UE도 장치가 없으면 Null 디바이스로 돈다)
 	return true;

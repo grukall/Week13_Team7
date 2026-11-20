@@ -7,6 +7,7 @@
 
 #include "Engine/World.h"
 #include "EngineTypes.h"
+#include "Physics/PhysScene.h"
 
 #include "Asset/AssetManager.h"
 #include "UI/UIRenderer.h"
@@ -74,6 +75,7 @@ public:
 
 	// Device·Window·Swapchain·AssetManager가 준비된 뒤 호출된다.
 	virtual bool Init();
+	const FPhysXRuntime& GetPhysXRuntime() const { return PhysXRuntime; }
 	// Init이 끝난 뒤 게임을 시작한다. UE의 UEngine::Start와 같은 자리다.
 	// 게임 엔진은 여기서 시작 맵을 연다. 실패하면 false를 돌려주고 실행을 끝낸다.
 	virtual bool Start() { return true; }
@@ -120,6 +122,7 @@ protected:
 	virtual void PostLoadMap(FWorldContext& Context) {}
 
 	FAudioDevice* MainAudioDevice = nullptr;
+	FPhysXRuntime PhysXRuntime;
 
 	// 게임 엔진과 에디터 엔진이 각자 Init에서 만든다.
 	TUniquePtr<FUIRenderer> UIRenderer;

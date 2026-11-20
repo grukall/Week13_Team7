@@ -63,7 +63,6 @@ local function PhysXSettings(linkFinalExecutable)
 	for config, sdkConfig in pairs(sdkConfigs) do
 		filter ("configurations:" .. config)
 			includedirs { checkout .. "/physx/include", checkout .. "/pxshared/include" }
-			defines { "WITH_PHYSX=1" }
 			defines { config == "Shipping" and "PX_SUPPORT_PVD=0" or "$(HitoriPhysXDefines)" }
 
 			if linkFinalExecutable then
@@ -77,8 +76,6 @@ local function PhysXSettings(linkFinalExecutable)
 				end
 			end
 	end
-	filter { "configurations:not Debug", "configurations:not Release", "configurations:not Shipping" }
-		defines { "WITH_PHYSX=0" }
 	filter {}
 end
 
@@ -277,6 +274,13 @@ project "HitoriEngine"
 
 	dependson { "HitoriHeaderTool" }
 	prebuildcommands { HeaderTool .. ' Runtime "' .. GeneratedDir .. '/Runtime" "%{wks.location}/Source/Runtime"' }
+
+	-- Tool configurations keep their existing SDK-free World lifecycle.
+	filter { "files:**/PhysScene.cpp", "configurations:not Debug", "configurations:not Release", "configurations:not Shipping" }
+		excludefrombuild "On"
+	filter { "files:**/PhysSceneNoSDK.cpp", "configurations:Debug or Release or Shipping" }
+		excludefrombuild "On"
+	filter {}
 
 	-- sol2 템플릿이 섹션 수 제한을 넘긴다
 	filter "files:Source/Runtime/Script/**.cpp"

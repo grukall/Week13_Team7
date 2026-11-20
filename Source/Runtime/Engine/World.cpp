@@ -213,7 +213,13 @@ void UWorld::GameWorldTick(float DeltaTime)
 	// 모든 Actor를 도는 대신 등록된 Tick 함수만 실행한다
 	{
 		SCOPE_CYCLE_COUNTER(STAT_ActorTick);
-		TickTaskManager.RunAllTickGroups(DeltaTime);
+		TickTaskManager.RunTickGroup(ETickingGroup::PrePhysics, DeltaTime);
+		PhysicsScene->StartFrame(DeltaTime);
+		TickTaskManager.RunTickGroup(ETickingGroup::DuringPhysics, DeltaTime);
+		PhysicsScene->ProcessPhysScene();
+		PhysicsScene->EndFrame();
+		TickTaskManager.RunTickGroup(ETickingGroup::PostPhysics, DeltaTime);
+		TickTaskManager.RunTickGroup(ETickingGroup::PostUpdateWork, DeltaTime);
 	}
 
 	// 코루틴 Tick

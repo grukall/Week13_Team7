@@ -1,6 +1,11 @@
 #pragma once
 
 #include "Core/Types.h"
+#include "Containers/Set.h"
+#include "Containers/Map.h"
+#include "Math/Transform.h"
+
+struct FBodyInstance;
 
 namespace physx
 {
@@ -23,12 +28,21 @@ public:
 	FPhysScene() = default;
 	bool Init(const FPhysXRuntime& Runtime);
 	~FPhysScene();
+	void StartFrame(float DeltaSeconds);
+	void ProcessPhysScene();
+	void EndFrame();
+	void WaitPhysScenes();
 	void AddActorsToScene_AssumesLocked(const TArray<FPhysicsActorHandle>& InActors);
 	FPhysScene(const FPhysScene&) = delete;
 	FPhysScene& operator=(const FPhysScene&) = delete;
 
 private:
 	friend class FPhysicsInterface;
+	friend struct FBodyInstance;
+	bool FetchSubstepResults();
+	TSet<FBodyInstance*> ActiveBodies;
+	TMap<FBodyInstance*, FTransform> PendingKinematicTargets;
+	bool bSimulating = false;
 	physx::PxScene* Scene = nullptr;
 	FPhysXCPUDispatcher* CPUDispatcher = nullptr;
 };

@@ -112,6 +112,12 @@ bool UPrimitiveComponent::LineTraceComponentLocal(const FRay& LocalRay, float& O
 	return Mesh && TraceMeshLocal(LocalRay, *Mesh, OutT);
 }
 
+void UPrimitiveComponent::OnUpdateTransform()
+{
+	if (BodyInstance.IsValidBodyInstance())
+		BodyInstance.SetBodyTransform(FTransform(GetWorldRotation(), GetWorldLocation(), GetWorldScale3D()));
+}
+
 void UPrimitiveComponent::OnTransformDirty()
 {
 	if (SceneProxy)

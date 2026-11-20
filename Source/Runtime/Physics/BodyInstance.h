@@ -21,4 +21,13 @@ struct FBodyInstance
 	void InitBody(UBodySetup* Setup, const FTransform& Transform, UPrimitiveComponent* PrimComp, FPhysScene* InRBScene);
 	bool IsValidBodyInstance() const { return ActorHandle.IsValid(); }
 	void TermBody();
+	void SetInstanceSimulatePhysics(bool bSimulate);
+	void SetBodyTransform(const FTransform& Transform);
+	void SyncComponentToRBPhysics();
+
+private:
+	friend class FPhysScene;
+	UPrimitiveComponent* OwnerComponent = nullptr;
+	FPhysScene* PhysicsScene = nullptr;
+	bool bSyncingComponent = false;
 };

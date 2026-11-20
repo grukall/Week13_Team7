@@ -48,6 +48,8 @@ public:
 	UPROPERTY(EditAnywhere)
 	FBodyInstance BodyInstance;
 
+	void SetSimulatePhysics(bool bSimulate) { BodyInstance.SetInstanceSimulatePhysics(bSimulate); }
+	void OnUpdateTransform() override;
 	virtual UBodySetup* GetBodySetup() { return nullptr; }
 	FBodyInstance* GetBodyInstance() { return &BodyInstance; }
 

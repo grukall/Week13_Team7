@@ -323,6 +323,7 @@ float USceneComponent::GetCollisionRadius() const
 
 void USceneComponent::MarkTransformDirty()
 {
+	OnUpdateTransform();
 	OnTransformDirty();         
 
 	for (USceneComponent* Child : AttachChildren)

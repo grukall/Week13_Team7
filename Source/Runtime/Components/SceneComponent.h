@@ -96,6 +96,7 @@ public:
 	void SetCollisionRadiusOverride(float Radius) { CollisionRadiusOverride = Radius; }
 
 	void MarkTransformDirty();
+	virtual void OnUpdateTransform() {}
 	virtual void OnTransformDirty() {};
 
 	using Super::Serialize;

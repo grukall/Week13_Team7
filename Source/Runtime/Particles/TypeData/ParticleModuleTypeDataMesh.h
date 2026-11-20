@@ -16,6 +16,9 @@ public:
 	UPROPERTY(EditAnywhere)
 	bool bUseGPUInstancing = true;
 
+	UPROPERTY(EditAnywhere)
+	bool bCollisionsConsiderPartilceSize = true;
+
 	FParticleEmitterInstance* CreateInstance(UParticleEmitter* InEmitterParent,
 		UParticleSystemComponent* InComponent) override;
 	bool IsAMeshEmitter() const override { return true; }

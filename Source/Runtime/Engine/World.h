@@ -19,6 +19,7 @@
 #include "Script/CoroutineScheduler.h"
 #include "World.generated.h"
 
+struct FCollisionObjectQueryParams;
 class ULevel;
 class FPhysScene;
 class FLineBatcher;
@@ -100,6 +101,8 @@ public:
 		FBillboardTraceTransform ResolveBillboard = nullptr, const void* ViewContext = nullptr);
 	bool SweepSingleByChannel(FHitResult& OutHit, const FVector& Start, const FVector& End, const FQuat& Rotation, ECollisionChannel Channel, const FCollisionShape& CollisionShape, const AActor* IgnoreActor = nullptr) const;
 	bool LineTraceSingleByChannel(FHitResult& OutHit, const FVector& Start, const FVector& End, ECollisionChannel Channel, const AActor* IgnoreActor = nullptr) const;
+	bool LineTraceSingleByObjectType(FHitResult& OutHit, const FVector& Start, const FVector& End, const FCollisionObjectQueryParams& ObjectParams, const AActor* IgnoreActor = nullptr, bool bReturnPhysicalMaterial = false) const;
+	bool SweepSingleByObjectType(FHitResult& OutHit, const FVector& Start, const FVector& End, const FQuat& Rotation, const FCollisionObjectQueryParams& ObjectParams, const FCollisionShape& CollisionShape, const AActor* IgnoreActor = nullptr, bool bReturnPhysicalMaterial = false) const;
 	bool ComponentSweepMulti(TArray<FHitResult>& Hits, const UPrimitiveComponent* Component, const FVector& Start, const FVector& End, const FQuat& Rotation) const;
 	void ComponentOverlapMulti(TArray<UPrimitiveComponent*>& Overlaps, const UPrimitiveComponent* Component) const;
 

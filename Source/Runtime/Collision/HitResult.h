@@ -2,6 +2,7 @@
 #include "Core/Types.h"
 #include "Math/Vector.h"
 
+class UPhysicalMaterial;
 class UPrimitiveComponent;
 
 struct FHitResult
@@ -24,6 +25,7 @@ struct FHitResult
 	bool bBlockingHit = false;
 	bool bStartPenetrating = false;
 
+	UPhysicalMaterial* PhysMaterial = nullptr;
 	UPrimitiveComponent* HitComponent = nullptr;
 
 	FHitResult()

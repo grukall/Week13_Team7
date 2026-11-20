@@ -3,6 +3,7 @@
 #include "ParticleEditorPanels.h"
 #include "Editor/ParticleEditor/ParticleSystemEditor.h"
 #include "Editor/Details/PropertyEditor.h"
+#include "Particles/Collision/ParticleModuleCollision.h"
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleEmitter.h"
 #include "Particles/ParticleLODLevel.h"
@@ -658,7 +659,28 @@ void FParticleDetailsPanel::DrawContent()
 
 	const TArray<uint8> Before = SnapshotProperties(Selected);
 	FPropertyEditor::DrawObjectProperties(Selected);          // 레벨 디테일 패널과 같은 위젯 (텍스처 피커 포함)
-	if (!SameBytes(Before, SnapshotProperties(Selected)))
+	bool bTypesChanged = false;
+	if (auto* Collision = Cast<UParticleModuleCollision>(Selected); Collision && ImGui::TreeNode("Collision Types"))
+	{
+		for (const auto& Entry : TEnumInfo<ECollisionChannel>::Get()->Entries)
+		{
+			const auto Type = static_cast<ECollisionChannel>(Entry.Value);
+			if (!FCollisionObjectQueryParams::IsValidObjectQuery(Type))
+				continue;
+			const int32 TypeIndex = Collision->CollisionTypes.Find(Type);
+			bool bIncluded = TypeIndex != -1;
+			if (ImGui::Checkbox(Entry.Name.c_str(), &bIncluded))
+			{
+				if (bIncluded)
+					Collision->CollisionTypes.Add(Type);
+				else
+					Collision->CollisionTypes.RemoveAt(TypeIndex);
+				bTypesChanged = true;
+			}
+		}
+		ImGui::TreePop();
+	}
+	if (bTypesChanged || !SameBytes(Before, SnapshotProperties(Selected)))
 	{
 		Editor.NotifyPropertyChanged();
 	}

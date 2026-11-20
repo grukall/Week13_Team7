@@ -1,7 +1,10 @@
 #pragma once
 
 #include "Particles/ParticleModule.h"
+#include "Collision/CollisionQueryParams.h"
 #include "ParticleModuleCollision.generated.h"
+
+class AActor;
 
 UENUM()
 enum class EParticleCollisionComplete : uint8
@@ -29,6 +32,13 @@ class UParticleModuleCollision : public UParticleModule
 
 public:
 	UParticleModuleCollision();
+	void Serialize(FStructuredArchive::FRecord Record) override;
+	bool PerformCollisionCheck(FParticleEmitterInstance* Owner, FHitResult& Hit, const AActor* SourceActor, const FVector& End, const FVector& Start, const FVector& Extent, const FCollisionObjectQueryParams& ObjectParams) const;
+	TArray<ECollisionChannel> CollisionTypes;
+
+	UPROPERTY(EditAnywhere)
+	bool bIgnoreSourceActor = true;
+
 	virtual ~UParticleModuleCollision() override = default;
 
 	virtual void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle* ParticleBase) override;

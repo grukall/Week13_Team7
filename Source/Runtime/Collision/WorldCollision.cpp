@@ -1,5 +1,6 @@
 #include "EnginePCH.h"
 #include "Engine/World.h"
+#include "Collision/CollisionQueryParams.h"
 #include "Physics/PhysScene.h"
 #include "UObject/UObjectIterator.h"
 #include "Physics/PhysicsFiltering.h"
@@ -25,6 +26,7 @@ namespace
 		const AActor* IgnoreActor;
 		const UPrimitiveComponent* Source;
 		bool Touches;
+		const FCollisionObjectQueryParams* ObjectParams = nullptr;
 
 		FCollisionQueryFilterCallback(ECollisionChannel Channel, const AActor* Ignore, const UPrimitiveComponent* Source, bool Touches)
 			: Channel(Channel), IgnoreActor(Ignore), Source(Source), Touches(Touches) {}
@@ -32,6 +34,11 @@ namespace
 		PxQueryHitType::Enum CalcQueryHitType(const PxShape& Shape) const
 		{
 			const auto Data = Shape.getQueryFilterData();
+			if (ObjectParams)
+			{
+				const uint32 ShapeType = 1u << static_cast<uint32>(GetCollisionChannel(Data.word3));
+				return ObjectParams->ObjectTypesToQuery & ShapeType ? PxQueryHitType::eBLOCK : PxQueryHitType::eNONE;
+			}
 			const uint32 Bit = 1u << static_cast<uint32>(Channel);
 			auto Response = Data.word1 & Bit ? ECollisionResponse::ECR_Block :
 				Data.word2 & Bit ? ECollisionResponse::ECR_Overlap : ECollisionResponse::ECR_Ignore;
@@ -101,25 +108,25 @@ bool UWorld::LineTraceSingleByChannel(FHitResult& OutHit, const FVector& Start, 
 	return SweepSingleByChannel(OutHit, Start, End, FQuat::Identity(), Channel, FCollisionShape{}, IgnoreActor);
 }
 
-bool UWorld::SweepSingleByChannel(FHitResult& OutHit, const FVector& Start, const FVector& End, const FQuat& Rotation, ECollisionChannel Channel, const FCollisionShape& CollisionShape, const AActor* IgnoreActor) const
+static bool SweepSingle(physx::PxScene* Scene, FHitResult& OutHit, const FVector& Start, const FVector& End, const FQuat& Rotation, const FCollisionShape& CollisionShape, FCollisionQueryFilterCallback Filter, bool bReturnPhysicalMaterial)
 {
 	using namespace physx;
 	OutHit = FHitResult(1.f);
 	OutHit.Init(Start, End);
 	const FVector Delta = End - Start;
 	const float Length = Delta.Size();
-	if (!PhysicsScene || !(Length > SMALL_NUMBER) || !std::isfinite(Length))
+	if (!Scene || !(Length > SMALL_NUMBER) || !std::isfinite(Length))
 		return false;
-	auto& Scene = *PhysicsScene->Scene;
-	PxSceneReadLock Lock(Scene);
-	FCollisionQueryFilterCallback Filter(Channel, IgnoreActor, nullptr, false);
+	PxSceneReadLock Lock(*Scene);
 	const PxQueryFilterData Data(QueryFlags);
 	const PxVec3 Direction = ToPx(Delta / Length);
+	const PxShape* HitShape = nullptr;
 	if (CollisionShape.ShapeType == ECollisionShape::Line || CollisionShape.HalfExtent.SizeSquared() <= SMALL_NUMBER)
 	{
 		PxRaycastBuffer Buffer;
-		if (!Scene.raycast(ToPx(Start), Direction, Length, Buffer, PxHitFlag::eDEFAULT, Data, &Filter))
+		if (!Scene->raycast(ToPx(Start), Direction, Length, Buffer, PxHitFlag::eDEFAULT, Data, &Filter))
 			return false;
+		HitShape = Buffer.block.shape;
 		OutHit = ConvertQueryImpactHit(Buffer.block, Start, End, Length, false, true);
 	}
 	else
@@ -154,11 +161,36 @@ bool UWorld::SweepSingleByChannel(FHitResult& OutHit, const FVector& Start, cons
 		if (!Pose.isValid())
 			return false;
 		PxSweepBuffer Buffer;
-		if (!Scene.sweep(Geometry.any(), Pose, Direction, Length, Buffer, PxHitFlag::eDEFAULT | PxHitFlag::eMTD, Data, &Filter))
+		if (!Scene->sweep(Geometry.any(), Pose, Direction, Length, Buffer, PxHitFlag::eDEFAULT | PxHitFlag::eMTD, Data, &Filter))
 			return false;
+		HitShape = Buffer.block.shape;
 		OutHit = ConvertQueryImpactHit(Buffer.block, Start, End, Length, Buffer.block.hadInitialOverlap(), true);
 	}
+	if (bReturnPhysicalMaterial)
+	{
+		// The supported simple geometries bind one material per shape.
+		PxMaterial* Material = nullptr;
+		if (HitShape->getMaterials(&Material, 1))
+			OutHit.PhysMaterial = static_cast<UPhysicalMaterial*>(Material->userData);
+	}
 	return true;
+}
+
+bool UWorld::SweepSingleByChannel(FHitResult& OutHit, const FVector& Start, const FVector& End, const FQuat& Rotation, ECollisionChannel Channel, const FCollisionShape& CollisionShape, const AActor* IgnoreActor) const
+{
+	return SweepSingle(PhysicsScene ? PhysicsScene->Scene : nullptr, OutHit, Start, End, Rotation, CollisionShape, {Channel, IgnoreActor, nullptr, false}, false);
+}
+
+bool UWorld::LineTraceSingleByObjectType(FHitResult& OutHit, const FVector& Start, const FVector& End, const FCollisionObjectQueryParams& ObjectParams, const AActor* IgnoreActor, bool bReturnPhysicalMaterial) const
+{
+	return SweepSingleByObjectType(OutHit, Start, End, FQuat::Identity(), ObjectParams, FCollisionShape{}, IgnoreActor, bReturnPhysicalMaterial);
+}
+
+bool UWorld::SweepSingleByObjectType(FHitResult& OutHit, const FVector& Start, const FVector& End, const FQuat& Rotation, const FCollisionObjectQueryParams& ObjectParams, const FCollisionShape& CollisionShape, const AActor* IgnoreActor, bool bReturnPhysicalMaterial) const
+{
+	FCollisionQueryFilterCallback Filter({}, IgnoreActor, nullptr, false);
+	Filter.ObjectParams = &ObjectParams;
+	return SweepSingle(PhysicsScene ? PhysicsScene->Scene : nullptr, OutHit, Start, End, Rotation, CollisionShape, Filter, bReturnPhysicalMaterial);
 }
 
 void FPhysicsInterface::GeomSweepMulti(const UWorld& World, const physx::PxGeometry& Geometry, const physx::PxTransform& ShapePose, const UPrimitiveComponent& Source, const FVector& Start, const FVector& End, float Length, TArray<FHitResult>& Hits)

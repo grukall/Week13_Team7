@@ -2298,6 +2298,24 @@
                                 "bReceivesDecals": true,
                                 "bVisible": true
                             }
+                        },
+                        {
+                            "Class": "UBoxComponent",
+                            "Name": "GroundCollision",
+                            "Parent": "UStaticMeshComponent",
+                            "Properties": {
+                                "BoxExtent": {
+                                    "X": 0.5,
+                                    "Y": 0.5,
+                                    "Z": 0.5
+                                },
+                                "Mobility": "Static",
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryOnly"
+                                },
+                                "bGenerateOverlapEvents": false,
+                                "bBlockComponent": true
+                            }
                         }
                     ],
                     "Name": "Ground",

@@ -60,8 +60,10 @@ public:
 	void RegisterComponent();
 	void RegisterComponentWithWorld(UWorld* InWorld);
 	void UnregisterComponent();
+	void RecreatePhysicsState();
 
 	bool IsRegistered() const { return bRegistered; }
+	bool IsPhysicsStateCreated() const { return bPhysicsStateCreated; }
 	bool IsRenderStateCreated() const { return bRenderStateCreated; }
 
 	UWorld* GetWorld() const { return WorldPrivate; }
@@ -69,6 +71,9 @@ protected:
 
 	virtual void OnRegister();
 	virtual void OnUnregister();
+	virtual bool ShouldCreatePhysicsState() { return false; }
+	virtual void OnCreatePhysicsState() { bPhysicsStateCreated = true; }
+	virtual void OnDestroyPhysicsState() { bPhysicsStateCreated = false; }
 	virtual bool ShouldCreateRenderState() const
 	{
 		return false;
@@ -88,6 +93,9 @@ protected:
 	void ExecuteUnregisterEvents();
 
 private:
+	void CreatePhysicsState();
+	void DestroyPhysicsState();
+	bool bPhysicsStateCreated = false;
 	AActor* Owner = nullptr;
 	bool bHiddenInDetails = false;
 	bool bIsActive = false;

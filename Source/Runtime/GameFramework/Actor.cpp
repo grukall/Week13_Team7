@@ -217,6 +217,12 @@ void AActor::Serialize(FStructuredArchive::FRecord Record)
 			Attachment.Child->SetupAttachment(ParentComponent);
 		}
 	}
+
+	// SpawnActor/AddComponent register before the loader restores body settings and attachment transforms.
+	if (Ar.IsLoading() && World && World->GetPhysicsScene())
+		for (UActorComponent* Component : Components)
+			if (Component)
+				Component->RecreatePhysicsState();
 }
 
 

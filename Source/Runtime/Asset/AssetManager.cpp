@@ -132,6 +132,13 @@ namespace
 		UStaticMesh* Mesh = NewObject<UStaticMesh>();
 		Mesh->MeshData = std::move(Optimized);
 
+		if (!Mesh->MeshData.ConvexElems.IsEmpty())
+		{
+			Mesh->CreateBodySetup();
+			Mesh->GetBodySetup()->AggGeom.ConvexElems = std::move(Mesh->MeshData.ConvexElems);
+			Mesh->GetBodySetup()->CookedFormatData = std::move(Mesh->MeshData.CookedFormatData);
+		}
+
 		// Vertex/Index GPU 업로드
 		Mesh->VertexBuffer = std::move(VB);
 		Mesh->IndexBuffer = std::move(IB);
@@ -226,6 +233,12 @@ void UAssetManager::ScanAssets(const fs::path& AssetRoot, const FAssetLoadProgre
 			Path = Key;
 		}
 
+		// A deployed OBJ can consist solely of its baked file. Keep the scene's .obj key.
+		if (Path.ends_with(".obj.bin"))
+		{
+			Key.resize(Key.size() - 4);
+			Path.resize(Path.size() - 4);
+		}
 		// 경로만 등록한다. 실제 로드는 처음 찾을 때 FindOrLoadAsset에서 한다.
 		if (GetAssetTypeFromPath(Path) != EAssetType::None)
 		{

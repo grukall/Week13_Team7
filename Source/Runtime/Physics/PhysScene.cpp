@@ -1,5 +1,6 @@
 #include "EnginePCH.h"
 #include "Physics/PhysScene.h"
+#include "Physics/PhysicsInterface.h"
 
 #include "Engine/Engine.h"
 #include "Tasks/TaskScheduler.h"
@@ -38,11 +39,21 @@ bool FPhysXRuntime::Init()
 		return false;
 
 	Physics = PxCreatePhysics(PX_PHYSICS_VERSION, *Foundation, physx::PxTolerancesScale());
-	return Physics != nullptr;
+	if (!Physics)
+		return false;
+	Cooking = PxCreateCooking(PX_PHYSICS_VERSION, *Foundation, physx::PxCookingParams(Physics->getTolerancesScale()));
+	if (!Cooking)
+		return false;
+	DefaultMaterial = Physics->createMaterial(0.5f, 0.5f, 0.0f);
+	return DefaultMaterial != nullptr;
 }
 
 FPhysXRuntime::~FPhysXRuntime()
 {
+	if (DefaultMaterial)
+		DefaultMaterial->release();
+	if (Cooking)
+		Cooking->release();
 	if (Physics)
 		Physics->release();
 	if (Foundation)
@@ -67,6 +78,12 @@ bool FPhysScene::Init(const FPhysXRuntime& Runtime)
 	Desc.filterShader = physx::PxDefaultSimulationFilterShader;
 	Scene = Runtime.Physics->createScene(Desc);
 	return Scene != nullptr;
+}
+
+void FPhysScene::AddActorsToScene_AssumesLocked(const TArray<FPhysicsActorHandle>& InActors)
+{
+	for (const FPhysicsActorHandle& Actor : InActors)
+		Scene->addActor(*Actor.SyncActor);
 }
 
 FPhysScene::~FPhysScene()

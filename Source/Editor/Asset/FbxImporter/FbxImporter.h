@@ -53,7 +53,7 @@ public:
 	// 참조는 다음 ReadMeshData/Open/Close/소멸 전까지만 유효하다.
 	const TArray<FFbxMeshNodeData>& GetMeshNodes() const { return MeshNodes; }
 	// Import Static용: Skin 유무와 관계없이 모든 Node를 하나로 합친다.
-	void BuildStaticMesh(FStaticMeshData& OutData) const;
+	bool BuildStaticMesh(FStaticMeshData& OutData, bool bOnlyUnbound, FString& OutError) const;
 	// ReadMeshData 성공 후 호출한다. Bone 계층/Bind와 rigid의 Bind 기준 Geometry를 만들며 Weight는 만들지 않는다.
 	bool ReadSkeletonData(TArray<FString>& OutWarnings, FString& OutError);
 	// 다음 Skeleton/Mesh 재추출, Open/Close/소멸 전까지만 유효하다.
@@ -88,6 +88,7 @@ private:
 	FbxScene* Scene = nullptr;
 	FString SourcePath;			// 원본 FBX 파일 경로 문자열
 	TArray<FFbxMeshNodeData> MeshNodes;
+	TArray<FbxNode*> CollisionNodes;
 	bool bIsBlender = false;	// Armature 예외 처리용
 	TArray<FBoneInfo> Bones;
 	TMap<FbxNode*, int32> BoneIndices; // Import 중 SDK Node를 출력 Bone 번호로 연결

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PrimitiveComponent.h"
+#include "Physics/BodySetup.h"
 #include "Render/LineBatcher.h"
 #include "ShapeComponent.generated.h"
 
@@ -16,6 +17,8 @@ class UShapeComponent : public UPrimitiveComponent
 	GENERATED_BODY()
 public:
 	UShapeComponent();
+	~UShapeComponent() override;
+	UBodySetup* GetBodySetup() override;
 
 	// 넓은 범위 판정용. 월드 스케일과 회전이 반영된 AABB
 	virtual FBox GetWorldAABB() const;
@@ -32,6 +35,8 @@ public:
 	bool bDrawOnlyIfSelected = false;
 
 protected:
+	UBodySetup* ShapeBodySetup = nullptr;
+	virtual void UpdateBodySetup() {}
 	virtual bool ShouldCreateRenderState() const override { return false; }
 
 	// 중심, 원이 놓일 평면의 두 축, 반지름, 시작~끝 각도(라디안)

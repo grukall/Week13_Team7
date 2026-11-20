@@ -1,5 +1,6 @@
 #include "EnginePCH.h"
 #include "PrimitiveComponent.h"
+#include "Physics/BodySetup.h"
 #include "../Render/Renderer.h"
 #include "Asset/AssetManager.h"
 #include "Render/RenderCommand.h"
@@ -47,6 +48,28 @@ UPrimitiveComponent::~UPrimitiveComponent()
 void UPrimitiveComponent::BeginPlay()
 {
 	Super::BeginPlay();
+}
+
+bool UPrimitiveComponent::ShouldCreatePhysicsState()
+{
+	const UBodySetup* Setup = GetBodySetup();
+	return Setup && !Setup->AggGeom.IsEmpty();
+}
+
+void UPrimitiveComponent::OnCreatePhysicsState()
+{
+	const FTransform BodyTransform(GetWorldRotation(), GetWorldLocation(), GetWorldScale3D());
+	BodyInstance.InitBody(GetBodySetup(), BodyTransform, this, GetWorld()->GetPhysicsScene());
+	if (BodyInstance.IsValidBodyInstance())
+		Super::OnCreatePhysicsState();
+	else
+		HTR_LOG(Warning, "Failed to create physics state for {}", GetName());
+}
+
+void UPrimitiveComponent::OnDestroyPhysicsState()
+{
+	BodyInstance.TermBody();
+	Super::OnDestroyPhysicsState();
 }
 
 void UPrimitiveComponent::OnUnregister()

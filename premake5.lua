@@ -8,8 +8,6 @@ workspace "Hitori"
 		"Release",
 		"Shipping",
 		"ObjViewer",
-		"Benchmark",
-		"Benchmark_Debug",
 		"DebugPublishSymbols",
 		"ReleasePublishSymbols",
 	}
@@ -57,13 +55,19 @@ end
 
 local function PhysXSettings(linkFinalExecutable)
 	local checkout = "Intermediate/PhysX-4.1"
-	local sdkConfigs = { Debug = "$(HitoriPhysXDebug)", Release = "$(HitoriPhysXRelease)", Shipping = "release" }
+	local sdkConfigs = { Debug = "$(HitoriPhysXDebug)", Release = "$(HitoriPhysXRelease)", Shipping = "release", ObjViewer = "release", DebugPublishSymbols = "debug", ReleasePublishSymbols = "release" }
 	local sharedModules = { "PhysX_64", "PhysXFoundation_64", "PhysXCommon_64", "PhysXCooking_64" }
 
 	for config, sdkConfig in pairs(sdkConfigs) do
 		filter ("configurations:" .. config)
 			includedirs { checkout .. "/physx/include", checkout .. "/pxshared/include" }
-			defines { config == "Shipping" and "PX_SUPPORT_PVD=0" or "$(HitoriPhysXDefines)" }
+			if sdkConfig == "debug" then
+				defines { "PX_DEBUG=1", "PX_CHECKED=1", "PX_SUPPORT_PVD=1" }
+			elseif sdkConfig == "release" then
+				defines { "PX_SUPPORT_PVD=0" }
+			else
+				defines { "$(HitoriPhysXDefines)" }
+			end
 
 			if linkFinalExecutable then
 				-- PhysX 4.1's CMake uses this directory name even with the v145 toolset.
@@ -138,21 +142,6 @@ function CommonSettings()
 		defines  { "ENGINE_RELEASE", "NDEBUG", "OBJ_VIEWER" }
 		runtime  "Release"
 		optimize "on"
-		symbols  "on"
-
-	filter "configurations:Benchmark_Debug"
-		defines  { "ENGINE_DEBUG", "_DEBUG", "BENCHMARK" }
-		runtime  "Debug"
-		symbols  "on"
-
-	filter "configurations:Benchmark"
-		defines  { "ENGINE_RELEASE", "NDEBUG", "BENCHMARK" }
-		runtime  "Release"
-		optimize "speed"
-		-- /GL + /LTCG는 끈다. 켠 exe가 Defender ML 탐지(Trojan:Win32/Wacatac)에 오탐으로 걸렸다.
-		vectorextensions "AVX2"
-		-- /GS-(버퍼 보안 검사 끄기)는 성능 이득이 거의 없고 백신 휴리스틱 오탐을 부르기 쉬워 켜 둔다 (기본값 /GS)
-		buildoptions { "/Gw" }
 		symbols  "on"
 
 	filter "configurations:Shipping"
@@ -275,13 +264,6 @@ project "HitoriEngine"
 	dependson { "HitoriHeaderTool" }
 	prebuildcommands { HeaderTool .. ' Runtime "' .. GeneratedDir .. '/Runtime" "%{wks.location}/Source/Runtime"' }
 
-	-- Tool configurations keep their existing SDK-free World lifecycle.
-	filter { "files:**/PhysScene.cpp", "configurations:not Debug", "configurations:not Release", "configurations:not Shipping" }
-		excludefrombuild "On"
-	filter { "files:**/PhysSceneNoSDK.cpp", "configurations:Debug or Release or Shipping" }
-		excludefrombuild "On"
-	filter {}
-
 	-- sol2 템플릿이 섹션 수 제한을 넘긴다
 	filter "files:Source/Runtime/Script/**.cpp"
 		buildoptions { "/bigobj" }
@@ -311,8 +293,8 @@ project "HitoriEditor"
 	defines { "FBXSDK_SHARED" }
 	links { "libfbxsdk.lib" }
 
-	for _, Config in ipairs({ "Debug", "Release", "Shipping", "ObjViewer", "Benchmark", "Benchmark_Debug", "DebugPublishSymbols", "ReleasePublishSymbols"}) do
-		local DebugCRT = Config == "Benchmark_Debug" or Config == "DebugPublishSymbols"
+	for _, Config in ipairs({ "Debug", "Release", "Shipping", "ObjViewer", "DebugPublishSymbols", "ReleasePublishSymbols"}) do
+		local DebugCRT = Config == "DebugPublishSymbols"
 		local SdkConfig = DebugCRT and "debug" or "release"
 		if Config == "Debug" then
 			SdkConfig = "$(HitoriDebugFbx)"
@@ -382,12 +364,6 @@ project "HitoriEditor"
 
 	filter "configurations:ObjViewer"
 		targetname "ObjViewer"
-
-	filter "configurations:Benchmark"
-		targetname "Benchmark"
-
-	filter "configurations:Benchmark_Debug"
-		targetname "Benchmark_Debug"
 
 	filter {}
 

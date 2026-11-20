@@ -9,7 +9,7 @@ namespace
 {
 	constexpr uint32 Magic = 0x58424648; // HFBX, little endian
 	// 장면 전체의 축 변환으로 Bone Local 축과 Bind 행렬 표현이 달라져 기존 출력은 다시 굽는다.
-	constexpr uint32 Version = 6;
+	constexpr uint32 Version = 7;
 	constexpr uint32 QuaternionBoneRotationVersion = 5;
 	constexpr uint32 EulerBoneRotationVersion = 4; // 본 회전을 FRotator로 저장한 마지막 버전. 그대로 읽어 변환한다
 	static_assert(sizeof(FVertex) == 64 && sizeof(FSkinWeight) == 20);
@@ -135,6 +135,8 @@ namespace
 			}
 			D.SkeletalMesh.SourcePath = D.Source.Path;
 		}
+		if (D.Kind == EFbxMeshKind::Static && FileVersion >= 7)
+			return ReadCookedConvex(In.Stream, D.StaticMesh.ConvexElems, D.StaticMesh.CookedFormatData);
 		return In.Remaining == 0;
 	}
 
@@ -187,7 +189,7 @@ bool FFbxMeshBake::Read(const FString& Path, FFbxBakedMesh& OutData, FString& Ou
 	FFbxBakedMesh D;
 	uint32 M = 0, V = 0;
 	if (!In.Pod(M) || M != Magic || !In.Pod(V)) { OutError = "FBX binary: invalid header: " + Path; return false; }
-	if (V != Version && V != QuaternionBoneRotationVersion && V != EulerBoneRotationVersion)
+	if (V != Version && V != 6 && V != QuaternionBoneRotationVersion && V != EulerBoneRotationVersion)
 	{
 		OutError = "FBX binary: unsupported version " + std::to_string(V) + " (expected " + std::to_string(Version) + "); reimport the source FBX: " + Path;
 		return false;
@@ -205,6 +207,7 @@ bool FFbxMeshBake::Read(const FString& Path, FFbxBakedMesh& OutData, FString& Ou
 	}
 	if (!ReadPayload(In, D, V) || !FinitePayload(D)) { OutError = "FBX binary: invalid/truncated payload: " + Path; return false; }
 	if (D.Kind == EFbxMeshKind::Static ? !D.StaticMesh.Validate(OutError) : !D.SkeletalMesh.Validate(OutError)) return false;
+	D.bCurrentBakeVersion = V == Version;
 	OutData = std::move(D);
 	return true;
 }
@@ -235,6 +238,8 @@ bool FFbxMeshBake::Write(const FString& Path, const FFbxBakedMesh& D, FString& O
 			Out.String(B.Name); Out.Pod(B.ParentIndex); Out.Pod(B.LocalBindPose.Location); Out.Pod(B.LocalBindPose.Rotation); Out.Pod(B.LocalBindPose.Scale); Out.Pod(B.InverseBindPose.M);
 		}
 	}
+	if (D.Kind == EFbxMeshKind::Static && !WriteCookedConvex(Out.Stream, D.StaticMesh.ConvexElems, D.StaticMesh.CookedFormatData))
+		Out.Stream.setstate(std::ios::failbit);
 	Out.Stream.flush();
 	Out.Stream.close();
 	if (!Out.Stream) { OutError = "FBX binary: write failed: " + Path; return false; }

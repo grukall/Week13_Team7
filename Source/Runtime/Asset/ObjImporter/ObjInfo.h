@@ -61,6 +61,7 @@ struct FObjInfo
 	TArray<FVector> Normals;
 	TArray<FVector> Tangents; 
 	TArray<FObjFace> Faces;
+	TArray<TArray<FVector>> ConvexHulls;
 	TArray<FObjSection> Sections;
 	TArray<FString> Mtllibs; // .obj 폴더 기준
 	TArray<FObjMaterialInfo> MaterialInfos;

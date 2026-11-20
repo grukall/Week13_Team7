@@ -6,6 +6,7 @@
 #include "Render/RenderPacket.h"
 #include "Render/GeometryGenerator.h"
 #include "Collision/HitResult.h"
+#include "Physics/BodyInstance.h"
 #include "Core/Delegate/Delegate.h"
 #include "PrimitiveComponent.generated.h"
 
@@ -43,6 +44,12 @@ class UPrimitiveComponent :public USceneComponent
 public:
 	UPrimitiveComponent();
 	virtual ~UPrimitiveComponent();
+
+	UPROPERTY(EditAnywhere)
+	FBodyInstance BodyInstance;
+
+	virtual UBodySetup* GetBodySetup() { return nullptr; }
+	FBodyInstance* GetBodyInstance() { return &BodyInstance; }
 
 	virtual void BeginPlay() override;
 
@@ -116,6 +123,9 @@ public:
 	void DispatchHit(UPrimitiveComponent* OtherComp);
 
 protected:
+	virtual void OnCreatePhysicsState() override;
+	virtual bool ShouldCreatePhysicsState() override;
+	virtual void OnDestroyPhysicsState() override;
 	virtual void OnUnregister() override;
 	TArray<FOverlapInfo> OverlapInfos;
 

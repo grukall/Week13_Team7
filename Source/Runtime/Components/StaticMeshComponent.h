@@ -19,6 +19,7 @@ public:
 
 	// 메시가 바뀌면 슬롯 구성이 달라지므로 덮어쓰기를 비운다
 	void SetStaticMesh(UStaticMesh* InStaticMesh);
+	UBodySetup* GetBodySetup() override { return StaticMesh ? StaticMesh->GetBodySetup() : nullptr; }
 	UStaticMesh* GetStaticMesh() const { return StaticMesh; }
 	virtual UStaticMesh* GetRenderMesh() const override { return StaticMesh; }
 

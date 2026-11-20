@@ -1,5 +1,6 @@
 #include "EnginePCH.h"
 #include "FbxImporter.h"
+#include "Physics/BodySetup.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimSequenceFile.h"
 #include "Asset/AssetManager.h"
@@ -436,6 +437,15 @@ namespace
 
 	// 삼각형화가 끝난 Mesh 하나에서 엔진 기준 Geometry/Material과 정점별 Control Point 번호를 추출한다.
 	// Node와 Skin 유무도 보관하여 후속 Skeleton 분류와 Weight 연결에 사용한다. 여기서는 Bone/Weight를 읽지 않는다.
+	FbxAMatrix MeshToAsset(FbxNode* Node, const FbxAMatrix& Global)
+	{
+		FbxAMatrix Geometric;
+		Geometric.SetT(Node->GetGeometricTranslation(FbxNode::eSourcePivot));
+		Geometric.SetR(Node->GetGeometricRotation(FbxNode::eSourcePivot));
+		Geometric.SetS(Node->GetGeometricScaling(FbxNode::eSourcePivot));
+		return Global * Geometric;
+	}
+
 	bool ReadMeshNode(FbxNode* Node, FbxMesh* Mesh, const FbxAMatrix& Global, const std::filesystem::path& Folder, FFbxMeshNodeData& Result, TArray<FString>& Warnings, FString& Error)
 	{
 		Result.Node = Node;
@@ -464,13 +474,7 @@ namespace
 
 		// Mesh 자체에 적용되는 Geometric Translation/Rotation/Scale을 G 행렬로 만든다.
 		// 전달받은 현재 또는 Bind Global과 결합해 정점을 굽고, Normal에는 결합 행렬의 역전치를 적용한다.
-		FbxAMatrix Geometric;
-		Geometric.SetT(Node->GetGeometricTranslation(FbxNode::eSourcePivot));
-		Geometric.SetR(Node->GetGeometricRotation(FbxNode::eSourcePivot));
-		Geometric.SetS(Node->GetGeometricScaling(FbxNode::eSourcePivot));
-		
-		// SDK는 열벡터이므로 엔진의 p*G*M에 해당하는 행렬은 M*G다.
-		const FbxAMatrix Total = Global * Geometric;
+		const FbxAMatrix Total = MeshToAsset(Node, Global);
 		// 좌표계 반사와 Polygon 순서는 DeepConvertScene에서 변환됐다.
 		// 여기서는 정점에 굽는 Geometric/Global의 음수 Scale에 의한 뒤집기만 검사한다.
 		const double FinalDeterminant = Total.Determinant();
@@ -656,6 +660,7 @@ void FFbxImporter::Close()
 {
 	ClearSkeletonData();
 	MeshNodes.Empty();
+	CollisionNodes.Empty();
 	SourcePath.clear();
 	bIsBlender = false;
 	// Manager가 아직 남아 있는 Reader, Scene, IOSettings를 함께 해제한다.
@@ -671,6 +676,7 @@ bool FFbxImporter::ReadMeshData(TArray<FString>& OutWarnings, FString& OutError)
 {
 	ClearSkeletonData();
 	MeshNodes.Empty();
+	CollisionNodes.Empty();
 	OutWarnings.Empty();
 	OutError.clear();
 	if (!Scene) 
@@ -717,6 +723,12 @@ bool FFbxImporter::ReadMeshData(TArray<FString>& OutWarnings, FString& OutError)
 			return false; 
 		}
 
+		if (FString(Node->GetName()).starts_with("UCX_"))
+		{
+			CollisionNodes.Add(Node);
+			continue;
+		}
+
 		// replace를 true로 하였기때문에, 기존 데이터는 사라지고, 삼각형으로 변환된 데이터만 남게 된다.
 		if (!Converter.Triangulate(Node->GetMesh(), true)) 
 		{ 
@@ -739,13 +751,43 @@ bool FFbxImporter::ReadMeshData(TArray<FString>& OutWarnings, FString& OutError)
 
 // Node별로 추출한 Geometry를 하나의 Static 출력 데이터로 합친다.
 // Skin이 있는 Node도 포함하며, 이미 구워진 Position/Normal에 Transform을 다시 적용하지 않는다.
-void FFbxImporter::BuildStaticMesh(FStaticMeshData& OutData) const
+bool FFbxImporter::BuildStaticMesh(FStaticMeshData& OutData, bool bOnlyUnbound, FString& OutError) const
 {
 	OutData = {};
 	for (const FFbxMeshNodeData& Node : MeshNodes)
+	{
+		if (bOnlyUnbound && (Node.bHasSkin || Node.RigidBoneIndex >= 0))
+			continue;
 		AppendGeometry(Node.Geometry, OutData);
+		const FString Prefix = "UCX_" + FString(Node.Node->GetName());
+		for (FbxNode* Collision : CollisionNodes)
+		{
+			const FString Name = Collision->GetName();
+			if (Name != Prefix)
+			{
+				if (!Name.starts_with(Prefix + "_"))
+					continue;
+				const auto Suffix = Name.substr(Prefix.size() + 1);
+				if (Suffix.empty() || Suffix.find_first_not_of("0123456789") != FString::npos)
+					continue;
+			}
+			FKConvexElem Hull;
+			const auto Total = MeshToAsset(Collision, Collision->EvaluateGlobalTransform());
+			auto* Mesh = Collision->GetMesh();
+			for (int I = 0; I < Mesh->GetControlPointsCount(); ++I)
+				Hull.VertexData.Add(ToVector(Total.MultT(Mesh->GetControlPointAt(I))));
+			std::array<TArray<uint8>, 2> Streams;
+			if (!UBodySetup::CookConvex(Hull, Streams))
+			{
+				OutError = "FBX: invalid convex hull: " + Name;
+				return false;
+			}
+			OutData.ConvexElems.Add(std::move(Hull));
+			OutData.CookedFormatData.Add(std::move(Streams));
+		}
+	}
+	return true;
 }
-
 
 void FFbxImporter::ClearSkeletonData()
 {
@@ -1495,7 +1537,7 @@ bool FFbxImporter::ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbx
 				if (!(Previous.Source.Outputs & static_cast<uint32>(Kind))) continue;
 				const FString OutputPath = Utf8Path(Kind == EFbxMeshKind::Static ? StaticPath : SkeletalPath);
 				FFbxBakedMesh Other;
-				if (!FFbxMeshBake::Read(OutputPath, Other, ReadError) || !SameSource(Source, Other.Source) || Other.Source.Outputs != Previous.Source.Outputs || Other.Kind != Kind) Complete = false;
+				if (!FFbxMeshBake::Read(OutputPath, Other, ReadError) || !Other.bCurrentBakeVersion || !SameSource(Source, Other.Source) || Other.Source.Outputs != Previous.Source.Outputs || Other.Kind != Kind) Complete = false;
 				Paths.Add(OutputPath);
 			}
 			if (Complete)
@@ -1639,8 +1681,8 @@ bool FFbxImporter::ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbx
 			Outputs.Add(std::move(Skeletal));
 		}
 		FFbxBakedMesh Static;
-		if (Mode == EFbxImportMode::Static) Importer.BuildStaticMesh(Static.StaticMesh);
-		else for (const auto& Mesh : Importer.GetMeshNodes()) if (!Mesh.bHasSkin && Mesh.RigidBoneIndex < 0) AppendGeometry(Mesh.Geometry, Static.StaticMesh);
+		if (!Importer.BuildStaticMesh(Static.StaticMesh, Mode != EFbxImportMode::Static, OutError))
+			return false;
 		if (!Static.StaticMesh.Vertices.IsEmpty())
 		{
 			if (!Static.StaticMesh.Validate(OutError)) return false;

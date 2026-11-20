@@ -6,8 +6,13 @@ namespace physx
 {
 	class PxFoundation;
 	class PxPhysics;
+	class PxMaterial;
+	class PxCooking;
 	class PxScene;
 }
+
+struct FPhysicsActorHandle;
+template<typename T> class TArray;
 
 class FPhysXRuntime;
 class FPhysXCPUDispatcher;
@@ -18,10 +23,12 @@ public:
 	FPhysScene() = default;
 	bool Init(const FPhysXRuntime& Runtime);
 	~FPhysScene();
+	void AddActorsToScene_AssumesLocked(const TArray<FPhysicsActorHandle>& InActors);
 	FPhysScene(const FPhysScene&) = delete;
 	FPhysScene& operator=(const FPhysScene&) = delete;
 
 private:
+	friend class FPhysicsInterface;
 	physx::PxScene* Scene = nullptr;
 	FPhysXCPUDispatcher* CPUDispatcher = nullptr;
 };
@@ -39,6 +46,10 @@ public:
 
 private:
 	friend class FPhysScene;
+	friend class UBodySetup;
+	friend class FPhysicsInterface;
 	physx::PxFoundation* Foundation = nullptr;
 	physx::PxPhysics* Physics = nullptr;
+	physx::PxCooking* Cooking = nullptr;
+	physx::PxMaterial* DefaultMaterial = nullptr;
 };

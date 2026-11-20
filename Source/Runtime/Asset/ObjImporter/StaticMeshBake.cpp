@@ -21,7 +21,7 @@ static_assert(std::is_trivially_copyable_v<FLODSourceVertex>);
 namespace
 {
 	// FStaticMeshData, FVertex, FStaticMeshSection, FStaticMaterialSlot 구조가 바뀌면 올린다
-	constexpr uint32 BakeVersion{ 5 };
+	constexpr uint32 BakeVersion{ 6 };
 
 	struct FBakeHeader
 	{
@@ -112,7 +112,8 @@ TUniquePtr<FStaticMeshData> FStaticMeshBake::ReadBaked(const FString& BinPath)
 	const FBakeHeader Expected;
 	if (!ReadPod<FBakeHeader>(In, Header) ||
 		std::memcmp(Header.Magic, Expected.Magic, sizeof(Header.Magic)) != 0 ||
-		Header.Version != Expected.Version)
+		(Header.Version != 5 && Header.Version != Expected.Version) ||
+		(Header.Version == 5 && std::filesystem::exists(std::filesystem::path(BinPath).replace_extension())))
 	{
 		HTR_LOG(Warning, "[BAKE] {}: invalid header or version, re-cooking", BinPath);
 		return nullptr;
@@ -142,7 +143,7 @@ TUniquePtr<FStaticMeshData> FStaticMeshBake::ReadBaked(const FString& BinPath)
 	}
 
 	// AABB
-	if (!ReadPod<FBox>(In, Data->AABB))
+	if (!ReadPod<FBox>(In, Data->AABB) || (Header.Version >= 6 && !ReadCookedConvex(In, Data->ConvexElems, Data->CookedFormatData)))
 	{
 		return nullptr;
 	}
@@ -161,7 +162,10 @@ TUniquePtr<FStaticMeshData> FStaticMeshBake::ReadBaked(const FString& BinPath)
 
 void FStaticMeshBake::WriteBaked(const FString& BinPath, const FStaticMeshData& Data)
 {
-	std::ofstream Out(BinPath, std::ios::binary);
+	const fs::path Target(BinPath);
+	fs::path Temp = Target;
+	Temp += L".tmp." + std::to_wstring(GetCurrentProcessId()) + L"." + std::to_wstring(GetCurrentThreadId());
+	std::ofstream Out(Temp, std::ios::binary);
 	if (!Out)
 	{
 		HTR_LOG(Warning, "[BAKE] {}: cannot open for writing", BinPath);
@@ -186,10 +190,15 @@ void FStaticMeshBake::WriteBaked(const FString& BinPath, const FStaticMeshData& 
 
 	// AABB
 	WritePod<FBox>(Out, Data.AABB);
+	if (!WriteCookedConvex(Out, Data.ConvexElems, Data.CookedFormatData))
+		Out.setstate(std::ios::failbit);
 
 	// 스트림은 한 번 실패하면 상태가 유지되므로 마지막에 한 번만 확인
-	if (!Out)
+	Out.close();
+	if (!Out || !MoveFileExW(Temp.c_str(), Target.c_str(), MOVEFILE_REPLACE_EXISTING))
 	{
+		std::error_code Error;
+		fs::remove(Temp, Error);
 		HTR_LOG(Warning, "[BAKE] {}: write failed", BinPath);
 	}
 }

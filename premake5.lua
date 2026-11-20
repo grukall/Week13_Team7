@@ -36,6 +36,18 @@ IncludeDir["lua"]   = "Source/ThirdParty/lua/src"
 IncludeDir["sol2"]  = "Source/ThirdParty/sol2/include"
 IncludeDir["miniaudio"]  = "Source/ThirdParty/miniaudio"
 IncludeDir["nanosvg"] = "Source/ThirdParty/nanosvg"
+IncludeDir["NvCloth"]  = "Source/ThirdParty/NvCloth/NvCloth"
+IncludeDir["PxShared"] = "Source/ThirdParty/NvCloth/PxShared/include"
+
+-- NvCloth 헤더를 읽는 모든 프로젝트가 같은 값을 써야 한다.
+-- NV_CLOTH_IMPORT를 비워 두지 않으면 헤더가 dllimport로 해석되어 정적 링크에서 __imp_ 기호를 찾다 LNK2019가 난다.
+NvClothDefines = { "NV_CLOTH_IMPORT=", "NV_CLOTH_ENABLE_CUDA=0", "NV_CLOTH_ENABLE_DX11=0" }
+NvClothIncludeDirs =
+{
+	"%{IncludeDir.PxShared}",
+	"%{IncludeDir.NvCloth}/include",
+	"%{IncludeDir.NvCloth}/extensions/include",
+}
 
 -- premake의 filter는 project()를 만나면 초기화된다.
 -- 두 프로젝트가 같은 런타임(/MDd vs /MD)으로 컴파일되지 않으면 링크가 실패하므로
@@ -167,7 +179,38 @@ project "Lua"
 	removefiles { "%{IncludeDir.lua}/lua.c", "%{IncludeDir.lua}/luac.c" }
 	includedirs { "%{IncludeDir.lua}" }
 
+project "NvCloth"
+	location "Source/ThirdParty/NvCloth"
+	kind     "StaticLib"
+	CommonSettings()
 
+	files
+	{
+		"%{IncludeDir.NvCloth}/src/*.cpp",                         -- CPU 솔버 핵심 (14개)
+		"%{IncludeDir.NvCloth}/extensions/src/*.cpp",              -- Fabric Cooker (4개)
+		"%{IncludeDir.NvCloth}/include/NvCloth/ps/PsAllocator.cpp",
+		"%{IncludeDir.NvCloth}/src/ps/windows/PsWindowsAtomic.cpp",
+		"%{IncludeDir.NvCloth}/src/avx/SwSolveConstraints.cpp",
+	}
+
+	includedirs
+	{
+		"%{IncludeDir.PxShared}",
+		"%{IncludeDir.NvCloth}/include",
+		"%{IncludeDir.NvCloth}/extensions/include",
+		"%{IncludeDir.NvCloth}/src",
+		"%{IncludeDir.NvCloth}/extensions/src",
+	}
+
+	defines (NvClothDefines)
+	defines { "WIN64", "_CRT_SECURE_NO_DEPRECATE" }
+
+	filter "files:**/avx/SwSolveConstraints.cpp"
+		buildoptions { "/arch:AVX" }
+	filter "configurations:Debug or Benchmark_Debug or DebugPublishSymbols"
+		defines { "PX_DEBUG=1", "PX_CHECKED=1" }
+	filter {}
+	
 -- 헤더 툴 (UE의 UnrealHeaderTool 역할). 엔진 코드에 의존하지 않고 std만 쓴다.
 -- HitoriEngine / HitoriEditor가 빌드 전에 이 exe로 *.generated.h를 만든다.
 HeaderTool = '"%{wks.location}/Build/Bin/' .. outputdir .. '/HitoriHeaderTool.exe"'
@@ -214,8 +257,10 @@ project "HitoriEngine"
 		"%{IncludeDir.lua}",
 		"%{IncludeDir.sol2}",
 	}
+	includedirs (NvClothIncludeDirs)
+	defines (NvClothDefines)
 
-	links { "Lua" }
+	links { "Lua", "NvCloth" }
 
 	dependson { "HitoriHeaderTool" }
 	prebuildcommands { HeaderTool .. ' Runtime "' .. GeneratedDir .. '/Runtime" "%{wks.location}/Source/Runtime"' }
@@ -266,7 +311,7 @@ project "HitoriEditor"
 	pchheader "EnginePCH.h"
 	pchsource "Source/Editor/EditorPCH.cpp"
 
-	links { "HitoriEngine", "ImGui", "Lua" }
+	links { "HitoriEngine", "ImGui", "Lua", "NvCloth" }
 
 	-- UClass는 헤더의 정적 객체가 등록하므로, exe가 직접 참조하지 않는 클래스의 .obj를 링커가 버리면
 	-- 그 클래스가 등록되지 않아 씬 로드 때 액터가 사라진다. 엔진 .obj를 전부 링크해 막는다.
@@ -304,6 +349,8 @@ project "HitoriEditor"
 		"%{IncludeDir.sol2}",
 		"%{IncludeDir.nanosvg}",
 	}
+	includedirs (NvClothIncludeDirs)
+	defines (NvClothDefines)
 
 	links
 	{
@@ -335,7 +382,7 @@ project "HitoriGame"
 	pchheader "EnginePCH.h"
 	pchsource "Source/Game/GamePCH.cpp"
 
-	links { "HitoriEngine", "Lua" }
+	links { "HitoriEngine", "Lua", "NvCloth" }
 
 	-- 에디터와 같은 이유. 게임 코드는 라이트 액터 등을 직접 참조하지 않아 특히 빠지기 쉽다.
 	linkoptions { "/WHOLEARCHIVE:HitoriEngine" }
@@ -358,6 +405,8 @@ project "HitoriGame"
 		"%{IncludeDir.lua}",
 		"%{IncludeDir.sol2}",
 	}
+	includedirs (NvClothIncludeDirs)
+	defines (NvClothDefines)
 
 	links
 	{

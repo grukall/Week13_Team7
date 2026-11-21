@@ -22,6 +22,13 @@ namespace
 	}
 }
 
+UPhysicalMaterial* UMaterial::GetPhysicalMaterial() const
+{
+	if (PhysMaterial)
+		return PhysMaterial;
+	return Parent ? Parent->GetPhysicalMaterial() : nullptr;
+}
+
 UMaterial* UMaterial::CreateInstance(const UMaterial* Source)
 {
 	if (Source == nullptr)

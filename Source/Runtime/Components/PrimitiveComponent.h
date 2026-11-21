@@ -6,6 +6,7 @@
 #include "Render/RenderPacket.h"
 #include "Render/GeometryGenerator.h"
 #include "Collision/HitResult.h"
+#include "Physics/BodyInstance.h"
 #include "Core/Delegate/Delegate.h"
 #include "PrimitiveComponent.generated.h"
 
@@ -43,6 +44,19 @@ class UPrimitiveComponent :public USceneComponent
 public:
 	UPrimitiveComponent();
 	virtual ~UPrimitiveComponent();
+
+	UPROPERTY(EditAnywhere)
+	FBodyInstance BodyInstance;
+
+	void SetPhysMaterialOverride(UPhysicalMaterial* Material) { BodyInstance.SetPhysMaterialOverride(Material); }
+	void SetCollisionEnabled(ECollisionEnabled Enabled);
+	void SetCollisionObjectType(ECollisionChannel Channel);
+	void SetCollisionResponseToChannel(ECollisionChannel Channel, ECollisionResponse Response);
+	void SetNotifyRigidBodyCollision(bool bNotify);
+	void SetSimulatePhysics(bool bSimulate) { BodyInstance.SetInstanceSimulatePhysics(bSimulate); }
+	void OnUpdateTransform() override;
+	virtual UBodySetup* GetBodySetup() { return nullptr; }
+	FBodyInstance* GetBodyInstance() { return &BodyInstance; }
 
 	virtual void BeginPlay() override;
 
@@ -101,7 +115,8 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	bool bGenerateOverlapEvents = true;
-	UPROPERTY(EditAnywhere)
+	// Read by the version 4 scene migration.
+	UPROPERTY()
 	bool bBlockComponent = false;
 
 	UPROPERTY(EditAnywhere)
@@ -116,6 +131,9 @@ public:
 	void DispatchHit(UPrimitiveComponent* OtherComp);
 
 protected:
+	virtual void OnCreatePhysicsState() override;
+	virtual bool ShouldCreatePhysicsState() override;
+	virtual void OnDestroyPhysicsState() override;
 	virtual void OnUnregister() override;
 	TArray<FOverlapInfo> OverlapInfos;
 

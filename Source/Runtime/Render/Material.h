@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Physics/PhysicalMaterial.h"
 #include "MaterialInterface.h"
 #include "RenderResourceManager.h"
 #include "Render/RenderStates.h"
@@ -32,6 +33,9 @@ public:
 	UMaterial() :SortID(NextSortID++) {};
 	virtual ~UMaterial() override = default;
 
+	UPROPERTY(EditAnywhere)
+	UPhysicalMaterial* PhysMaterial = nullptr;
+	UPhysicalMaterial* GetPhysicalMaterial() const;
 	EMaterialParamLayout ParamLayout = EMaterialParamLayout::None;
 	FShaderProgram* Shader = nullptr;
 	TArray<UTexture2D*> Textures;

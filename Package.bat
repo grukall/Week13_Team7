@@ -73,6 +73,14 @@ mkdir "%OUT%"
 copy /y "%BIN%\HitoriGame.exe" "%OUT%\" >nul
 rem 실행 파일 복사. /y: 덮어쓰기 확인 생략, >nul: 출력 숨김
 
+set "PACKAGE_PHYSX="
+for %%C in (Debug Release Shipping) do if /i "%CONFIG%"=="%%C" set "PACKAGE_PHYSX=1"
+if defined PACKAGE_PHYSX (
+    for %%L in (PhysX_64 PhysXCommon_64 PhysXFoundation_64 PhysXCooking_64) do (
+        copy /y "%BIN%\%%L.dll" "%OUT%\" >nul || exit /b 1
+    )
+)
+
 rem ---- 3. 게임 데이터 폴더 복사 ----
 rem Shaders are compiled at runtime, so Resources\Shader must ship as source.
 rem 셰이더를 런타임에 컴파일하므로 .hlsl 원본이 Resources\Shader에 같이 들어가야 함

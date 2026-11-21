@@ -2,11 +2,28 @@
 #include "ShapeComponent.h"
 #include "Render/LineBatcher.h"
 #include "UObject/UObjectIterator.h"
+#include "UObject/UObjectHash.h"
 
 UShapeComponent::UShapeComponent()
 {
 	bCastShadow = false;
 	bReceiveShadow = false;
+}
+
+UShapeComponent::~UShapeComponent()
+{
+	// Engine shutdown may have already destroyed the child in GUObjectArray.
+	if (ShapeBodySetup)
+		delete FindObjectWithOuter(this, UBodySetup::StaticClass(), FName("ShapeBodySetup"));
+}
+
+UBodySetup* UShapeComponent::GetBodySetup()
+{
+	if (!ShapeBodySetup)
+		ShapeBodySetup = NewObject<UBodySetup>(this, FName("ShapeBodySetup"), EObjectFlags::RF_Transient);
+	if (ShapeBodySetup)
+		UpdateBodySetup();
+	return ShapeBodySetup;
 }
 
 FBox UShapeComponent::GetWorldAABB() const

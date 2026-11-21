@@ -1,5 +1,6 @@
 #include "EnginePCH.h"
 #include "ObjImporter.h"
+#include "Physics/BodySetup.h"
 
 #include <fstream>
 #include <sstream>
@@ -225,6 +226,7 @@ bool FObjImporter::ParseObj(const FString& Path, FObjInfo& Out)
 	Info.Path = Path;
 
 	FObjSection S;
+	int32 ObjectHull = -1, GroupHull = -1;
 	FString Line;
 	int32 LineNumber = 0;
 	while (std::getline(File, Line))
@@ -243,7 +245,25 @@ bool FObjImporter::ParseObj(const FString& Path, FObjInfo& Out)
 			continue; // 빈 줄 || 주석
 		}
 
-		if (Keyword == "v")
+		if (Keyword == "o" || Keyword == "g")
+		{
+			FString Name;
+			Stream >> Name;
+			int32 Hull = -1;
+			if (Name.starts_with("UCX_"))
+			{
+				Hull = Info.ConvexHulls.Num();
+				Info.ConvexHulls.Add(TArray<FVector>{});
+			}
+			if (Keyword == "o")
+			{
+				ObjectHull = Hull;
+				GroupHull = -1;
+			}
+			else
+				GroupHull = Hull;
+		}
+		else if (Keyword == "v")
 		{
 			FVector P;
 			if (!(Stream >> P.X >> P.Y >> P.Z))
@@ -304,6 +324,13 @@ bool FObjImporter::ParseObj(const FString& Path, FObjInfo& Out)
 			{
 				HTR_LOG(Error, "[OBJ] {}:{}: face needs at least 3 vertices (got {})", Path, LineNumber, F.Indexes.Num());
 				return false;
+			}
+			const int32 Hull = GroupHull >= 0 ? GroupHull : ObjectHull;
+			if (Hull >= 0)
+			{
+				for (const auto& Corner : F.Indexes)
+					Info.ConvexHulls[Hull].Add(ToEngine(Info.Positions[Corner.PositionIndex]));
+				continue;
 			}
 			Info.Faces.Add(F);
 			S.Count++;
@@ -497,6 +524,21 @@ bool FObjImporter::Cook(const FObjInfo& Raw, FStaticMeshData& Out)
 		return false;
 	}
 
+	for (const auto& Points : Raw.ConvexHulls)
+	{
+		if (Points.IsEmpty())
+			continue;
+		FKConvexElem Hull;
+		Hull.VertexData = Points;
+		std::array<TArray<uint8>, 2> Streams;
+		if (!UBodySetup::CookConvex(Hull, Streams))
+		{
+			HTR_LOG(Error, "[OBJ] {}: invalid UCX convex hull", Raw.Path);
+			return false;
+		}
+		Cooked.ConvexElems.Add(std::move(Hull));
+		Cooked.CookedFormatData.Add(std::move(Streams));
+	}
 	Out = std::move(Cooked);
 	return true;
 }
@@ -506,9 +548,14 @@ TUniquePtr<FStaticMeshData> FObjImporter::LoadStaticMeshData(const FString& Path
 	const FString BinPath = Path + ".bin";
 
 	// .bin 파일 읽기
-	if (TUniquePtr<FStaticMeshData> Baked = FStaticMeshBake::ReadBaked(BinPath))
+	std::error_code Error;
+	const auto SourceTime = std::filesystem::last_write_time(Path, Error);
+	const bool bHasSource = !Error;
+	const auto BakeTime = std::filesystem::last_write_time(BinPath, Error);
+	if (!Error && (!bHasSource || BakeTime >= SourceTime))
 	{
-		return Baked;
+		if (auto Baked = FStaticMeshBake::ReadBaked(BinPath))
+			return Baked;
 	}
 
 	FObjInfo Info;

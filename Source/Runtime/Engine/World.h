@@ -14,11 +14,14 @@
 #include "Camera/CameraActor.h"
 #include "Asset/LOD/StaticMeshLODSelector.h"
 #include "Engine/EngineTypes.h"
+#include "Collision/CollisionShape.h"
 #include "Render/SceneRenderData.h"
 #include "Script/CoroutineScheduler.h"
 #include "World.generated.h"
 
+struct FCollisionObjectQueryParams;
 class ULevel;
+class FPhysScene;
 class FLineBatcher;
 class UBillboardComponent;
 class APawn;
@@ -37,6 +40,7 @@ public:
 	virtual ~UWorld();
 
 	bool Init();
+	FPhysScene* GetPhysicsScene() const { return PhysicsScene.get(); }
 
 	// 이 월드의 디버그 선(충돌 도형, 라이트 범위, 본 등)을 모아 그리는 도구. Init에서 만든다.
 	// UE의 UWorld::LineBatcher와 같은 자리이고 UE에서도 public 멤버다.
@@ -95,9 +99,12 @@ public:
 	// 현재 World의 Component에 Ray를 전달하고 가장 가까운 유효 교차를 반환한다.
 	bool LineTraceSingle(const FRay& WorldRay, FHitResult& OutHit,
 		FBillboardTraceTransform ResolveBillboard = nullptr, const void* ViewContext = nullptr);
-	// bBlockingOnly: bBlockComponent인 도형/메시만 검사한다. 기본값은 기존 투사체 동작을 유지한다.
-	bool SweepSingle(const FRay& WorldRay, float MaxDistance, float Radius, FHitResult& OutHit, AActor* IgnoreActor = nullptr,
-		bool bBlockingOnly = false);
+	bool SweepSingleByChannel(FHitResult& OutHit, const FVector& Start, const FVector& End, const FQuat& Rotation, ECollisionChannel Channel, const FCollisionShape& CollisionShape, const AActor* IgnoreActor = nullptr) const;
+	bool LineTraceSingleByChannel(FHitResult& OutHit, const FVector& Start, const FVector& End, ECollisionChannel Channel, const AActor* IgnoreActor = nullptr) const;
+	bool LineTraceSingleByObjectType(FHitResult& OutHit, const FVector& Start, const FVector& End, const FCollisionObjectQueryParams& ObjectParams, const AActor* IgnoreActor = nullptr, bool bReturnPhysicalMaterial = false) const;
+	bool SweepSingleByObjectType(FHitResult& OutHit, const FVector& Start, const FVector& End, const FQuat& Rotation, const FCollisionObjectQueryParams& ObjectParams, const FCollisionShape& CollisionShape, const AActor* IgnoreActor = nullptr, bool bReturnPhysicalMaterial = false) const;
+	bool ComponentSweepMulti(TArray<FHitResult>& Hits, const UPrimitiveComponent* Component, const FVector& Start, const FVector& End, const FQuat& Rotation) const;
+	void ComponentOverlapMulti(TArray<UPrimitiveComponent*>& Overlaps, const UPrimitiveComponent* Component) const;
 
 	void BeginPlay();
 	void EndPlay();
@@ -137,6 +144,7 @@ public:
 	void SetCinematicTimeDilation(float InDilation) { CinematicTimeDilation = InDilation; }
 
 private:
+	bool CreatePhysicsScene();
 
 	void GameWorldTick(float DeltaTime);
 	void EditorWorldTick(float DeltaTime);
@@ -175,6 +183,7 @@ private:
 	TArray<ULevel*> Levels;
 
 	FScene Scene;
+	TUniquePtr<FPhysScene> PhysicsScene;
 
 	// GatherRenderPackets가 매 프레임 채우는 컬링 결과. 용량을 재사용한다.
 	TArray<FPrimitiveSceneProxy*> VisibleProxies;

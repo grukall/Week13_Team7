@@ -5,6 +5,7 @@
 #include "Particles/ParticleSystem.h"
 #include "ParticleSystemComponent.generated.h"
 
+struct FCollisionObjectQueryParams;
 struct FParticleEmitterInstance;
 struct FDynamicEmitterDataBase;
 
@@ -31,6 +32,7 @@ class UParticleSystemComponent : public UPrimitiveComponent
 {
 	GENERATED_BODY()
 public:
+	bool ParticleLineCheck(FHitResult& Hit, const AActor* SourceActor, const FVector& End, const FVector& Start, const FVector& HalfExtent, const FCollisionObjectQueryParams& ObjectParams) const;
 	UParticleSystemComponent();
 	virtual ~UParticleSystemComponent() override;
 

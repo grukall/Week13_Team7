@@ -1,5 +1,6 @@
 #include "EnginePCH.h"
 #include "Engine.h"
+#include "Physics/PhysicalMaterial.h"
 #include "Engine/GameInstance.h"
 #include "Engine/GameViewportClient.h"
 #include "Engine/Level.h"
@@ -13,7 +14,19 @@ UEngine* GEngine = nullptr;
 
 bool UEngine::Init()
 {
+	if (!PhysXRuntime.Init())
+	{
+		HTR_LOG(Error, "Failed to initialize PhysX runtime");
+		return false;
+	}
 	// 모든 엔진 모드가 공통으로 쓰는 것만 여기서 준비한다. 월드와 뷰포트는 서브클래스의 Init이 만든다.
+	DefaultPhysMaterial = NewObject<UPhysicalMaterial>(this, FName("DefaultPhysicalMaterial"));
+	// Preserve existing scenes' PhysX contact values and mass density (1 kg/m3).
+	DefaultPhysMaterial->Friction = 0.5f;
+	DefaultPhysMaterial->Restitution = 0.f;
+	DefaultPhysMaterial->Density = 0.001f;
+	DefaultPhysMaterial->RaiseMassToPower = 1.f;
+	UAssetManager::Get().RegisterAsset("DefaultPhysicalMaterial", DefaultPhysMaterial);
 	InitializeAudioDevice();          // 실패해도 엔진은 계속 (UE도 장치가 없으면 Null 디바이스로 돈다)
 	InitializeClothManager();
 	return true;

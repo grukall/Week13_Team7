@@ -11,8 +11,11 @@ public:
 	UPROPERTY(EditAnywhere)
 	float SphereRadius = 0.5f;
 
-	// 비균일 스케일이면 가장 큰 축을 쓴다
+	// UE 4.27은 비균일 scale의 절댓값 중 가장 작은 축을 사용한다
 	float GetScaledSphereRadius() const;
 	virtual FBox CalcLocalBounds() const override;
 	virtual void DrawDebug(FLineBatcher*, const FVector4&) const override;
+
+protected:
+	void UpdateBodySetup() override;
 };

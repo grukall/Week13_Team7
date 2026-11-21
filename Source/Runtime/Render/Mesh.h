@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Asset/RenderAsset.h"
+#include "Physics/BodySetup.h"
 #include "Render/Buffer.h"
 #include "Render/StaticMeshData.h"
 #include "Render/MeshRenderData.h"
@@ -26,6 +27,8 @@ public:
 	virtual ~UStaticMesh() override;
 
 	FStaticMeshData MeshData;
+	void CreateBodySetup();
+	UBodySetup* GetBodySetup() const { return BodySetup; }
 
 	// Renderer가 실제로 Bind할 런타임 재질 객체
 	TArray<UMaterial*> Materials;
@@ -70,6 +73,7 @@ public:
 
     const uint16 SortID;
 private:
+	UBodySetup* BodySetup = nullptr;
     static inline uint16 NextSortID = 0;
     struct FMaterialSlotsHash
     {

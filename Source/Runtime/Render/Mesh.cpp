@@ -1,5 +1,6 @@
 #include "EnginePCH.h"
 #include "Mesh.h"
+#include "UObject/UObjectHash.h"
 #include "Renderer.h"
 #include "Asset/AssetManager.h"
 #include "Engine/PrimitiveSceneProxy.h"
@@ -7,8 +8,16 @@
 #include <cmath>
 #include <limits>
 
+void UStaticMesh::CreateBodySetup()
+{
+	if (!BodySetup)
+		BodySetup = NewObject<UBodySetup>(this, FName("BodySetup"));
+}
+
 UStaticMesh::~UStaticMesh()
 {
+	if (BodySetup)
+		delete FindObjectWithOuter(this, UBodySetup::StaticClass(), FName("BodySetup"));
     for (FPrimitiveSceneProxy* Proxy : RenderProxies)
         Proxy->OnMeshDestroyed();
 	VertexBuffer = nullptr;

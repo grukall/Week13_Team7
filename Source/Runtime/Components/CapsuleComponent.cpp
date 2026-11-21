@@ -5,14 +5,13 @@
 
 float UCapsuleComponent::GetScaledCapsuleHalfHeight() const
 {
-	const float Half = CapsuleHalfHeight * std::abs(GetWorldScale3D().Z); 
-	return std::max(Half, GetScaledCapsuleRadius()); // 반높이가 반지름보다 작으면 구가 된다
+	return CapsuleHalfHeight * GetWorldScale3D().Z;
 }
 
 float UCapsuleComponent::GetScaledCapsuleRadius() const
 {
-	const FVector S = GetWorldScale3D().GetAbs(); 
-	return CapsuleRadius * std::max(S.X, S.Y); // 반지름은 축에 수직인 X·Y 중 큰 쪽
+	const FVector Scale = GetWorldScale3D();
+	return CapsuleRadius * std::min(Scale.X, Scale.Y);
 }
 
 FBox UCapsuleComponent::CalcLocalBounds() const
@@ -43,4 +42,9 @@ void UCapsuleComponent::DrawDebug(FLineBatcher* LineBatcher, const FVector4& Col
 	// 옆선 4개
 	for (const FVector& Side : { X, X * -1.0f, Y, Y * -1.0f })
 		LineBatcher->AddLine(Cap.A + Side * R, Cap.B + Side * R, Color);
+}
+void UCapsuleComponent::UpdateBodySetup()
+{
+	ShapeBodySetup->AggGeom.SphylElems.SetNum(1);
+	ShapeBodySetup->AggGeom.SphylElems[0] = { CapsuleRadius, 2.0f * std::max(0.0f, CapsuleHalfHeight - CapsuleRadius) };
 }

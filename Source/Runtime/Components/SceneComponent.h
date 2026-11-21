@@ -6,6 +6,14 @@
 #include "Collision/HitResult.h"
 #include "SceneComponent.generated.h"
 
+UENUM()
+enum class EComponentMobility : uint8
+{
+	Static,
+	Stationary,
+	Movable
+};
+
 enum class EAttachmentRule
 {
 	KeepRelative,
@@ -21,6 +29,9 @@ class USceneComponent : public UActorComponent
 
 public:
 	enum class EVisibilityPropagation : uint8 { NoPropagation, DirtyOnly, Propagate };
+
+	UPROPERTY(EditAnywhere)
+	EComponentMobility Mobility = EComponentMobility::Movable;
 
 	USceneComponent() = default;
 	virtual ~USceneComponent() override;
@@ -85,6 +96,7 @@ public:
 	void SetCollisionRadiusOverride(float Radius) { CollisionRadiusOverride = Radius; }
 
 	void MarkTransformDirty();
+	virtual void OnUpdateTransform() {}
 	virtual void OnTransformDirty() {};
 
 	using Super::Serialize;

@@ -1,5 +1,8 @@
 #include "EnginePCH.h"
 #include "AssetManager.h"
+#include "Physics/PhysicalMaterial.h"
+#include "Serialization/MemoryReader.h"
+#include "Serialization/Formatter/JsonArchiveInputFormatter.h"
 #include "Render/Buffer.h"
 #include "Render/Material.h"
 
@@ -49,6 +52,8 @@ namespace
 		if (Extension == ".png" || Extension == ".dds") {
 			return EAssetType::Texture;
 		}
+		if (Extension == ".physmat")
+			return EAssetType::PhysicalMaterial;
 		if (Extension == ".json") {
 			return EAssetType::Font;
 		}
@@ -131,6 +136,20 @@ namespace
 
 		UStaticMesh* Mesh = NewObject<UStaticMesh>();
 		Mesh->MeshData = std::move(Optimized);
+
+		Mesh->CreateBodySetup();
+		if (!Mesh->MeshData.ConvexElems.IsEmpty())
+		{
+			Mesh->GetBodySetup()->AggGeom.ConvexElems = std::move(Mesh->MeshData.ConvexElems);
+			Mesh->GetBodySetup()->CookedFormatData = std::move(Mesh->MeshData.CookedFormatData);
+		}
+		else
+		{
+			// Preserve the simple query volume of meshes imported before authored collision.
+			const auto& Bounds = Mesh->MeshData.AABB;
+			const FVector Size = Bounds.Max - Bounds.Min;
+			Mesh->GetBodySetup()->AggGeom.BoxElems.Add({std::max(Size.X, 0.001f), std::max(Size.Y, 0.001f), std::max(Size.Z, 0.001f), (Bounds.Min + Bounds.Max) * 0.5f});
+		}
 
 		// Vertex/Index GPU 업로드
 		Mesh->VertexBuffer = std::move(VB);
@@ -226,6 +245,12 @@ void UAssetManager::ScanAssets(const fs::path& AssetRoot, const FAssetLoadProgre
 			Path = Key;
 		}
 
+		// A deployed OBJ can consist solely of its baked file. Keep the scene's .obj key.
+		if (Path.ends_with(".obj.bin"))
+		{
+			Key.resize(Key.size() - 4);
+			Path.resize(Path.size() - 4);
+		}
 		// 경로만 등록한다. 실제 로드는 처음 찾을 때 FindOrLoadAsset에서 한다.
 		if (GetAssetTypeFromPath(Path) != EAssetType::None)
 		{
@@ -254,6 +279,31 @@ void UAssetManager::LoadAsset(const FString& Key, const FString& Path) {
 	case EAssetType::Texture:
 		LoadTexture(Path);
 		break;
+	case EAssetType::PhysicalMaterial:
+	{
+		std::ifstream File(FPaths::FromUtf8(FPaths::ResolveContentPath(Path)), std::ios::binary | std::ios::ate);
+		const std::streamoff Size = File.tellg();
+		if (!File || Size <= 0 || Size > INT32_MAX)
+			break;
+		TArray<uint8> Bytes;
+		Bytes.SetNum(static_cast<int32>(Size));
+		File.seekg(0);
+		if (!File.read(reinterpret_cast<char*>(Bytes.GetData()), Size))
+			break;
+		FMemoryReader Reader(Bytes, true);
+		FJsonArchiveInputFormatter Formatter(Reader);
+		if (Reader.IsError())
+			break;
+		FStructuredArchive Archive(Formatter);
+		auto* Material = NewObject<UPhysicalMaterial>();
+		Material->Serialize(Archive.Open().EnterRecord());
+		Archive.Close();
+		if (Reader.IsError())
+			delete Material;
+		else
+			RegisterAsset(Key, Material);
+		break;
+	}
 	case EAssetType::Font:
 		LoadFontAtlas(Path, fs::path{ Path }.replace_extension(".png").string());
 		break;

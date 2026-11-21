@@ -5,8 +5,8 @@
 
 float USphereComponent::GetScaledSphereRadius() const
 {
-	const FVector S = GetWorldScale3D().GetAbs(); 
-	return SphereRadius * std::max({S.X, S.Y, S.Z}); // 비균일 스케일이면 가장 큰 축
+	const FVector Size = GetWorldScale3D().GetAbs();
+	return SphereRadius * std::min({ Size.X, Size.Y, Size.Z });
 }
 
 FBox USphereComponent::CalcLocalBounds() const
@@ -23,4 +23,10 @@ void USphereComponent::DrawDebug(FLineBatcher* LineBatcher, const FVector4& Colo
 	AddWireArc(LineBatcher, C, FVector(1, 0, 0), FVector(0, 1, 0), R, 0, TwoPi, Color);
 	AddWireArc(LineBatcher, C, FVector(1, 0, 0), FVector(0, 0, 1), R, 0, TwoPi, Color);
 	AddWireArc(LineBatcher, C, FVector(0, 1, 0), FVector(0, 0, 1), R, 0, TwoPi, Color);
+}
+
+void USphereComponent::UpdateBodySetup()
+{
+	ShapeBodySetup->AggGeom.SphereElems.SetNum(1);
+	ShapeBodySetup->AggGeom.SphereElems[0] = { SphereRadius };
 }

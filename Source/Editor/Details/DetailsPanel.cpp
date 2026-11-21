@@ -1243,6 +1243,29 @@ namespace
 			UObject** ObjPtr = &ObjectProperty->GetPropertyValue(ValuePtr);
 			const UClass* PropertyClass = ObjectProperty->PropertyClass;
 
+			if (PropertyClass == UPhysicalMaterial::StaticClass())
+			{
+				auto* Current = static_cast<UPhysicalMaterial*>(*ObjPtr);
+				if (!ImGui::BeginCombo(Label, Current ? Current->GetPath().c_str() : "None"))
+					return false;
+				UPhysicalMaterial* Selected = Current;
+				if (ImGui::Selectable("None", Current == nullptr))
+					Selected = nullptr;
+				for (TObjectIterator<UPhysicalMaterial> It; It; ++It)
+					if (!It->GetPath().empty() && ImGui::Selectable(It->GetPath().c_str(), *It == Current))
+						Selected = *It;
+				for (const FString& Path : UAssetManager::GetUnloadedAssetPaths(EAssetType::PhysicalMaterial))
+					if (ImGui::Selectable(Path.c_str()))
+						Selected = UAssetManager::GetAssetByPath<UPhysicalMaterial>(Path);
+				ImGui::EndCombo();
+				if (Current == Selected)
+					return false;
+				if (auto* Primitive = Cast<UPrimitiveComponent>(Object); Primitive && Property.Name == "PhysMaterialOverride")
+					Primitive->SetPhysMaterialOverride(Selected);
+				else
+					*ObjPtr = Selected;
+				return true;
+			}
 			if (PropertyClass == UMaterial::StaticClass())
 			{
 				DrawTextureSlot(reinterpret_cast<UMaterial**>(ObjPtr), 0);

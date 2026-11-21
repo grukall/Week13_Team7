@@ -291,25 +291,10 @@ void USceneComponent::SetWorldScale3D(FVector NewScale)
 
 bool USceneComponent::MoveComponent(const FVector& Delta, const FRotator& NewRotation, bool bSweep, FHitResult* Hit)
 {
-	FHitResult LocalHit(1.0f);
-	FHitResult& Result = Hit ? *Hit : LocalHit;
-	Result = FHitResult(1.0f);
-	const FVector Start = GetWorldLocation();
-	FVector Destination = Start + Delta;
-	bool bBlocked = false;
-	AActor* Owner = GetOwner();
-	if (bSweep && Delta.SizeSquared() > SMALL_NUMBER && Owner && Owner->GetActorEnableCollision())
-	{
-		if (UWorld* World = Owner->GetWorld())
-		{
-			Result.Init(Start, Destination);
-			bBlocked = World->SweepSingle(FRay(Start, Delta.Normalized()), Delta.Size(), GetCollisionRadius(), Result, Owner);
-			if (bBlocked)
-				Destination = Start + Delta * Result.Time + Result.ImpactNormal * 0.001f;
-		}
-	}
-	SetWorldLocationAndRotation(Destination, NewRotation, false);
-	return !bBlocked;
+	if (Hit)
+		*Hit = FHitResult(1.0f);
+	SetWorldLocationAndRotation(GetWorldLocation() + Delta, NewRotation, false);
+	return true;
 }
 
 float USceneComponent::GetCollisionRadius() const
@@ -323,6 +308,7 @@ float USceneComponent::GetCollisionRadius() const
 
 void USceneComponent::MarkTransformDirty()
 {
+	OnUpdateTransform();
 	OnTransformDirty();         
 
 	for (USceneComponent* Child : AttachChildren)

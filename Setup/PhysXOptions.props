@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Edit the local copy in Visual Studio Property Manager > PhysXOptions > User Macros. -->
+  <PropertyGroup Label="UserMacros">
+    <HitoriPhysXDebug>debug</HitoriPhysXDebug>
+    <HitoriPhysXRelease>checked</HitoriPhysXRelease>
+  </PropertyGroup>
+</Project>

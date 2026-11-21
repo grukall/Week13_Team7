@@ -8,8 +8,6 @@ workspace "Hitori"
 		"Release",
 		"Shipping",
 		"ObjViewer",
-		"Benchmark",
-		"Benchmark_Debug",
 		"DebugPublishSymbols",
 		"ReleasePublishSymbols",
 	}
@@ -25,6 +23,65 @@ if not FbxSdkRoot or FbxSdkRoot == "" then
 	error("FBX_SDK_ROOT is missing. Run Setup/SetupFbxSdk.bat, then SlnGenerator.bat.")
 end
 FbxSdkRoot = path.translate(FbxSdkRoot, "/")
+
+-- Property Manager edits one local copy shared by all Hitori projects.
+if _ACTION and _ACTION:match("^vs") then
+	require("vstudio")
+	local vc = premake.vstudio.vc2010
+	premake.override(vc, "propertySheets", function(base, cfg)
+		base(cfg)
+		if cfg.project.name == "Shaders" or (cfg.buildcfg ~= "Debug" and cfg.buildcfg ~= "Release") then
+			return
+		end
+		local directory = path.join(_MAIN_SCRIPT_DIR, "Build/PhysX")
+		local sheet = path.join(directory, "PhysXOptions.props")
+		os.mkdir(directory)
+		if not os.isfile(sheet) then
+			assert(os.copyfile(path.join(_MAIN_SCRIPT_DIR, "Setup/PhysXOptions.props"), sheet))
+		end
+		premake.push('<ImportGroup Label="PropertySheets" %s>', vc.condition(cfg))
+		premake.w('<Import Project="%s" />', path.getrelative(cfg.project.location, sheet))
+		premake.pop('</ImportGroup>')
+		premake.w('<Import Project="%s" %s />', path.getrelative(cfg.project.location, path.join(_MAIN_SCRIPT_DIR, "Setup/PhysXBuild.props")), vc.condition(cfg))
+	end)
+	premake.override(vc, "runtimeLibrary", function(base, cfg)
+		if cfg.buildcfg == "Debug" and cfg.project.name ~= "Shaders" then
+			premake.w('<RuntimeLibrary>$(HitoriDebugRuntime)</RuntimeLibrary>')
+		else
+			base(cfg)
+		end
+	end)
+end
+
+local function PhysXSettings(linkFinalExecutable)
+	local checkout = "Intermediate/PhysX-4.1"
+	local sdkConfigs = { Debug = "$(HitoriPhysXDebug)", Release = "$(HitoriPhysXRelease)", Shipping = "release", ObjViewer = "release", DebugPublishSymbols = "debug", ReleasePublishSymbols = "release" }
+	local sharedModules = { "PhysX_64", "PhysXFoundation_64", "PhysXCommon_64", "PhysXCooking_64" }
+
+	for config, sdkConfig in pairs(sdkConfigs) do
+		filter ("configurations:" .. config)
+			includedirs { checkout .. "/physx/include", checkout .. "/pxshared/include" }
+			if sdkConfig == "debug" then
+				defines { "PX_DEBUG=1", "PX_CHECKED=1", "PX_SUPPORT_PVD=1" }
+			elseif sdkConfig == "release" then
+				defines { "PX_SUPPORT_PVD=0" }
+			else
+				defines { "$(HitoriPhysXDefines)" }
+			end
+
+			if linkFinalExecutable then
+				-- PhysX 4.1's CMake uses this directory name even with the v145 toolset.
+				local binDir = checkout .. "/physx/bin/win.x86_64.vc142.md/" .. sdkConfig
+				libdirs { binDir }
+				links { "PhysXExtensions_static_64", "PhysXPvdSDK_static_64", "PhysXVehicle_static_64" }
+				for _, module in ipairs(sharedModules) do
+					links { module }
+					postbuildcommands { '{COPYFILE} "%{wks.location}/' .. binDir .. '/' .. module .. '.dll" "%{cfg.targetdir}" || exit 1' }
+				end
+			end
+	end
+	filter {}
+end
 
 IncludeDir = {}
 IncludeDir["ImGui"] = "Source/ThirdParty/ImGui"
@@ -81,8 +138,9 @@ function CommonSettings()
 		defines { "ENGINE_PLATFORM_WINDOWS" }
 
 	filter "configurations:Debug"
-		defines { "ENGINE_DEBUG", "_DEBUG" }
-		runtime  "Debug"
+		defines { "ENGINE_DEBUG" }
+		defines { "$(HitoriDebugDefine)" }
+		runtime "Debug"
 		symbols  "on"
 
 	filter "configurations:Release"
@@ -96,21 +154,6 @@ function CommonSettings()
 		defines  { "ENGINE_RELEASE", "NDEBUG", "OBJ_VIEWER" }
 		runtime  "Release"
 		optimize "on"
-		symbols  "on"
-
-	filter "configurations:Benchmark_Debug"
-		defines  { "ENGINE_DEBUG", "_DEBUG", "BENCHMARK" }
-		runtime  "Debug"
-		symbols  "on"
-
-	filter "configurations:Benchmark"
-		defines  { "ENGINE_RELEASE", "NDEBUG", "BENCHMARK" }
-		runtime  "Release"
-		optimize "speed"
-		-- /GL + /LTCG는 끈다. 켠 exe가 Defender ML 탐지(Trojan:Win32/Wacatac)에 오탐으로 걸렸다.
-		vectorextensions "AVX2"
-		-- /GS-(버퍼 보안 검사 끄기)는 성능 이득이 거의 없고 백신 휴리스틱 오탐을 부르기 쉬워 켜 둔다 (기본값 /GS)
-		buildoptions { "/Gw" }
 		symbols  "on"
 
 	filter "configurations:Shipping"
@@ -233,6 +276,7 @@ project "HitoriEngine"
 	location "Source/Runtime"
 	kind     "StaticLib"
 	CommonSettings()
+	PhysXSettings(false)
 
 	pchheader "EnginePCH.h"
 	pchsource "Source/Runtime/EnginePCH.cpp"
@@ -287,15 +331,20 @@ project "HitoriEditor"
 	location "Source/Editor"
 	kind     "WindowedApp"
 	CommonSettings()
+	PhysXSettings(true)
 
 	-- FBX 해석은 Editor에서 수행하고 Runtime/Game은 SDK에 의존하지 않는다.
 	includedirs { path.join(FbxSdkRoot, "include") }
 	defines { "FBXSDK_SHARED" }
 	links { "libfbxsdk.lib" }
 
-	for _, Config in ipairs({ "Debug", "Release", "Shipping", "ObjViewer", "Benchmark", "Benchmark_Debug", "DebugPublishSymbols", "ReleasePublishSymbols"}) do
-		local SdkConfig = (Config == "Debug" or Config == "Benchmark_Debug" or Config == "DebugPublishSymbols") and "debug" or "release"
-		local SdkLibDir = path.join(FbxSdkRoot, "lib/x64", SdkConfig)
+	for _, Config in ipairs({ "Debug", "Release", "Shipping", "ObjViewer", "DebugPublishSymbols", "ReleasePublishSymbols"}) do
+		local DebugCRT = Config == "DebugPublishSymbols"
+		local SdkConfig = DebugCRT and "debug" or "release"
+		if Config == "Debug" then
+			SdkConfig = "$(HitoriDebugFbx)"
+		end
+		local SdkLibDir = FbxSdkRoot .. "/lib/x64/" .. SdkConfig
 		local Commands = { '{COPYFILE} "' .. path.join(SdkLibDir, "libfbxsdk.dll") .. '" "%{cfg.targetdir}"' }
 
 		if Config == "DebugPublishSymbols" or Config == "ReleasePublishSymbols" then
@@ -363,12 +412,6 @@ project "HitoriEditor"
 	filter "configurations:ObjViewer"
 		targetname "ObjViewer"
 
-	filter "configurations:Benchmark"
-		targetname "Benchmark"
-
-	filter "configurations:Benchmark_Debug"
-		targetname "Benchmark_Debug"
-
 	filter {}
 
 -- 패키징용 게임 실행 파일. 에디터 소스와 ImGui를 링크하지 않는다.
@@ -377,6 +420,7 @@ project "HitoriGame"
 	location "Source/Game"
 	kind     "WindowedApp"
 	CommonSettings()
+	PhysXSettings(true)
 	targetname "HitoriGame"
 
 	pchheader "EnginePCH.h"

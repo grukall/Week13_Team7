@@ -216,9 +216,10 @@ namespace FCollision
 		const FMatrix M = C->GetWorldMatrix();
 		const FVector Center = Row(M, 3);
 		const FVector Up = Row(M, 2).GetSafeNormal();
-		const float Radius = C->GetScaledCapsuleRadius();
-		const float Segment = C->GetScaledCapsuleHalfHeight() - Radius;   // 반구 중심까지 거리 (0이면 구)
-		return { Center + Up * Segment, Center - Up * Segment, Radius };
+		const FKSphylElem Capsule{ C->CapsuleRadius, 2.0f * std::max(0.0f, C->CapsuleHalfHeight - C->CapsuleRadius) };
+		const auto Scaled = Capsule.GetFinalScaled(C->GetWorldScale3D());
+		const float Segment = Scaled.Length * 0.5f;
+		return { Center + Up * Segment, Center - Up * Segment, Scaled.Radius };
 	}
 
 	FWorldBox ToWorld(const UBoxComponent* B)

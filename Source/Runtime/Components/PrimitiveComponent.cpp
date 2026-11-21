@@ -1,5 +1,6 @@
 #include "EnginePCH.h"
 #include "PrimitiveComponent.h"
+#include "Physics/BodySetup.h"
 #include "../Render/Renderer.h"
 #include "Asset/AssetManager.h"
 #include "Render/RenderCommand.h"
@@ -44,9 +45,55 @@ UPrimitiveComponent::~UPrimitiveComponent()
 
 }
 
+void UPrimitiveComponent::SetCollisionEnabled(ECollisionEnabled Enabled)
+{
+	BodyInstance.CollisionEnabled = Enabled;
+	BodyInstance.UpdatePhysicsFilterData();
+}
+
+void UPrimitiveComponent::SetCollisionObjectType(ECollisionChannel Channel)
+{
+	BodyInstance.ObjectType = Channel;
+	BodyInstance.UpdatePhysicsFilterData();
+}
+
+void UPrimitiveComponent::SetCollisionResponseToChannel(ECollisionChannel Channel, ECollisionResponse Response)
+{
+	BodyInstance.CollisionResponses.SetResponse(Channel, Response);
+	BodyInstance.UpdatePhysicsFilterData();
+}
+
+void UPrimitiveComponent::SetNotifyRigidBodyCollision(bool bNotify)
+{
+	BodyInstance.bNotifyRigidBodyCollision = bNotify;
+	BodyInstance.UpdatePhysicsFilterData();
+}
+
 void UPrimitiveComponent::BeginPlay()
 {
 	Super::BeginPlay();
+}
+
+bool UPrimitiveComponent::ShouldCreatePhysicsState()
+{
+	const UBodySetup* Setup = GetBodySetup();
+	return Setup && !Setup->AggGeom.IsEmpty();
+}
+
+void UPrimitiveComponent::OnCreatePhysicsState()
+{
+	const FTransform BodyTransform(GetWorldRotation(), GetWorldLocation(), GetWorldScale3D());
+	BodyInstance.InitBody(GetBodySetup(), BodyTransform, this, GetWorld()->GetPhysicsScene());
+	if (BodyInstance.IsValidBodyInstance())
+		Super::OnCreatePhysicsState();
+	else
+		HTR_LOG(Warning, "Failed to create physics state for {}", GetName());
+}
+
+void UPrimitiveComponent::OnDestroyPhysicsState()
+{
+	BodyInstance.TermBody();
+	Super::OnDestroyPhysicsState();
 }
 
 void UPrimitiveComponent::OnUnregister()
@@ -89,6 +136,12 @@ bool UPrimitiveComponent::LineTraceComponentLocal(const FRay& LocalRay, float& O
 	return Mesh && TraceMeshLocal(LocalRay, *Mesh, OutT);
 }
 
+void UPrimitiveComponent::OnUpdateTransform()
+{
+	if (BodyInstance.IsValidBodyInstance())
+		BodyInstance.SetBodyTransform(FTransform(GetWorldRotation(), GetWorldLocation(), GetWorldScale3D()));
+}
+
 void UPrimitiveComponent::OnTransformDirty()
 {
 	if (SceneProxy)
@@ -97,11 +150,46 @@ void UPrimitiveComponent::OnTransformDirty()
 
 bool UPrimitiveComponent::MoveComponent(const FVector& Delta, const FRotator& NewRotation, bool bSweep, FHitResult* Hit)
 {
-	return Super::MoveComponent(Delta, NewRotation, bSweep, Hit);
+	if (!bSweep || !GetWorld() || Delta.SizeSquared() <= SMALL_NUMBER)
+		return Super::MoveComponent(Delta, NewRotation, false, Hit);
+	const FVector Start = GetWorldLocation();
+	TArray<FHitResult> Hits;
+	GetWorld()->ComponentSweepMulti(Hits, this, Start, Start + Delta, GetWorldRotation().Quaternion());
+	FVector Destination = Start + Delta;
+	const FHitResult* BlockingHit = nullptr;
+	for (const auto& Candidate : Hits)
+	{
+		if (!Candidate.bBlockingHit || (Candidate.bStartPenetrating && Delta.Dot(Candidate.Normal) >= 0.f))
+			continue;
+		BlockingHit = &Candidate;
+		Destination = Start + Delta * Candidate.Time;
+		break;
+	}
+	if (Hit)
+		*Hit = BlockingHit ? *BlockingHit : FHitResult(1.0f);
+	const FRotator OldRotation = GetWorldRotation();
+	const bool Moved = (Destination - Start).SizeSquared() > 0.f || OldRotation.Pitch != NewRotation.Pitch ||
+		OldRotation.Yaw != NewRotation.Yaw || OldRotation.Roll != NewRotation.Roll;
+	SetWorldLocationAndRotation(Destination, NewRotation, false);
+	for (const auto& Candidate : Hits)
+	{
+		if (&Candidate == BlockingHit)
+			break;
+		auto* Other = Candidate.HitComponent;
+		if (!Candidate.bBlockingHit && bGenerateOverlapEvents && Other->bGenerateOverlapEvents && !IsOverlappingComponent(Other))
+		{
+			BeginComponentOverlap(Other);
+			Other->BeginComponentOverlap(this);
+		}
+	}
+	if (BlockingHit)
+		DispatchHit(BlockingHit->HitComponent);
+	return Moved;
 }
 
 void UPrimitiveComponent::PostEditChangeProperty(const FProperty& Property)
 {
+	BodyInstance.UpdatePhysicsFilterData();
 	if (Property.Name == "bCastShadow" ||
 		Property.Name == "bReceiveShadow" ||
 		Property.Name == "bReceivesDecals" ||

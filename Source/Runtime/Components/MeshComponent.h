@@ -26,7 +26,7 @@ public:
 	UMaterial* GetOverrideMaterial(int32 SlotIndex) const;
 	// 덮어쓰기 설정. nullptr을 넣으면 메시 기본값으로 되돌린다 (메시 에셋은 건드리지 않음)
 	void SetMaterial(int32 SlotIndex, UMaterial* InMaterial) override;
-	void ClearOverrideMaterials() { OverrideMaterials.Reset(); MarkRenderStateDirty(); }
+	void ClearOverrideMaterials() { OverrideMaterials.Reset(); BodyInstance.UpdatePhysicalMaterials(); MarkRenderStateDirty(); }
 
 	using Super::Serialize;
 	virtual void Serialize(FStructuredArchive::FRecord Record) override;

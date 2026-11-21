@@ -4,6 +4,8 @@
 #include "Components/ParticleSystemComponent.h"
 #include "Engine/World.h"
 #include "Particles/ParticleLODLevel.h"
+#include "Particles/ParticleModuleRequired.h"
+#include "Particles/TypeData/ParticleModuleTypeDataMesh.h"
 #include "Particles/Event/ParticleModuleEventGenerator.h"
 
 namespace
@@ -16,8 +18,40 @@ namespace
 
 UParticleModuleCollision::UParticleModuleCollision()
 {
+	CollisionTypes.Add(ECollisionChannel::ECC_WorldStatic);
 	bSpawnModule = true;
 	bUpdateModule = true;
+}
+
+void UParticleModuleCollision::Serialize(FStructuredArchive::FRecord Record)
+{
+	Super::Serialize(Record);
+	auto Field = Record.TryEnterField("CollisionTypes", true);
+	if (!Field.IsSet())
+		return;
+	auto& Ar = Record.GetUnderlyingArchive();
+	int32 Count = CollisionTypes.Num();
+	auto Array = Field.GetValue().EnterArray(Count);
+	const auto* Channels = TEnumInfo<ECollisionChannel>::Get();
+	if (Ar.IsLoading())
+		CollisionTypes.Reset();
+	for (int32 Index = 0; Index < Count; ++Index)
+	{
+		FString Name = Ar.IsSaving() ? Channels->ToName(static_cast<int64>(CollisionTypes[Index])) : FString{};
+		Array << Name;
+		if (Ar.IsLoading())
+			if (const auto* Entry = Channels->FindByName(Name))
+			{
+				const auto Channel = static_cast<ECollisionChannel>(Entry->Value);
+				if (FCollisionObjectQueryParams::IsValidObjectQuery(Channel))
+					CollisionTypes.AddUnique(Channel);
+			}
+	}
+}
+
+bool UParticleModuleCollision::PerformCollisionCheck(FParticleEmitterInstance* Owner, FHitResult& Hit, const AActor* SourceActor, const FVector& End, const FVector& Start, const FVector& Extent, const FCollisionObjectQueryParams& ObjectParams) const
+{
+	return Owner->Component->ParticleLineCheck(Hit, SourceActor, End, Start, Extent, ObjectParams);
 }
 
 void UParticleModuleCollision::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle* ParticleBase)
@@ -58,8 +92,24 @@ void UParticleModuleCollision::Update(FParticleEmitterInstance* Owner, int32 Off
 
 	if (const UParticleSystemComponent* Component = Owner->Component)
 	{
-		if (UWorld* World = Component->GetWorld())
+		if (Component->GetWorld())
 		{
+			FCollisionObjectQueryParams ObjectParams;
+			for (const auto Channel : CollisionTypes)
+				ObjectParams.AddObjectTypesToQuery(Channel);
+			const AActor* IgnoreActor = bIgnoreSourceActor ? Component->GetOwner() : nullptr;
+			const auto* LOD = Owner->CurrentLODLevel;
+			const bool bLocal = LOD && LOD->RequiredModule && LOD->RequiredModule->bUseLocalSpace;
+			const FMatrix ToWorld = bLocal ? Component->GetWorldMatrix() : FMatrix::Identity;
+			const FMatrix FromWorld = bLocal ? ToWorld.Inverse() : FMatrix::Identity;
+			const FVector Scale = Component->GetWorldScale3D().GetAbs();
+			const auto* MeshType = LOD ? Cast<UParticleModuleTypeDataMesh>(LOD->TypeDataModule) : nullptr;
+			FVector MeshExtent = FVector::ZeroVector;
+			if (MeshType && MeshType->StaticMesh)
+			{
+				const FBox& Bounds = MeshType->StaticMesh->GetMeshData().AABB;
+				MeshExtent = (Bounds.Max - Bounds.Min) * 0.5f;
+			}
 			BEGIN_UPDATE_LOOP;
 
 			if ((Particle.Flags & STATE_Particle_CollisionIgnoreCheck) != 0)
@@ -79,14 +129,16 @@ void UParticleModuleCollision::Update(FParticleEmitterInstance* Owner, int32 Off
 			}
 
 			FHitResult Result;
-			const FVector Start = Particle.Location;
-			const FVector Direction = Particle.Velocity.Normalized();
-			const float SizeAhead = DirScalar > 0.0f ? (Direction * Particle.Size).Size() / DirScalar : 0.0f;
-			const bool bBlocked = World->SweepSingle(
-				FRay(Start, Direction),
-				Particle.Velocity.Size() * DeltaTime + SizeAhead,
-				0.0f, Result, Component->GetOwner()
-			);
+			// PostSpawn already advanced newly born particles for the remainder of their first tick.
+			const FVector Predicted = (Particle.Flags & STATE_Particle_JustSpawned) ? Particle.Location : Particle.Location + Particle.Velocity * DeltaTime;
+			const FVector Start = bLocal ? ToWorld.TransformPosition(Particle.OldLocation) : Particle.OldLocation;
+			const FVector Location = bLocal ? ToWorld.TransformPosition(Predicted) : Predicted;
+			const FVector Travel = Location - Start;
+			const FVector Direction = Travel.GetSafeNormal();
+			const FVector Size = Particle.Size.GetAbs() * Scale;
+			const FVector End = DirScalar > 0.f ? Location + Direction * Size / DirScalar : Location;
+			const FVector Extent = MeshType && MeshType->bCollisionsConsiderPartilceSize ? MeshExtent * Size : MeshExtent;
+			const bool bBlocked = PerformCollisionCheck(Owner, Result, IgnoreActor, End, Start, Extent, ObjectParams);
 
 			if (bBlocked)
 			{
@@ -102,14 +154,20 @@ void UParticleModuleCollision::Update(FParticleEmitterInstance* Owner, int32 Off
 				if (CollisionPayload.UsedCollisions > 0)
 				{
 					const FVector& Damping = CollisionPayload.UsedDampingFactor;
-					Particle.BaseVelocity = Reflected(Particle.BaseVelocity, Result.Normal);
-					Particle.Velocity = Reflected(Particle.Velocity, Result.Normal);
-					Particle.BaseVelocity *= Damping;
-					Particle.Velocity *= Damping;
+					const FVector BaseVelocity = bLocal ? ToWorld.TransformVector(Particle.BaseVelocity) : Particle.BaseVelocity;
+					const FVector ReflectedVelocity = Reflected(BaseVelocity, Result.Normal) * Damping;
+					Particle.BaseVelocity = bLocal ? FromWorld.TransformVector(ReflectedVelocity) : ReflectedVelocity;
+					const FVector Bounce = Reflected(Travel, Result.Normal) * Damping * (1.f - Result.Time);
+					if (bLocal)
+						Particle.Location = FromWorld.TransformPosition(Location + Bounce);
+					else
+						Particle.Location += Bounce;
+					// The collision module consumed this tick's displacement.
+					Particle.Velocity = FVector::ZeroVector;
 				}
 				else
 				{
-					Particle.Location = Result.Location;
+					Particle.Location = bLocal ? FromWorld.TransformPosition(Result.Location) : Result.Location;
 
 					switch (CollisionCompletionOption)
 					{

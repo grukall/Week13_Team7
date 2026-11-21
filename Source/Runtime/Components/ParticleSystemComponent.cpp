@@ -14,7 +14,6 @@
 #include "Asset/AssetManager.h"
 #include "Camera/CameraComponent.h"
 #include "Camera/PlayerCameraManager.h"
-#include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include <algorithm>
 #include <cmath>
@@ -657,4 +656,14 @@ void UParticleSystemComponent::GatherParticleLights(TArray<FLightRenderParameter
 			OutLights.Add(Light);
 		}
 	}
+}
+
+bool UParticleSystemComponent::ParticleLineCheck(FHitResult& Hit, const AActor* SourceActor, const FVector& End, const FVector& Start, const FVector& HalfExtent, const FCollisionObjectQueryParams& ObjectParams) const
+{
+	UWorld* World = GetWorld();
+	if (!World)
+		return false;
+	if (HalfExtent.SizeSquared() == 0.f)
+		return World->LineTraceSingleByObjectType(Hit, Start, End, ObjectParams, SourceActor, true);
+	return World->SweepSingleByObjectType(Hit, Start, End, FQuat::Identity(), ObjectParams, FCollisionShape::MakeBox(HalfExtent), SourceActor, true);
 }

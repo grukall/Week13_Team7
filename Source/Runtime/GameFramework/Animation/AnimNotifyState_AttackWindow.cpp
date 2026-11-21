@@ -24,7 +24,7 @@ void UAnimNotifyState_AttackWindow::NotifyTick(USkeletalMeshComponent* MeshComp,
 	const FRay AttackRay{ Attacker->GetActorLocation() + FVector(0.0f, 0.0f, AttackHeight), Forward };
 
 	FHitResult Hit;
-	if (!World->SweepSingle(AttackRay, AttackRange, AttackRadius, Hit, Attacker))
+	if (!World->SweepSingleByChannel(Hit, AttackRay.Origin, AttackRay.PointAt(AttackRange), FQuat::Identity(), ECollisionChannel::ECC_Visibility, FCollisionShape::MakeSphere(AttackRadius), Attacker))
 		return;
 
 	AActor* HitActor = Hit.HitComponent ? Hit.HitComponent->GetOwner() : nullptr;

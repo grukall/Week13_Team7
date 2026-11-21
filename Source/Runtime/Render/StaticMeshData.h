@@ -1,6 +1,7 @@
-﻿#pragma once
+#pragma once
 
 #include "Vertex.h"
+#include "Physics/CookedConvex.h"
 #include "Math/BVH.h"
 #include "Math/Box.h"
 #include "Math/OBBTree.h"
@@ -42,6 +43,8 @@ struct FStaticMeshData
 	TArray<uint32> Indices;
 	TArray<FStaticMeshSection> Sections;
 	TArray<FStaticMaterialSlot> MaterialSlots;
+	TArray<FKConvexElem> ConvexElems;
+	TArray<std::array<TArray<uint8>, 2>> CookedFormatData;
 	FBox AABB;
 
 	// LOD0 생성용 CPU 메타데이터. GPU vertex layout에는 포함하지 않는다.

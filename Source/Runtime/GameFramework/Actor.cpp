@@ -16,6 +16,14 @@
 enum class EAttachmentRule;
 
 
+void AActor::SetActorEnableCollision(bool bEnabled)
+{
+	bActorEnableCollision = bEnabled;
+	for (auto* Component : GetComponents())
+		if (auto* Primitive = Cast<UPrimitiveComponent>(Component))
+			Primitive->BodyInstance.UpdatePhysicsFilterData();
+}
+
 AActor::AActor()
 {
 	PrimaryActorTick.Target = this;
@@ -217,6 +225,12 @@ void AActor::Serialize(FStructuredArchive::FRecord Record)
 			Attachment.Child->SetupAttachment(ParentComponent);
 		}
 	}
+
+	// SpawnActor/AddComponent register before the loader restores body settings and attachment transforms.
+	if (Ar.IsLoading() && World && World->GetPhysicsScene())
+		for (UActorComponent* Component : Components)
+			if (Component)
+				Component->RecreatePhysicsState();
 }
 
 

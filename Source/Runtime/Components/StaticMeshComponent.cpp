@@ -37,6 +37,7 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
 
 	StaticMesh = InStaticMesh;
 	ClearOverrideMaterials();
+	RecreatePhysicsState();
 	MarkRenderStateDirty();
 	OnTransformDirty();
 }

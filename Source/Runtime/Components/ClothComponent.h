@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Components/MeshComponent.h"
+#include "Render/ClothMeshData.h"
 #include "ClothComponent.generated.h"
 
 // NvCloth 헤더는 ClothComponent.cpp에서만 include 한다.
@@ -41,6 +42,7 @@ private:
 
 	nv::cloth::Solver* Solver = nullptr;
 	TArray<FClothInstance> ClothInstances;		// Component가 소유중인 천 모음, Solver에 들어가있는것과는 별개임
+	TArray<FClothMeshData> ClothMeshDatas;		// Cloth 렌더링용 데이터 배열
 	UPROPERTY(EditAnywhere) int32 DefaultGridRows = 3;
 	UPROPERTY(EditAnywhere) int32 DefaultGridCols = 3;
 	UPROPERTY(EditAnywhere) float DefaultGridSpacing = 0.1f;

@@ -94,14 +94,13 @@ IncludeDir["sol2"]  = "Source/ThirdParty/sol2/include"
 IncludeDir["miniaudio"]  = "Source/ThirdParty/miniaudio"
 IncludeDir["nanosvg"] = "Source/ThirdParty/nanosvg"
 IncludeDir["NvCloth"]  = "Source/ThirdParty/NvCloth/NvCloth"
-IncludeDir["PxShared"] = "Source/ThirdParty/NvCloth/PxShared/include"
 
 -- NvCloth 헤더를 읽는 모든 프로젝트가 같은 값을 써야 한다.
 -- NV_CLOTH_IMPORT를 비워 두지 않으면 헤더가 dllimport로 해석되어 정적 링크에서 __imp_ 기호를 찾다 LNK2019가 난다.
+-- PxShared(foundation/Px*.h)는 PhysXSettings가 넣는 PhysX 4.1의 pxshared/include 한 벌만 쓴다.
 NvClothDefines = { "NV_CLOTH_IMPORT=", "NV_CLOTH_ENABLE_CUDA=0", "NV_CLOTH_ENABLE_DX11=0" }
 NvClothIncludeDirs =
 {
-	"%{IncludeDir.PxShared}",
 	"%{IncludeDir.NvCloth}/include",
 	"%{IncludeDir.NvCloth}/extensions/include",
 }
@@ -226,10 +225,13 @@ project "NvCloth"
 	location "Source/ThirdParty/NvCloth"
 	kind     "StaticLib"
 	CommonSettings()
+	-- 링크는 하지 않고 PhysX의 pxshared include와 PX_* 정의값만 받는다.
+	-- 엔진과 같은 PX_DEBUG / PX_CHECKED로 컴파일해야 NvCloth 헤더가 양쪽에서 같게 해석된다.
+	PhysXSettings(false)
 
 	files
 	{
-		"%{IncludeDir.NvCloth}/src/*.cpp",                         -- CPU 솔버 핵심 (14개)
+		"%{IncludeDir.NvCloth}/src/*.cpp",                        -- CPU 솔버 핵심 (14개)
 		"%{IncludeDir.NvCloth}/extensions/src/*.cpp",              -- Fabric Cooker (4개)
 		"%{IncludeDir.NvCloth}/include/NvCloth/ps/PsAllocator.cpp",
 		"%{IncludeDir.NvCloth}/src/ps/windows/PsWindowsAtomic.cpp",
@@ -238,7 +240,6 @@ project "NvCloth"
 
 	includedirs
 	{
-		"%{IncludeDir.PxShared}",
 		"%{IncludeDir.NvCloth}/include",
 		"%{IncludeDir.NvCloth}/extensions/include",
 		"%{IncludeDir.NvCloth}/src",
@@ -250,8 +251,6 @@ project "NvCloth"
 
 	filter "files:**/avx/SwSolveConstraints.cpp"
 		buildoptions { "/arch:AVX" }
-	filter "configurations:Debug or Benchmark_Debug or DebugPublishSymbols"
-		defines { "PX_DEBUG=1", "PX_CHECKED=1" }
 	filter {}
 	
 -- 헤더 툴 (UE의 UnrealHeaderTool 역할). 엔진 코드에 의존하지 않고 std만 쓴다.

@@ -5,17 +5,11 @@
 #include <NvCloth/Solver.h> 
 #include <NvCloth/Cloth.h> 
 #include <NvClothExt/ClothFabricCooker.h>
+#include <algorithm>	// std::min
+#include <cmath>		// std::isfinite
 
 namespace
 {
-	// 천 한 장을 만드는 데 필요한 원본 정보. 격자·메시 에셋 등 원본이 무엇이든 이 형태로 채움
-	struct FClothBuildInput
-	{
-		TArray<FVector> Positions;	// 점 위치 (컴포넌트 로컬 좌표)
-		TArray<uint32>  Indices;	// 삼각형 점 번호, 3개씩 (파티클 번호 기준)
-		TArray<float>   InvMasses;	// 점 역질량. 0 = 고정점, Positions와 개수가 같아야 한다
-	};
-
 	FClothBuildInput MakeDefaultGridInput(int32 Rows, int32 Cols, float Spacing)		// 에셋 등록 전 Default로 사용하는 천의 FClothBuildInput 만드는 함수
 	{
 		FClothBuildInput Input;
@@ -35,7 +29,7 @@ namespace
 		{
 			for (int32 c = 0; c < Cols; ++c)
 			{
-				Input.Positions.Add(FVector(c * Spacing, 0.0f, -r * Spacing));
+				Input.Positions.Add(FVector(c * Spacing, r * Spacing, 0.0f));
 				Input.InvMasses.Add(r == 0 ? 0.0f : 1.0f);
 			}
 		}
@@ -79,6 +73,7 @@ nv::cloth::ClothMeshDesc MakeClothMeshDesc(const FClothBuildInput& Input)
 UClothComponent::UClothComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.TickGroup = ETickingGroup::PostPhysics;
 }
 
 UClothComponent::~UClothComponent()
@@ -88,74 +83,140 @@ UClothComponent::~UClothComponent()
 void UClothComponent::OnRegister()
 {
 	Super::OnRegister();
-	FClothBuildInput DefaultClothInput = MakeDefaultGridInput(3, 3, 2.0f);
-	if (DefaultClothInput.Positions.Num() == 0)
-	{
-		HTR_LOG(Error, "[NvCloth] Cloth build input is empty");
-		return;
-	}
-	nv::cloth::ClothMeshDesc DefaultGridDesc = MakeClothMeshDesc(DefaultClothInput);	// Fabric Cook용 Desc
+
 	nv::cloth::Factory* Factory = FNvClothManager::Get().GetFactory();  // NvCloth용 관련 객체들 생성하기 위한 Factory
 	if (Factory == nullptr)
 	{
 		HTR_LOG(Error, "[NvCloth] Factory is null (NvClothManager not initialized)");
 		return;
 	}
-	physx::PxVec3 gravity(0.0f, 0.0f, -1.0f);  // 기본 중력 세팅
-	nv::cloth::Vector<int32_t>::Type phaseTypeInfo;	// phaseType 배열을 저장, 해당 배열은 i번째 phase의 종류를 담고 있음 (선 종류 / vertical 등등)ㄱ
 
-	TArray<physx::PxVec4> Particles;
-	Particles.Reserve(DefaultClothInput.Positions.Num());
-	for (int i = 0; i < DefaultClothInput.Positions.Num();i++)
-	{
-		FVector P = DefaultClothInput.Positions[i];
-		Particles.Add(physx::PxVec4(P.X, P.Y, P.Z, DefaultClothInput.InvMasses[i]));		// 정점 xyz + 역질량 좌표 Particles 배열에 추가
-	}
-	nv::cloth::Range<const physx::PxVec4> ParticleRange(Particles.GetData(), Particles.GetData() + Particles.Num());		// Particle 배열 시작과 끝 지점 Range 구조체로 정의 (시작, 끝 지점 포인터 존재)
-	
-	Solver = Factory->createSolver();	// 천 계산할 Solver 세팅
+	Solver = Factory->createSolver();	// 천 계산할 Solver 세팅 (컴포넌트의 모든 천이 공유)
 	if (Solver == nullptr)
 	{
 		HTR_LOG(Error, "[NvCloth] createSolver failed");
 		return;
 	}
-	nv::cloth::Fabric* Fabric = NvClothCookFabricFromMesh(Factory, DefaultGridDesc, gravity, &phaseTypeInfo);
+
+	// 에셋 등록 전에는 기본 격자 천 하나를 추가한다. 에셋이 생기면 그 입력으로 CreateCloth를 호출한다.
+	CreateCloth(MakeDefaultGridInput(3, 3, 2.0f));
+}
+
+void UClothComponent::OnUnregister()
+{
+	for (FClothInstance& Instance : ClothInstances)
+	{
+		DestroyCloth(Instance);
+	}
+	ClothInstances.Reset();
+	NV_CLOTH_DELETE(Solver);	// 천이 모두 빠진 뒤에 Solver 삭제
+	Solver = nullptr;
+	Super::OnUnregister();
+}
+
+// 입력 하나로 Fabric Cook → Cloth 생성·설정 → Solver에 추가 → ClothInstances에 보관. 실패하면 false
+bool UClothComponent::CreateCloth(const FClothBuildInput& Input)
+{
+	if (Solver == nullptr)
+	{
+		HTR_LOG(Error, "[NvCloth] CreateCloth called without Solver");
+		return false;
+	}
+	nv::cloth::Factory* Factory = FNvClothManager::Get().GetFactory();
+	if (Factory == nullptr)
+	{
+		HTR_LOG(Error, "[NvCloth] Factory is null (NvClothManager not initialized)");
+		return false;
+	}
+	if (Input.Positions.Num() == 0 || Input.InvMasses.Num() != Input.Positions.Num() || Input.Indices.Num() % 3 != 0)
+	{
+		HTR_LOG(Error, "[NvCloth] Cloth build input is invalid");
+		return false;
+	}
+
+	nv::cloth::ClothMeshDesc ClothDesc = MakeClothMeshDesc(Input);	// Fabric Cook용 Desc
+
+	physx::PxVec3 gravity(0.0f, 0.0f, -1.0f);  // 기본 중력 세팅
+	nv::cloth::Vector<int32_t>::Type phaseTypeInfo;	// phaseType 배열을 저장, 해당 배열은 i번째 phase의 종류를 담고 있음 (선 종류 / vertical 등등)ㄱ
+
+	TArray<physx::PxVec4> Particles;
+	Particles.Reserve(Input.Positions.Num());
+	for (int i = 0; i < Input.Positions.Num();i++)
+	{
+		FVector P = Input.Positions[i];
+		Particles.Add(physx::PxVec4(P.X, P.Y, P.Z, Input.InvMasses[i]));		// 정점 xyz + 역질량 좌표 Particles 배열에 추가
+	}
+	nv::cloth::Range<const physx::PxVec4> ParticleRange(Particles.GetData(), Particles.GetData() + Particles.Num());		// Particle 배열 시작과 끝 지점 Range 구조체로 정의 (시작, 끝 지점 포인터 존재)
+	
+
+	
+	nv::cloth::Fabric* Fabric = NvClothCookFabricFromMesh(Factory, ClothDesc, gravity, &phaseTypeInfo);
 	if (Fabric == nullptr)
 	{
 		HTR_LOG(Error, "[NvCloth] Fabric cooking failed");
-		return;
+		return false;
 	}
+
 	nv::cloth::Cloth* Cloth = Factory->createCloth(ParticleRange, *Fabric);
 	if (Cloth == nullptr)
 	{
 		HTR_LOG(Error, "[NvCloth] createCloth failed");
 		Fabric->decRefCount();		// 굽기에서 받은 참조(1)를 반납 → Fabric 삭제
-		return;
+		return false;
 	}
-	FClothInstance DefaultCloth = { Fabric, Cloth, DefaultClothInput.Indices };
-	ClothInstances.Add(DefaultCloth);
+
+	FClothInstance NewCloth = { Fabric, Cloth, Input.Indices };
+	ClothInstances.Add(NewCloth);
 
 	int32 PhaseNum = Fabric->getNumPhases();
 	TArray<nv::cloth::PhaseConfig> Configs; 
 	Configs.Reserve(PhaseNum);
 	for (int i = 0;i < PhaseNum;i++)
 	{
-		Configs.Add(nv::cloth::PhaseConfig(i));			//  Fabric의 Phase 만큼 PhaseConfig 세팅
+		Configs.Add(nv::cloth::PhaseConfig(i));	//  Fabric의 Phase 만큼 PhaseConfig 세팅
 	}
 	Cloth->setPhaseConfig(nv::cloth::Range<const nv::cloth::PhaseConfig>(Configs.GetData(), Configs.GetData() + Configs.Num()));	// PhaseConfig 세팅
 	Cloth->setGravity(physx::PxVec3(0, 0, -9.81));	// 중력 세팅
-	Solver->addCloth(Cloth);	// Solver에 Default 옷 추가
+	Solver->addCloth(Cloth);	// Solver에 옷 추가
+	return true;
 }
 
-void UClothComponent::OnUnregister()
+void UClothComponent::DestroyCloth(FClothInstance& Instance)
 {
-	// TODO
-	Super::OnUnregister();
+	if (Instance.Cloth != nullptr)
+	{
+		if (Solver != nullptr)
+		{
+			Solver->removeCloth(Instance.Cloth);
+		}
+		NV_CLOTH_DELETE(Instance.Cloth);		// User가 초기에 지정한 deallocate 호출됨
+		Instance.Cloth = nullptr;
+	}
+	if (Instance.Fabric != nullptr)
+	{
+		Instance.Fabric->decRefCount();	// Fabric의 경우 여러 Cloth가 공유할수 있기 때문에 참조Count로 관리, Fabric 안에서 자체적으로 참조수 = 0일때 delete 진행함
+		Instance.Fabric = nullptr;
+	}
 }
 
 void UClothComponent::TickComponent(float DeltaTime)
 {
 	Super::TickComponent(DeltaTime);
-	// TODO
-}
+	if (Solver == nullptr) return;
+	if (!(DeltaTime > 0.0f) || !std::isfinite(DeltaTime)) return;
+	float dt = std::min(DeltaTime, 1.0f / 30.0f);
 
+	if (!Solver->beginSimulation(dt)) return;
+	for (int i = 0;i < Solver->getSimulationChunkCount();i++)		
+	// Factory의 종류 (CPU,CUDA,GPU) 에 따라서 Solver가 한 프레임에 Simulation 돌릴 양을 얼마나 나눠서 돌릴지가 다름
+	// CPU는 천 당 하나의 Chunk로 나눠서 돌림
+	{
+		Solver->simulateChunk(i);
+	}
+	Solver->endSimulation();
+} 
+
+void UClothComponent::SubmitToRenderQueue(FRenderQueue& RenderQueue, const FViewContext& ViewContext)
+{
+
+}

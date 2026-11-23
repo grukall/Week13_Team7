@@ -295,7 +295,7 @@ void USkeletalMeshComponent::SetSkeletalMesh(USkeletalMesh* InMesh)
 {
 	if (GetSkeletalMesh() == InMesh) return;
 	Super::SetSkeletalMesh(InMesh);
-	// 등록 전(생성자 등)이면 아무것도 안 하고, 등록 후면 기존 바디 해제 → 새 Physics Asset으로 재생성
+
 	RecreatePhysicsState();
 }
 

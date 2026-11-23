@@ -52,8 +52,3 @@ inline void operator<<(FStructuredArchiveSlot Slot, FTransform& T)
 	if (Record.GetUnderlyingArchive().IsLoading())
 		T.Rotation = Rotation.Quaternion();
 }
-
-inline void SerializeQuat(FStructuredArchiveRecord Record, FQuat& Q)
-{
-	Record << SA_VALUE("X", Q.X) << SA_VALUE("Y", Q.Y) << SA_VALUE("Z", Q.Z) << SA_VALUE("W", Q.W);
-}

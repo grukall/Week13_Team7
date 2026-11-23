@@ -22,6 +22,9 @@ struct FClothInstance			// 천 한장을 정의하는 구조체
 	nv::cloth::Fabric* Fabric = nullptr;   
 	nv::cloth::Cloth*  Cloth  = nullptr;   
 	TArray<uint32> Indices;
+	TArray<FVector> MotionTargets;	// Motion Constraint를 위한 점마다의 목표 위치
+	TArray<float>   MaxDistances;	// 점마다의 MaxDistancez. 0 = 고정, 클수록 자유
+	bool bMotionDirty = true;		// Motion 점 변경시에 체크를 위한 DirtyFlag
 };
 
 struct FClothCollisionShapes	// Collision 처리를 위해 Collision이 발생한 Shape들 모아놓는 배열
@@ -70,9 +73,23 @@ public:
 	void GatherCollisionShape(FClothCollisionShapes& CollisionShape, FMatrix WorldToCloth);
 	void ApplyClothCollision(nv::cloth::Cloth& Cloth, const FClothCollisionShapes& CollisionShape);
 
+	// 디테일 패널에서 값이 바뀌면 불린다. 구조체 멤버가 바뀌어도 바깥 이름("PinSettings")으로 온다 (DetailsPanel.cpp DrawProperty)
+	void PostEditChangeProperty(const FProperty& Property) override;
+
+	// 코드에서 고정 설정을 바꾸는 입구. 다음 Tick에 반영된다
+	void SetPinSettings(const FClothPinSettings& NewSettings);
+	const FClothPinSettings& GetPinSettings() const { return PinSettings; }
+
 private:
 	bool CreateCloth(const FClothBuildInput& Input);	// 입력 하나(기본 격자·에셋)로 천 한 장을 만들어 Solver와 ClothInstances에 추가
 	void DestroyCloth(FClothInstance& Instance);		// 천 한 장을 Solver에서 빼고 해제
+	void ApplyMotionConstraints(FClothInstance& ClothInstance);	// dirty일 때만 점마다 (목표 위치, 반경)을 NvCloth Motion Constraint에 쓴다
+	void RefreshPinsFromSettings();		// 현재 PinSettings로 기본 격자 천의 반경을 다시 계산하고 dirty를 켠다 (NvCloth에 쓰는 건 ApplyMotionConstraints)
+
+	// 기본 격자 천을 만들 때 실제로 쓴 값. DefaultGridRows/Cols는 실행 중에 바뀔 수 있어서 점 번호(r * Cols + c) 계산에는 이것을 쓴다
+	int32 BuiltGridRows = 0;
+	int32 BuiltGridCols = 0;
+	int32 DefaultGridClothIndex = -1;	// ClothInstances 중 기본 격자 천의 번호. -1이면 없음
 
 	nv::cloth::Solver* Solver = nullptr;
 	TArray<FClothInstance> ClothInstances;		// Component가 소유중인 천 모음, Solver에 들어가있는것과는 별개임

@@ -221,7 +221,13 @@ void UClothComponent::OnRegister()
 	}
 
 	// 에셋 등록 전에는 기본 격자 천 하나를 추가한다. 에셋이 생기면 그 입력으로 CreateCloth를 호출한다.
-	CreateCloth(MakeDefaultGridInput(DefaultGridRows, DefaultGridCols, DefaultGridSpacing, PinSettings));	// 고정 설정으로 점마다 반경(MaxDistances)을 채운다
+	if (CreateCloth(MakeDefaultGridInput(DefaultGridRows, DefaultGridCols, DefaultGridSpacing, PinSettings)))	// 고정 설정으로 점마다 반경(MaxDistances)을 채운다
+	{
+		// 실행 중 고정 설정 변경(RefreshPinsFromSettings)에서 같은 점 번호로 다시 계산하기 위해 기억
+		BuiltGridRows = DefaultGridRows;
+		BuiltGridCols = DefaultGridCols;
+		DefaultGridClothIndex = ClothInstances.Num() - 1;	// 방금 Add된 천
+	}
 	OnTransformDirty();		// Proxy가 천 생성 전에 만들어졌을 수 있으므로 초기 바운드를 반영
 
 }
@@ -233,6 +239,9 @@ void UClothComponent::OnUnregister()
 		DestroyCloth(Instance);
 	}
 	ClothInstances.Reset();
+	BuiltGridRows = 0;
+	BuiltGridCols = 0;
+	DefaultGridClothIndex = -1;
 	NV_CLOTH_DELETE(Solver);	// 천이 모두 빠진 뒤에 Solver 삭제
 	Solver = nullptr;
 	Super::OnUnregister();
@@ -334,7 +343,10 @@ bool UClothComponent::CreateCloth(const FClothBuildInput& Input)
 
 	Solver->addCloth(Cloth);		// Buffer 채우기 및 모든 과정 종료 후 Solver에 Cloth 추가
 
-	ClothInstances.Add(FClothInstance{ Fabric, Cloth, Input.Indices });
+	FClothInstance Instance{ Fabric, Cloth, Input.Indices };
+	Instance.MotionTargets = Input.Positions;			// 지켜야 하는 초기 위치, SkeletalMesh의 경우 Bone 정점으로 Tick마다 업데이트
+	Instance.MaxDistances = Input.MaxDistances;			// 점의 최대 반경
+	ClothInstances.Add(Instance);
 	ClothMeshDatas.Add(std::move(ClothData));
 	return true;
 }
@@ -391,8 +403,11 @@ void UClothComponent::TickComponent(float DeltaTime)
 			Instance.Cloth->setSelfCollisionStiffness(std::clamp(SelfCollisionStiffness, 0.0f, 1.0f));
 			Instance.Cloth->setFriction(Friction);
 			ApplyClothCollision(*Instance.Cloth, CollisionShapes);	// 수집한 전체 충돌체를 Cloth에 등록, 해당 Cloth와 충돌체가 상호작용하도록 함
+			ApplyMotionConstraints(Instance);	// 고정점·반경이 바뀌었으면(dirty) simulate 전에 NvCloth에 반영
 		}
 	}
+
+
 
 	if (!Solver->beginSimulation(dt)) return;
 	for (int i = 0;i < Solver->getSimulationChunkCount();i++)		 
@@ -535,3 +550,67 @@ void UClothComponent::ApplyClothCollision(nv::cloth::Cloth& Cloth, const FClothC
 	Cloth.setConvexes(nv::cloth::Range<const uint32>(ConvexMasks.GetData(), ConvexMasks.GetData() + ConvexMasks.Num()), 0, Cloth.getNumConvexes());
 }
 
+void UClothComponent::ApplyMotionConstraints(FClothInstance& ClothInstance)
+{
+	if (ClothInstance.Cloth == nullptr || !ClothInstance.bMotionDirty) return;
+
+	nv::cloth::Cloth& Cloth = *ClothInstance.Cloth;
+	const uint32 NumParticles = Cloth.getNumParticles();
+
+	if (ClothInstance.MotionTargets.Num() != static_cast<int32>(NumParticles) || ClothInstance.MaxDistances.Num() != static_cast<int32>(NumParticles))
+	{
+		HTR_LOG(Error, "[NvCloth] Motion constraint data count does not match particle count");
+		ClothInstance.bMotionDirty = false;
+		return;
+	}
+
+	nv::cloth::Range<physx::PxVec4> Constraints = Cloth.getMotionConstraints();		
+	for (uint32 ParticleIndex = 0; ParticleIndex < NumParticles; ++ParticleIndex)
+	{
+		const FVector& Target = ClothInstance.MotionTargets[ParticleIndex];
+		const float MaxDist = std::max(ClothInstance.MaxDistances[ParticleIndex], 0.0f);
+		Constraints[ParticleIndex] = physx::PxVec4(Target.X, Target.Y, Target.Z, MaxDist);		// 각 점의 Constraint에 MotionTarget 점을 기록
+	}
+
+	ClothInstance.bMotionDirty = false;
+}
+
+void UClothComponent::RefreshPinsFromSettings()
+{
+	if (DefaultGridClothIndex < 0 || DefaultGridClothIndex >= ClothInstances.Num()) return;	// 격자 천이 없음 (등록 전, 생성 실패)
+	FClothInstance& Instance = ClothInstances[DefaultGridClothIndex];
+
+	// 만들 때와 점 개수가 같을 때만 다시 계산한다. 다르면 점 번호가 어긋나 엉뚱한 점이 고정된다
+	if (Instance.MaxDistances.Num() != BuiltGridRows * BuiltGridCols)
+	{
+		HTR_LOG(Warning, "[NvCloth] Pin refresh skipped: grid size does not match the built cloth");
+		return;
+	}
+
+	// 격자 크기·점 위치는 그대로, 고정 설정만 바뀐 값으로 점마다 반경을 덮어쓴다 (처음 만들 때와 같은 함수)
+	for (int32 r = 0; r < BuiltGridRows; ++r)
+	{
+		for (int32 c = 0; c < BuiltGridCols; ++c)
+		{
+			Instance.MaxDistances[r * BuiltGridCols + c] = ComputeGridMaxDistance(r, c, BuiltGridRows, BuiltGridCols, PinSettings);
+		}
+	}
+
+	Instance.bMotionDirty = true;	// 다음 Tick의 ApplyMotionConstraints가 simulate 전에 NvCloth에 쓴다
+}
+
+void UClothComponent::SetPinSettings(const FClothPinSettings& NewSettings)
+{
+	PinSettings = NewSettings;
+	RefreshPinsFromSettings();
+}
+
+void UClothComponent::PostEditChangeProperty(const FProperty& Property)
+{
+	Super::PostEditChangeProperty(Property);	// 부모(Primitive·Scene 등)의 처리를 먼저
+
+	if (Property.Name == "PinSettings")
+	{
+		RefreshPinsFromSettings();
+	}
+}

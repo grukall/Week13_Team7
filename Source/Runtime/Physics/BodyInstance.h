@@ -62,7 +62,8 @@ struct FCollisionResponseContainer
 	UPROPERTY(EditAnywhere)
 	ECollisionResponse Destructible = ECollisionResponse::ECR_Block;
 	UPROPERTY(EditAnywhere)
-	ECollisionResponse Cloth = ECollisionResponse::ECR_Ignore;	// 기본 Ignore: 켠(Block) 물체만 천 충돌체가 되도록. 다른 채널과 달리 Block이 기본이 아님
+	ECollisionResponse Cloth = ECollisionResponse::ECR_Ignore;	
+
 	ECollisionResponse GetResponse(ECollisionChannel Channel) const;
 	void SetResponse(ECollisionChannel Channel, ECollisionResponse Response);
 };

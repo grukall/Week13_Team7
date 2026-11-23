@@ -23,6 +23,15 @@ struct FClothInstance			// 천 한장을 정의하는 구조체
 	TArray<uint32> Indices;
 };
 
+struct FClothCollisionShapes
+{
+	TArray<FVector4> Spheres;       
+	TArray<uint32>   CapsuleIndices;  
+	TArray<FVector4> Planes;        
+	TArray<uint32>   ConvexMasks;     
+	void Reset() { Spheres.Reset(); CapsuleIndices.Reset(); Planes.Reset(); ConvexMasks.Reset(); }
+};
+
 UCLASS()
 class UClothComponent : public UMeshComponent
 {
@@ -44,6 +53,9 @@ public:
 	// 현재 천 정점 위치(컴포넌트 로컬)를 모두 감싸는 박스. 컬링에 쓰인다
 	FBox CalcLocalBounds() const override;
 
+	void GatherCollisionShape(FClothCollisionShapes& CollisionShape, FMatrix WorldToCloth);
+	void ApplyClothCollision(nv::cloth::Cloth& Cloth, const FClothCollisionShapes& CollisionShape);
+
 private:
 	bool CreateCloth(const FClothBuildInput& Input);	// 입력 하나(기본 격자·에셋)로 천 한 장을 만들어 Solver와 ClothInstances에 추가
 	void DestroyCloth(FClothInstance& Instance);		// 천 한 장을 Solver에서 빼고 해제
@@ -51,9 +63,11 @@ private:
 	nv::cloth::Solver* Solver = nullptr;
 	TArray<FClothInstance> ClothInstances;		// Component가 소유중인 천 모음, Solver에 들어가있는것과는 별개임
 	TArray<FClothMeshData> ClothMeshDatas;		// Cloth 렌더링용 데이터 배열
+	FClothCollisionShapes CollisionShapes;		// Collision 발생시킬 Shape 모음
 	UPROPERTY(EditAnywhere) float WindTime = 0.0f;
 	UPROPERTY(EditAnywhere) float BaseWind = 3.0f;
 	UPROPERTY(EditAnywhere) bool bEnableGravity = false;
+	UPROPERTY(EditAnywhere) bool bEnableWind = true;	// 끄면 바람 속도 0 (끈 뒤에도 남지 않게 매 Tick 0을 넣음)
 	// 기본 격자 천 (에셋이 없을 때). OnRegister에서 한 번 만들므로 값을 바꾸면 다시 등록(재스폰)해야 반영된다
 	UPROPERTY(EditAnywhere) int32 DefaultGridRows = 20;
 	UPROPERTY(EditAnywhere) int32 DefaultGridCols = 20;

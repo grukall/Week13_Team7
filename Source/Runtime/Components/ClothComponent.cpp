@@ -3,6 +3,8 @@
 #include "Physics/NvClothManager.h"
 #include "Render/RenderCommand.h"
 #include "Asset/AssetManager.h"
+#include "UObject/UObjectIterator.h"
+#include "Physics/BodySetup.h"
 #include <NvCloth/Factory.h> 
 #include <NvCloth/Solver.h> 
 #include <NvCloth/Cloth.h> 
@@ -33,8 +35,8 @@ namespace
 			for (int32 c = 0; c < Cols; ++c)
 			{
 				Input.Positions.Add(FVector(c * Spacing, r * Spacing, 0.0f));
-				//Input.InvMasses.Add(1.0f);
-				Input.InvMasses.Add(r == 0 ? 0.0f : 1.0f);	// 첫 줄(r == 0)만 고정점. 모든 점에 하나씩 넣어야 Positions와 개수가 맞는다
+				Input.InvMasses.Add(1.0f);
+				//Input.InvMasses.Add(r == 0 ? 0.0f : 1.0f);	// 첫 줄(r == 0)만 고정점. 모든 점에 하나씩 넣어야 Positions와 개수가 맞는다
 				Input.UVs.Add(FVector2(c / static_cast<float>(Cols - 1), r / static_cast<float>(Rows - 1)));	// 격자 전체를 0~1로 펼친 UV
 			}
 		}
@@ -54,6 +56,94 @@ namespace
 		}
 
 		return Input;
+	}
+
+	constexpr int32 MaxClothCollisionShapes = 32;	// ClothImpl.h의 NV_CLOTH_ASSERT(newSize <= 32)
+
+	// 박스 = 바깥을 향한 평면 6개 + 그 6개를 묶은 convex 1개
+	bool AddBox(FClothCollisionShapes& Out, const FKBoxElem& Box, const FMatrix& MeshToCloth, float Pad)
+	{
+		if (Out.Planes.Num() + 6 > MaxClothCollisionShapes || Out.ConvexMasks.Num() + 1 > MaxClothCollisionShapes)
+		{
+			return false;
+		}
+
+		// X·Y·Z는 전체 길이 → 반축. 박스 자체 회전 → 메시 월드(회전·스케일) → 천 로컬 순서
+		const FVector Center = MeshToCloth.TransformPosition(Box.Center);
+		const FVector Axes[3] = {
+			MeshToCloth.TransformVector(Box.Rotation.RotateVector(FVector(Box.X * 0.5f, 0.0f, 0.0f))),
+			MeshToCloth.TransformVector(Box.Rotation.RotateVector(FVector(0.0f, Box.Y * 0.5f, 0.0f))),
+			MeshToCloth.TransformVector(Box.Rotation.RotateVector(FVector(0.0f, 0.0f, Box.Z * 0.5f))),
+		};
+
+		const uint32 BasePlane = Out.Planes.Num();	// 이 박스의 첫 평면 번호 (예산 검사로 26 이하)
+		for (const FVector& Axis : Axes)
+		{
+			for (const float Sign : { 1.0f, -1.0f })
+			{
+				const FVector Normal = (Axis * Sign).GetSafeNormal();			// 바깥 법선 (NvCloth는 정규화된 법선을 요구)
+				const FVector OnPlane = Center + Axis * Sign + Normal * Pad;	// 면 위의 점을 Pad만큼 바깥으로
+				Out.Planes.Add(FVector4(Normal.X, Normal.Y, Normal.Z, -FVector::Dot(Normal, OnPlane)));	// n·x + d < 0 이 박스 안쪽
+			}
+		}
+		Out.ConvexMasks.Add(0x3Fu << BasePlane);	// 방금 넣은 평면 6개(비트 6개)가 한 덩어리
+		return true;
+	}
+
+	// 구 1개. 반지름은 균등 스케일 가정 (NvCloth 구는 찌그러질 수 없음)
+	bool AddSphere(FClothCollisionShapes& Out, const FKSphereElem& Sphere, const FMatrix& MeshToCloth, float UniformScale, float Pad)
+	{
+		if (Out.Spheres.Num() + 1 > MaxClothCollisionShapes)
+		{
+			return false;
+		}
+		const FVector Center = MeshToCloth.TransformPosition(Sphere.Center);
+		Out.Spheres.Add(FVector4(Center, Sphere.Radius * UniformScale + Pad));
+		return true;
+	}
+
+	// 캡슐 = 양 끝 구 2개 + 두 구 번호를 잇는 캡슐 1개. Sphyl은 로컬 Z축 방향이고 Length는 반구를 뺀 원통 길이
+	bool AddSphyl(FClothCollisionShapes& Out, const FKSphylElem& Sphyl, const FMatrix& MeshToCloth, float UniformScale, float Pad)
+	{
+		if (Out.Spheres.Num() + 2 > MaxClothCollisionShapes || Out.CapsuleIndices.Num() / 2 + 1 > MaxClothCollisionShapes)
+		{
+			return false;
+		}
+		const FVector HalfSegment = Sphyl.Rotation.RotateVector(FVector(0.0f, 0.0f, Sphyl.Length * 0.5f));
+		const FVector End0 = MeshToCloth.TransformPosition(Sphyl.Center + HalfSegment);
+		const FVector End1 = MeshToCloth.TransformPosition(Sphyl.Center - HalfSegment);
+		const float Radius = Sphyl.Radius * UniformScale + Pad;
+
+		const uint32 FirstSphere = Out.Spheres.Num();
+		Out.Spheres.Add(FVector4(End0, Radius));
+		Out.Spheres.Add(FVector4(End1, Radius));
+		Out.CapsuleIndices.Add(FirstSphere);
+		Out.CapsuleIndices.Add(FirstSphere + 1);
+		return true;
+	}
+
+	// Convex는 평면 정보가 없으므로(정점 + PxConvexMesh뿐) 임시로 정점 AABB를 박스로 넣는다
+	bool AddConvexAsBox(FClothCollisionShapes& Out, const FKConvexElem& Convex, const FMatrix& MeshToCloth, float Pad)
+	{
+		if (Convex.VertexData.IsEmpty())
+		{
+			return false;
+		}
+		FVector Min = Convex.VertexData[0];
+		FVector Max = Min;
+		for (const FVector& Vertex : Convex.VertexData)		// VertexData는 바디 로컬
+		{
+			Min = FVector(std::min(Min.X, Vertex.X), std::min(Min.Y, Vertex.Y), std::min(Min.Z, Vertex.Z));
+			Max = FVector(std::max(Max.X, Vertex.X), std::max(Max.Y, Vertex.Y), std::max(Max.Z, Vertex.Z));
+		}
+
+		FKBoxElem Box;
+		Box.Center = (Min + Max) * 0.5f;
+		const FVector Size = Max - Min;
+		Box.X = Size.X;
+		Box.Y = Size.Y;
+		Box.Z = Size.Z;
+		return AddBox(Out, Box, MeshToCloth, Pad);
 	}
 }
 
@@ -178,7 +268,7 @@ bool UClothComponent::CreateCloth(const FClothBuildInput& Input)
 	for (int i = 0;i < PhaseNum;i++)
 	{
 		nv::cloth::PhaseConfig confi = nv::cloth::PhaseConfig(i);
-		confi.mStiffness = 1.0f;
+		confi.mStiffness = 0.3f;
 		Configs.Add(confi);	//  Fabric의 Phase 만큼 PhaseConfig 세팅
 	}
 	Cloth->setPhaseConfig(nv::cloth::Range<const nv::cloth::PhaseConfig>(Configs.GetData(), Configs.GetData() + Configs.Num()));	// PhaseConfig 세팅
@@ -230,25 +320,35 @@ void UClothComponent::DestroyCloth(FClothInstance& Instance)
 void UClothComponent::TickComponent(float DeltaTime)
 {
 	Super::TickComponent(DeltaTime);
+
 	if (Solver == nullptr) return;
 	if (!(DeltaTime > 0.0f) || !std::isfinite(DeltaTime)) return;
 	float dt = std::min(DeltaTime, 1.0f / 30.0f);
 
-	WindTime += DeltaTime;
-	const float Gust = 1.0f + 0.5f * std::sin(WindTime * 2.0f) + 0.25f * std::sin(WindTime * 5.3f);	
-	const physx::PxVec3 Wind(
-		0.3f * BaseWind * std::sin(WindTime * 1.3f),	// X: 좌우 흔들림
-		BaseWind * Gust,								// Y: 주 방향. 첫 줄(X축 방향)에 매달린 천의 면에 수직
-		0.2f * BaseWind * std::sin(WindTime * 3.7f));	// Z: 위아래 들썩임
+	// 바람: 켜져 있으면 시간에 따라 세기·방향이 바뀌는 값, 꺼져 있으면 0.
+	// 꺼질 때도 0을 넣어야 이전 바람이 Cloth에 남지 않는다 (setWindVelocity는 값이 바뀔 때만 실제로 갱신)
+	physx::PxVec3 Wind(0.0f);
+	if (bEnableWind)
+	{
+		WindTime += DeltaTime;
+		const float Gust = 1.0f + 0.5f * std::sin(WindTime * 2.0f) + 0.25f * std::sin(WindTime * 5.3f);
+		Wind = physx::PxVec3(
+			0.3f * BaseWind * std::sin(WindTime * 1.3f),
+			BaseWind * Gust,
+			0.2f * BaseWind * std::sin(WindTime * 3.7f));
+	}
+
+	FMatrix WorldToCloth = GetWorldMatrix().Inverse();
+	GatherCollisionShape(CollisionShapes, WorldToCloth);
+
 	for (FClothInstance& Instance : ClothInstances)
 	{
 		if (Instance.Cloth != nullptr)
 		{
-			Instance.Cloth->setWindVelocity(Wind);
-			if (bEnableGravity)
-			{
-				Instance.Cloth->setGravity(physx::PxVec3(0, 0, -9.81));
-			}
+			Instance.Cloth->setWindVelocity(Wind);	
+			// 중력: 켜면 -Z 9.81, 끄면 0. 끌 때도 0을 넣어야 이전 중력이 Cloth에 남지 않는다 (값이 같으면 setter가 바로 return)
+			Instance.Cloth->setGravity(bEnableGravity ? physx::PxVec3(0.0f, 0.0f, -9.81f) : physx::PxVec3(0.0f));
+			ApplyClothCollision(*Instance.Cloth, CollisionShapes);	// 수집한 전체 충돌체를 Cloth에 등록, 해당 Cloth와 충돌체가 상호작용하도록 함
 		}
 	}
 
@@ -333,3 +433,63 @@ void UClothComponent::SubmitToRenderQueue(FRenderQueue& RenderQueue, const FView
 
 	}
 }
+
+void UClothComponent::GatherCollisionShape(FClothCollisionShapes& CollisionShape, FMatrix WorldToCloth)
+{
+	CollisionShape.Reset();		// 매 프레임 새로 모은다. 빼먹으면 계속 쌓여 32개 상한 assert에 걸린다
+	const float Pad = RenderThickness * 0.5f + 0.01f;	// 렌더 두께(뒷면)가 충돌체에 파고들지 않게 충돌체를 키우는 여유
+
+	for (TObjectIterator<UPrimitiveComponent> It; It; ++It)
+	{
+		UPrimitiveComponent* PrimComp = *It;
+		if (PrimComp == this || !PrimComp->IsRegistered() || PrimComp->GetWorld() != GetWorld()) continue;
+
+		const FBodyInstance* Body = PrimComp->GetBodyInstance();
+		if (Body->CollisionEnabled == ECollisionEnabled::NoCollision) continue;
+		if (Body->CollisionResponses.Cloth != ECollisionResponse::ECR_Block) continue;	// Cloth 채널 Block만 천 충돌체
+
+		const UBodySetup* Setup = PrimComp->GetBodySetup();		// 모양 없는 Primitive(스켈레탈 등)는 nullptr
+		if (Setup == nullptr || Setup->AggGeom.IsEmpty()) continue;
+
+		const FMatrix MeshToCloth = PrimComp->GetWorldMatrix() * WorldToCloth;	// 메시 로컬 → 월드 → 천 로컬
+		const FVector Scale = PrimComp->GetWorldScale3D().GetAbs();
+		const float UniformScale = std::max({ Scale.X, Scale.Y, Scale.Z });	// 구·캡슐 반지름용 (균등 스케일 가정)
+		const FKAggregateGeom& Geom = Setup->AggGeom;		// 복사하지 않고 참조
+
+		bool bAllAdded = true;
+		for (const FKBoxElem& Box : Geom.BoxElems)          bAllAdded &= AddBox(CollisionShape, Box, MeshToCloth, Pad);					// 평면 6개 + convex 1개
+		for (const FKSphereElem& Sphere : Geom.SphereElems) bAllAdded &= AddSphere(CollisionShape, Sphere, MeshToCloth, UniformScale, Pad);	// 구 1개
+		for (const FKSphylElem& Sphyl : Geom.SphylElems)    bAllAdded &= AddSphyl(CollisionShape, Sphyl, MeshToCloth, UniformScale, Pad);	// 구 2개 + 캡슐 1개
+		for (const FKConvexElem& Convex : Geom.ConvexElems) bAllAdded &= AddConvexAsBox(CollisionShape, Convex, MeshToCloth, Pad);		// 정점 AABB를 박스로 (임시)
+
+		if (!bAllAdded)
+		{
+			HTR_LOG(Warning, "[NvCloth] Cloth collision budget exceeded or empty convex; some shapes of {} were skipped", PrimComp->GetName());
+		}
+	}
+}
+
+void UClothComponent::ApplyClothCollision(nv::cloth::Cloth& Cloth, const FClothCollisionShapes& CollisionShape)
+{
+	TArray<physx::PxVec4> PxSpheres, PxPlanes;
+	PxSpheres.Reserve(CollisionShape.Spheres.Num());
+	PxPlanes.Reserve(CollisionShape.Planes.Num());
+
+	for (int i = 0;i < CollisionShape.Spheres.Num();i++)
+	{
+		PxSpheres.Add(physx::PxVec4(CollisionShape.Spheres[i].X, CollisionShape.Spheres[i].Y, CollisionShape.Spheres[i].Z, CollisionShape.Spheres[i].W));
+	}
+	for (int i = 0;i < CollisionShape.Planes.Num();i++)
+	{
+		PxPlanes.Add(physx::PxVec4(CollisionShape.Planes[i].X, CollisionShape.Planes[i].Y, CollisionShape.Planes[i].Z, CollisionShape.Planes[i].W));
+	}
+	const TArray<uint32>& Capsules = CollisionShape.CapsuleIndices;
+	const TArray<uint32>& ConvexMasks = CollisionShape.ConvexMasks;
+
+	// 참조되는 쪽을 먼저: 구 → 캡슐, 평면 → convex
+	Cloth.setSpheres(nv::cloth::Range<const physx::PxVec4>(PxSpheres.GetData(), PxSpheres.GetData() + PxSpheres.Num()), 0, Cloth.getNumSpheres());
+	Cloth.setCapsules(nv::cloth::Range<const uint32>(Capsules.GetData(), Capsules.GetData() + Capsules.Num()), 0, Cloth.getNumCapsules());
+	Cloth.setPlanes(nv::cloth::Range<const physx::PxVec4>(PxPlanes.GetData(), PxPlanes.GetData() + PxPlanes.Num()), 0, Cloth.getNumPlanes());
+	Cloth.setConvexes(nv::cloth::Range<const uint32>(ConvexMasks.GetData(), ConvexMasks.GetData() + ConvexMasks.Num()), 0, Cloth.getNumConvexes());
+}
+

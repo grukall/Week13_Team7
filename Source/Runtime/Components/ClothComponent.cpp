@@ -268,12 +268,28 @@ bool UClothComponent::CreateCloth(const FClothBuildInput& Input)
 	for (int i = 0;i < PhaseNum;i++)
 	{
 		nv::cloth::PhaseConfig confi = nv::cloth::PhaseConfig(i);
-		confi.mStiffness = 0.3f;
+		if (phaseTypeInfo[i] == nv::cloth::ClothFabricPhaseType::eVERTICAL || phaseTypeInfo[i] == nv::cloth::ClothFabricPhaseType::eHORIZONTAL)
+		{
+			confi.mStiffness = 1.0f;
+		}
+		if (phaseTypeInfo[i] == nv::cloth::ClothFabricPhaseType::eSHEARING)
+		{
+			confi.mStiffness = 0.6f;
+		}
+		if (phaseTypeInfo[i] == nv::cloth::ClothFabricPhaseType::eBENDING)
+		{
+			confi.mStiffness = 0.3f;
+		}
 		Configs.Add(confi);	//  Fabric의 Phase 만큼 PhaseConfig 세팅
 	}
 	Cloth->setPhaseConfig(nv::cloth::Range<const nv::cloth::PhaseConfig>(Configs.GetData(), Configs.GetData() + Configs.Num()));	// PhaseConfig 세팅
 	Cloth->setDragCoefficient(0.2f);   // 공기 저항
 	Cloth->setLiftCoefficient(0.2f);   // 양력 (천이 들썩이는 힘)
+
+	// 자기 충돌용 휴지 위치 = 생성 시 파티클 위치.
+	// 이게 있으면 "원래부터 SelfCollisionDistance보다 가까웠던 점 쌍(격자 이웃)"은 서로 밀어내지 않는다.
+	// 없으면 이웃 점끼리도 밀어내서 거리를 격자 간격 이상으로 줄 수 없고, 크게 주면 천이 부풀어 오른다 (SwSelfCollision.cpp)
+	Cloth->setRestPositions(ParticleRange);
 
 	FClothMeshData ClothData;	// Cloth Rendering용 데이터 생성 (앞면·뒷면 두 겹, 정점 2N개)
 	ClothData.InitTwoSided(Input.Positions, Input.UVs, Input.Indices);
@@ -346,8 +362,9 @@ void UClothComponent::TickComponent(float DeltaTime)
 		if (Instance.Cloth != nullptr)
 		{
 			Instance.Cloth->setWindVelocity(Wind);	
-			// 중력: 켜면 -Z 9.81, 끄면 0. 끌 때도 0을 넣어야 이전 중력이 Cloth에 남지 않는다 (값이 같으면 setter가 바로 return)
 			Instance.Cloth->setGravity(bEnableGravity ? physx::PxVec3(0.0f, 0.0f, -9.81f) : physx::PxVec3(0.0f));
+			Instance.Cloth->setSelfCollisionDistance(bEnableSelfCollision ? std::max(SelfCollisionDistance, 0.0f) : 0.0f);
+			Instance.Cloth->setSelfCollisionStiffness(std::clamp(SelfCollisionStiffness, 0.0f, 1.0f));	
 			ApplyClothCollision(*Instance.Cloth, CollisionShapes);	// 수집한 전체 충돌체를 Cloth에 등록, 해당 Cloth와 충돌체가 상호작용하도록 함
 		}
 	}

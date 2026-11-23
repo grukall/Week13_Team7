@@ -61,7 +61,7 @@
                                             "Z": 1.0
                                         },
                                         "Textures": [
-                                            "FlatNormalTexture",
+                                            "Assets/hitori.png",
                                             "FlatNormalTexture"
                                         ],
                                         "UVScrollSpeed": [
@@ -73,7 +73,7 @@
                             ],
                             "Parent": "DefaultSceneRoot",
                             "Properties": {
-                                "BaseWind": 3.0,
+                                "BaseWind": 0.0,
                                 "BodyInstance": {
                                     "CollisionEnabled": "QueryAndPhysics",
                                     "CollisionResponses": {
@@ -306,7 +306,7 @@
                                     "Location": {
                                         "X": 0.0,
                                         "Y": 0.0,
-                                        "Z": 0.0
+                                        "Z": 0.7893296480178833
                                     },
                                     "Rotation": {
                                         "Pitch": 0.0,
@@ -334,7 +334,7 @@
                                     "CollisionEnabled": "QueryAndPhysics",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
-                                        "Cloth": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -388,7 +388,7 @@
                                     "CollisionEnabled": "QueryAndPhysics",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
-                                        "Cloth": "ECR_Ignore",
+                                        "Cloth": "ECR_Block",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -437,6 +437,99 @@
                         }
                     ],
                     "Name": "AStaticMeshActor_0",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": true
+                    }
+                },
+                {
+                    "Class": "AStaticMeshActor",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Mobility": "Movable",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 22.509357452392578,
+                                        "Y": 43.84907531738281,
+                                        "Z": 0.009999999776482582
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UStaticMeshComponent",
+                            "OverrideMaterials": [],
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Block",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
+                                "Mobility": "Movable",
+                                "StaticMesh": "Cube",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "TranslucencySortPriority": 0,
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": true,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": true,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
+                        }
+                    ],
+                    "Name": "AStaticMeshActor_1",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true

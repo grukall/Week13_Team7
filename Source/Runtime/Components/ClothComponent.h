@@ -67,7 +67,11 @@ private:
 	UPROPERTY(EditAnywhere) float WindTime = 0.0f;
 	UPROPERTY(EditAnywhere) float BaseWind = 3.0f;
 	UPROPERTY(EditAnywhere) bool bEnableGravity = false;
-	UPROPERTY(EditAnywhere) bool bEnableWind = true;	// 끄면 바람 속도 0 (끈 뒤에도 남지 않게 매 Tick 0을 넣음)
+	UPROPERTY(EditAnywhere) bool bEnableWind = true;
+	// 자기 충돌 (접힌 천이 자기 자신을 통과하지 않게). 비용이 커서 점 수가 많으면 프레임을 확인할 것
+	UPROPERTY(EditAnywhere) bool bEnableSelfCollision = true;
+	UPROPERTY(EditAnywhere) float SelfCollisionDistance = 0.1f;		// 점끼리 최소 간격. 격자 간격(0.2)의 절반 정도에서 시작, 렌더 두께보다 커야 겹이 파고들지 않음
+	UPROPERTY(EditAnywhere) float SelfCollisionStiffness = 1.0f;	// 0~1	// 끄면 바람 속도 0 (끈 뒤에도 남지 않게 매 Tick 0을 넣음)
 	// 기본 격자 천 (에셋이 없을 때). OnRegister에서 한 번 만들므로 값을 바꾸면 다시 등록(재스폰)해야 반영된다
 	UPROPERTY(EditAnywhere) int32 DefaultGridRows = 20;
 	UPROPERTY(EditAnywhere) int32 DefaultGridCols = 20;

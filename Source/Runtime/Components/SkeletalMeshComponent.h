@@ -18,6 +18,7 @@ class UAnimationAsset;
 class UAnimSingleNodeInstance;
 class UAnimGraphInstance;
 
+
 UCLASS()
 class USkeletalMeshComponent : public USkinnedMeshComponent
 {
@@ -82,6 +83,11 @@ protected:
 	void RefreshBoneTransforms() override;
 	void OnSkeletalMeshChanged() override;
 
+//Physics
+	bool ShouldCreatePhysicsState() override;
+	void OnCreatePhysicsState() override;
+	void OnDestroyPhysicsState() override;
+
 private:
     UPROPERTY()
     FString AnimBlueprintPath;
@@ -98,4 +104,11 @@ private:
 
 	FTransform PendingRootMotion;           // 월드 공간 누적값
 	bool bHasPendingRootMotion = false;
+
+	TArray<struct FBodyInstance*>       Bodies;
+	TArray<struct FConstraintInstance*> Constraints;
+	void InitArticulated(FPhysScene* Scene);
+	void TermArticulated();
+	void SetSimulatePhysics(bool bSimulate);     // Ragdoll ON/OFF
+	void BlendInPhysics();                       // PostPhysics에서 호출
 };

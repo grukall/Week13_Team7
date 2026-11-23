@@ -2,6 +2,7 @@
 #include "SkeletalMesh.h"
 #include "Render/RenderCommand.h"
 #include "Asset/AssetManager.h"
+#include "Physics/PhysicsAsset.h"
 
 namespace
 {
@@ -108,6 +109,11 @@ bool USkeletalMesh::Build(FSkeletalMeshData&& ImportData, FString& OutError)
 	RenderData.LODRenderData.Empty();
 	RenderData.LODRenderData.Add(std::move(LOD));
 	RenderStates.Reset();
+
+	//Phyics Asset이 없으면 생성
+	if (!PhysicsAsset)
+		PhysicsAsset = UPhysicsAsset::CreateFromSkeletalMesh(this);
+
 	return true;
 }
 

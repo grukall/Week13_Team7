@@ -15,6 +15,13 @@ FTransform::FTransform(FVector InL, FVector InS, const FQuat& InR)
 	Rotation = InR;
 }
 
+FTransform::FTransform(const FMatrix& InMatrix)
+{
+	Location = FVector(InMatrix.M[3][0], InMatrix.M[3][1], InMatrix.M[3][2]);
+	Scale = InMatrix.GetScaleVector();
+	Rotation = InMatrix.GetRotation();
+}
+
 FMatrix FTransform::GetLocalMatrix() const
 {
     FMatrix RotationMatrix = Rotation.ToFMatrix();

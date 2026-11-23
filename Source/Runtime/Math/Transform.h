@@ -3,6 +3,7 @@
 #include "Math/EngineMath.h"
 #include "Math/Quat.h"
 #include "Math/Rotator.h"
+#include "Matrix.h"
 
 struct FTransform
 {
@@ -13,6 +14,8 @@ struct FTransform
 		: Location(InL), Scale(InS), Rotation(InR.Quaternion()) {}
 	FTransform(const FQuat& InR, const FVector& InL, const FVector& InS = FVector::OneVector)
 		: Location(InL), Scale(InS), Rotation(InR) {}
+	// 행 벡터 규약의 SRT 행렬(GetLocalMatrix()의 역)을 위치/회전/스케일로 분해한다. 전단(shear)은 버린다.
+	explicit FTransform(const FMatrix& InMatrix);
 
 	static FTransform Identity;
 

@@ -85,6 +85,7 @@ struct FBodyInstance
 
 	UPROPERTY(EditAnywhere)
 	UPhysicalMaterial* PhysMaterialOverride = nullptr;
+
 	UPhysicalMaterial* GetSimplePhysicalMaterial() const;
 	void SetPhysMaterialOverride(UPhysicalMaterial* Material);
 	void UpdatePhysicalMaterials();
@@ -99,6 +100,10 @@ struct FBodyInstance
 	void SetBodyTransform(const FTransform& Transform);
 	void SyncComponentToRBPhysics();
 
+	FTransform GetUnrealWorldTransform() const;   // ActorHandle.SyncActor->getGlobalPose() → FTransform
+	int32 InstanceBodyIndex = INDEX_NONE;
+	int32 InstanceBoneIndex = INDEX_NONE;
+
 private:
 	friend class FPhysScene;
 	bool UpdateMassProperties() const;
@@ -106,4 +111,5 @@ private:
 	UPrimitiveComponent* OwnerComponent = nullptr;
 	FPhysScene* PhysicsScene = nullptr;
 	bool bSyncingComponent = false;
+
 };

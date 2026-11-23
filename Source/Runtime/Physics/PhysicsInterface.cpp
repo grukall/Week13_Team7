@@ -10,6 +10,9 @@ namespace
 
 	PxVec3 ToPx(const FVector& V) { return PxVec3(V.X, V.Y, V.Z); }
 	PxQuat ToPx(const FQuat& Q) { return PxQuat(Q.X, Q.Y, Q.Z, Q.W); }
+	// PxTransform은 위치 + 회전만 가진다. Scale은 강체/조인트 프레임에 의미가 없으므로 버린다.
+	// 회전은 정규화해서 넘긴다 (PxTransform::isValid가 단위 쿼터니언을 요구).
+	PxTransform ToPx(const FTransform& T) { return PxTransform(ToPx(T.Location), ToPx(T.Rotation).getNormalized()); }
 
 	template<class GeometryType>
 	bool AttachShape(PxRigidActor& Actor, const GeometryType& Geometry, PxMaterial& Material, const PxTransform& LocalPose)
@@ -140,6 +143,29 @@ bool FPhysicsInterface::AddGeometry(const FPhysicsActorHandle& Handle, const FGe
 bool FPhysicsInterface::IsInScene(const FPhysicsActorHandle& Handle)
 {
 	return Handle.IsValid() && Handle.SyncActor->getScene() != nullptr;
+}
+
+physx::PxD6Joint* FPhysicsInterface::CreateD6Joint(const FPhysicsActorHandle& Parent, const FTransform& ParentFrame,
+                                                   const FPhysicsActorHandle& Child, const FTransform& ChildFrame)
+{
+	using namespace physx;
+	if (!GEngine || !GEngine->GetPhysXRuntime().Physics || !Parent.IsValid() || !Child.IsValid())
+		return nullptr;
+	const PxTransform Frame0 = ToPx(ParentFrame);
+	const PxTransform Frame1 = ToPx(ChildFrame);
+	if (!Frame0.isValid() || !Frame1.isValid())
+		return nullptr;
+
+	// actor0 = 부모 + 부모 기준 프레임, actor1 = 자식 + 자식 기준 프레임 (짝을 맞춰야 한다)
+	auto& Physics = *GEngine->GetPhysXRuntime().Physics;
+	return PxD6JointCreate(Physics, Parent.SyncActor, Frame0, Child.SyncActor, Frame1);
+}
+
+void FPhysicsInterface::ReleaseJoint(physx::PxD6Joint*& Joint)
+{
+	if (Joint)
+		Joint->release();
+	Joint = nullptr;
 }
 
 void FPhysicsInterface::ReleaseActor(FPhysicsActorHandle& Handle)

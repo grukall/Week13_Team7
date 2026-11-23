@@ -47,6 +47,17 @@ struct FSceneView
 			|| (bVignette && VignetteIntensity > 0.0f);
 	}
 
+	// Thin-lens CoC at infinity, expressed as a radius in full-resolution pixels.
+	float GetInfinityCoCRadiusPixels(uint32 Width) const
+	{
+		const float SensorWidth = DepthOfField.SensorWidthMM * 0.001f;
+		const float FocalLength = 0.5f * SensorWidth * ProjectionMatrix.M[1][0];
+		if (!bIsPerspective || SensorWidth <= 0 || DepthOfField.FocusDistanceMeters <= FocalLength || DepthOfField.FStop <= 0)
+			return 0.0f;
+		const float Diameter = FocalLength * FocalLength / (DepthOfField.FStop * (DepthOfField.FocusDistanceMeters - FocalLength));
+		return 0.5f * Diameter * Width / SensorWidth;
+	}
+
 	FViewContext ToViewContext() const
 	{
 		FViewContext Context{};

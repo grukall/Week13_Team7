@@ -29,20 +29,8 @@ bool FSceneDepthRenderer::OnRender(const FSceneView& View, FTexture2D* DepthTarg
 	Data.MaxRange = MaxRange;
 	Data.bIsPerspective = View.bIsPerspective;
 	Data.bVisualizeDOFRadius = bVisualizeDOFRadius && View.bIsPerspective;
-	if (Data.bVisualizeDOFRadius)
-	{
-		const float SensorWidthMeters = View.DepthOfField.SensorWidthMM * 0.001f;
-		const float FocusDistanceMeters = View.DepthOfField.FocusDistanceMeters;
-		const float FStop = View.DepthOfField.FStop;
-		// X-forward projection: M[1][0] maps the view's horizontal axis to clip X.
-		const float FocalLength = 0.5f * SensorWidthMeters * View.ProjectionMatrix.M[1][0];
-		Data.FocusDistanceMeters = FocusDistanceMeters;
-		if (FocusDistanceMeters > FocalLength && FStop > 0.0f)
-		{
-			const float Diameter = FocalLength * FocalLength / (FStop * (FocusDistanceMeters - FocalLength));
-			Data.InfinityRadiusPixels = 0.5f * Diameter * ColorTarget->GetWidth() / SensorWidthMeters;
-		}
-	}
+	Data.FocusDistanceMeters = View.DepthOfField.FocusDistanceMeters;
+	Data.InfinityRadiusPixels = View.GetInfinityCoCRadiusPixels(ColorTarget->GetWidth());
 
 	RenderCommand::BindPipelineState(SceneDepthPipelineState);
 	RenderCommand::UpdateBufferData(ConstantBuffer.get(), &Data, sizeof(Data));

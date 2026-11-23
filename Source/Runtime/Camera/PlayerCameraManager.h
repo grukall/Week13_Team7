@@ -2,6 +2,7 @@
 #include "GameFramework/Actor.h"
 
 #include "CameraModifier_CameraShake.h"
+#include "Camera/DepthOfFieldSettings.h"
 
 #include "PlayerCameraManager.generated.h"
 
@@ -10,6 +11,7 @@ struct FMinimalViewInfo
 	FVector Location;
 	FRotator Rotation;
 	float FOV = 60.0f;
+	FDepthOfFieldSettings DepthOfField;
 	float AspectRatio = 16.0f / 9.0f;
 	float OrthoWidth = 16.0f;
 	float NearClip = 0.1f;

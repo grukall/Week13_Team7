@@ -21,7 +21,7 @@ void FSceneDepthRenderer::Init(FRenderer* InRenderer)
 
 // Depth Buffer에 있는 값을 바탕으로 viewport 전체를 회색값으로 그린다.
 bool FSceneDepthRenderer::OnRender(const FSceneView& View, FTexture2D* DepthTarget, FTexture2D* ColorTarget, float MaxRange,
-	bool bVisualizeDOFRadius, float FocusDistanceMeters, float FStop)
+	bool bVisualizeDOFRadius)
 {
 	FSceneDepthData Data{};
 	Data.A = View.ProjectionMatrix.M[0][2];
@@ -31,7 +31,9 @@ bool FSceneDepthRenderer::OnRender(const FSceneView& View, FTexture2D* DepthTarg
 	Data.bVisualizeDOFRadius = bVisualizeDOFRadius && View.bIsPerspective;
 	if (Data.bVisualizeDOFRadius)
 	{
-		constexpr float SensorWidthMeters = 0.036f;
+		const float SensorWidthMeters = View.DepthOfField.SensorWidthMM * 0.001f;
+		const float FocusDistanceMeters = View.DepthOfField.FocusDistanceMeters;
+		const float FStop = View.DepthOfField.FStop;
 		// X-forward projection: M[1][0] maps the view's horizontal axis to clip X.
 		const float FocalLength = 0.5f * SensorWidthMeters * View.ProjectionMatrix.M[1][0];
 		Data.FocusDistanceMeters = FocusDistanceMeters;

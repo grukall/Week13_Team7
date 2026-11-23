@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Types.h"
+#include "Camera/DepthOfFieldSettings.h"
 #include "Math/Vector.h"
 #include "Math/Rotator.h"
 #include "Math/Matrix.h"
@@ -26,6 +27,7 @@ struct FSceneView
 	FFrustumCorners FrustumCorners;
 	FRect ViewRect{};
 	float FieldOfView = 60.0f;
+	FDepthOfFieldSettings DepthOfField;
 	float AspectRatio = 16.0f / 9.0f;
 	float NearClip = 0.1f;
 	float FarClip = 10000.0f;

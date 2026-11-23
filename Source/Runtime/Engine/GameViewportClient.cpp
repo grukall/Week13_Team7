@@ -177,6 +177,7 @@ FSceneView FGameViewportClient::CalcSceneView(const FRect& InViewRect)
 			OutView.ViewProjectionMatrix = OutView.ViewMatrix * OutView.ProjectionMatrix;
 			// 렌즈 값
 			OutView.FieldOfView = POV.FOV;
+			OutView.DepthOfField = POV.DepthOfField;
 			OutView.AspectRatio = Aspect;
 			OutView.NearClip = POV.NearClip;
 			OutView.FarClip = POV.FarClip;
@@ -221,6 +222,7 @@ FSceneView FGameViewportClient::CalcSceneView(const FRect& InViewRect)
 		OutView.ProjectionMatrix = CameraComponent->GetProjectionMatrix();
 		OutView.ViewProjectionMatrix = CameraComponent->GetViewProjectionMatrix();
 		OutView.FieldOfView = CameraComponent->GetFieldOfView();
+		OutView.DepthOfField = CameraComponent->GetDepthOfFieldSettings();
 		OutView.AspectRatio = Aspect;
 		OutView.NearClip = CameraComponent->GetNearZ();
 		OutView.FarClip = CameraComponent->GetFarZ();

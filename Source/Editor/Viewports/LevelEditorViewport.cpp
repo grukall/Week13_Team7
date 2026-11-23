@@ -92,6 +92,8 @@ void FLevelEditorViewportClient::Draw(FViewport* InViewport, FUIRenderer* Canvas
 
 		// 이 뷰포트의 뷰 모드에서 나오는 설정 (안개는 Lit일 때만 FEditorViewportClient::Draw가 켜 둔다)
 		RenderOptions.SceneDepthRange = MaxRange;
+		DepthOfField.FocusDistanceMeters = S.DOFFocusDistanceMeters;
+		DepthOfField.FStop = S.DOFFStop;
 	}
 
 	FEditorViewportClient::Draw(InViewport, Canvas);
@@ -117,7 +119,7 @@ void FLevelEditorViewportClient::Draw(const FSceneView* View, FScenePassCallback
 	Callbacks.DepthVisualization = [this, &SceneView, DepthTarget, ColorTarget, &Settings]
 		{
 			SceneDepthRenderer.OnRender(SceneView, DepthTarget, ColorTarget, MaxRange,
-				Settings.bVisualizeDOFRadius, Settings.DOFFocusDistanceMeters, Settings.DOFFStop);
+				Settings.bVisualizeDOFRadius);
 		};
 	if (IsCascade())
 		Callbacks.CascadeVisualization = [this, &SceneView, DepthTarget, ColorTarget]

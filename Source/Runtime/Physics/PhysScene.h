@@ -22,6 +22,7 @@ template<typename T> class TArray;
 class FPhysXRuntime;
 class FPhysXCPUDispatcher;
 class FPhysXSimEventCallback;
+class FPhysXVehicleManager;
 
 class FPhysScene
 {
@@ -37,6 +38,8 @@ public:
 	FPhysScene(const FPhysScene&) = delete;
 	FPhysScene& operator=(const FPhysScene&) = delete;
 
+	FPhysXVehicleManager* GetVehicleManager() { return VehicleManager; }
+
 private:
 	friend class FPhysicsInterface;
 	friend struct FBodyInstance;
@@ -47,7 +50,9 @@ private:
 	TMap<FBodyInstance*, FTransform> PendingKinematicTargets;
 	bool bSimulating = false;
 	physx::PxScene* Scene = nullptr;
-	FPhysXCPUDispatcher* CPUDispatcher = nullptr;
+	FPhysXCPUDispatcher* CPUDispatcher = nullptr;	
+
+	FPhysXVehicleManager* VehicleManager = nullptr;
 };
 
 // Engine 소유. 맵 전환 중 공존하는 World들도 같은 SDK를 사용한다.
@@ -68,4 +73,7 @@ private:
 	physx::PxFoundation* Foundation = nullptr;
 	physx::PxPhysics* Physics = nullptr;
 	physx::PxCooking* Cooking = nullptr;
+
+	bool bVehicleSDKInitialize = false;
 };
+

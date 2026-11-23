@@ -10,6 +10,8 @@
 #include "Physics/PhysicsFiltering.h"
 #include <PxPhysicsAPI.h>
 
+#include "PhysXVehicleManager.h"
+
 class FPhysXCPUDispatcher final : public physx::PxCpuDispatcher
 {
 public:
@@ -120,13 +122,28 @@ bool FPhysXRuntime::Init()
 	if (!Physics)
 		return false;
 	Cooking = PxCreateCooking(PX_PHYSICS_VERSION, *Foundation, physx::PxCookingParams(Physics->getTolerancesScale()));
-	return Cooking != nullptr;
+	if(!Cooking)
+	{
+		return false;
+	}
+
+	if(!physx::PxInitVehicleSDK(*Physics))
+	{
+		return false;
+	}
+	physx::PxVehicleSetBasisVectors(physx::PxVec3(0, 0, 1), physx::PxVec3(1, 0, 0)); // Up = +Z, Forward = +X
+	physx::PxVehicleSetUpdateMode(physx::PxVehicleUpdateMode::eVELOCITY_CHANGE);
+	bVehicleSDKInitialize = true;
+
+	return true;
 }
 
 FPhysXRuntime::~FPhysXRuntime()
 {
 	if (Cooking)
 		Cooking->release();
+	if(bVehicleSDKInitialize)
+		physx::PxCloseVehicleSDK();
 	if (Physics)
 		Physics->release();
 	if (Foundation)
@@ -154,7 +171,15 @@ bool FPhysScene::Init(const FPhysXRuntime& Runtime)
 	SimEventCallback = new FPhysXSimEventCallback();
 	Desc.simulationEventCallback = SimEventCallback;
 	Scene = Runtime.Physics->createScene(Desc);
-	return Scene != nullptr;
+
+	if(Scene == nullptr)
+	{
+		return false;
+	}
+	
+	VehicleManager = new FPhysXVehicleManager(Scene);
+
+	return true;
 }
 
 void FPhysScene::AddActorsToScene_AssumesLocked(const TArray<FPhysicsActorHandle>& InActors)
@@ -166,6 +191,8 @@ void FPhysScene::AddActorsToScene_AssumesLocked(const TArray<FPhysicsActorHandle
 FPhysScene::~FPhysScene()
 {
 	WaitPhysScenes();
+	delete VehicleManager;
+	VehicleManager = nullptr;
 	if (Scene)
 		Scene->release();
 	delete SimEventCallback;
@@ -209,6 +236,12 @@ void FPhysScene::StartFrame(float DeltaSeconds)
 			const physx::PxQuat Rotation(Q.X, Q.Y, Q.Z, Q.W);
 			Move.Actor->setKinematicTarget(physx::PxTransform(A.p + (B.p - A.p) * Alpha, Rotation));
 		}
+
+		if(VehicleManager)
+		{
+			VehicleManager->Update(FrameTime / Steps);
+		}
+
 		Scene->simulate(FrameTime / Steps);
 		if (Step == Steps)
 			bSimulating = true;

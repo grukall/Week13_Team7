@@ -41,6 +41,7 @@ struct FEditorSettings
 
 	// Values
 	float SceneDepthMaxRange = 50.0f;
+	bool bEnableDepthOfField = true;
 	bool bVisualizeDOFRadius = false;
 	float DOFFocusDistanceMeters = 5.0f;
 	float DOFFStop = 2.8f;

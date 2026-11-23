@@ -217,6 +217,7 @@ namespace EditorViewportUI
 				{ "Particles", EEditorIcon::Particle, &Flags.Particles },
 				{ "Decals", EEditorIcon::ShowDecal, &Flags.Decals },
 				{ "Fog", EEditorIcon::ShowFog, &Flags.Fog },
+				{ "Depth of Field", EEditorIcon::Eye, &Flags.DepthOfField },
 				{ "Anti-aliasing", EEditorIcon::ShowAntiAliasing, &Flags.AntiAliasing },
 				{ "Vignette", EEditorIcon::ShowVignette, &Flags.Vignette },
 				{ "Camera Overlay", EEditorIcon::ShowCameraOverlay, &Flags.CameraOverlay },

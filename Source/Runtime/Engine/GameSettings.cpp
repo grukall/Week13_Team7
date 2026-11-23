@@ -72,6 +72,7 @@ FGameSettings FGameSettings::Load(const FString& Path)
 	Options.RenderingPath = ParseRenderingPath(Config.GetString("Rendering", "RenderingPath", ""), Options.RenderingPath);
 	Options.LightingModel = ParseLightingModel(Config.GetString("Rendering", "LightingModel", ""), Options.LightingModel);
 	Options.LightCullingMode = ParseLightCullingMode(Config.GetString("Rendering", "LightCullingMode", ""), Options.LightCullingMode);
+	Settings.ShowFlags.DepthOfField = Config.GetBool("Rendering", "DepthOfField", Settings.ShowFlags.DepthOfField);
 	Settings.ShowFlags.AntiAliasing = Config.GetBool("Rendering", "EnableFXAA", Settings.ShowFlags.AntiAliasing);
 	Options.bGammaCorrection = Config.GetBool("Rendering", "GammaCorrection", Options.bGammaCorrection);
 	Settings.ShowFlags.Vignette = Config.GetBool("Rendering", "ShowVignette", Settings.ShowFlags.Vignette);

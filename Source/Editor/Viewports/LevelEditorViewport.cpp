@@ -54,6 +54,7 @@ void FLevelEditorViewportClient::Draw(FViewport* InViewport, FUIRenderer* Canvas
 		// 쇼 플래그는 뷰포트마다 따로 갖는다 (UE5 뷰포트 Show 메뉴).
 		// 설정 창은 "모든 뷰포트에 한꺼번에 적용"으로 쓰여서, 설정 값이 바뀐 플래그만 옮긴다.
 		FEngineShowFlags SettingsFlags = LastSettingsShowFlags;
+		SettingsFlags.DepthOfField = S.bEnableDepthOfField;
 		SettingsFlags.AntiAliasing = S.bEnableFXAA;
 		SettingsFlags.Vignette = S.bShowVignette;
 		SettingsFlags.CameraOverlay = S.bShowCameraOverlay;
@@ -65,6 +66,7 @@ void FLevelEditorViewportClient::Draw(FViewport* InViewport, FUIRenderer* Canvas
 			if (!bSettingsShowFlagsSynced || SettingsFlags.*Flag != LastSettingsShowFlags.*Flag)
 				EngineShowFlags.*Flag = SettingsFlags.*Flag;
 		};
+		SyncFlag(&FEngineShowFlags::DepthOfField);
 		SyncFlag(&FEngineShowFlags::AntiAliasing);
 		SyncFlag(&FEngineShowFlags::Vignette);
 		SyncFlag(&FEngineShowFlags::CameraOverlay);

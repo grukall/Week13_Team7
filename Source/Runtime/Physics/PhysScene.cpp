@@ -43,6 +43,9 @@ namespace
 		const PxU32 ChannelB = static_cast<uint32>(GetCollisionChannel(B.word3));
 		if (!(A.word1 & (1u << ChannelB)) || !(B.word1 & (1u << ChannelA)))
 			return PxFilterFlag::eSUPPRESS;
+		// 같은 컴포넌트의 바디끼리(래그돌 캡슐들)는 충돌하지 않는다. word2 = 소유 컴포넌트 UUID (0이면 미지정)
+		if (A.word2 != 0 && A.word2 == B.word2)
+			return PxFilterFlag::eSUPPRESS;
 		Flags = PxPairFlag::eCONTACT_DEFAULT;
 		if ((A.word3 | B.word3) & EPDF_CCD)
 			Flags |= PxPairFlag::eDETECT_CCD_CONTACT;

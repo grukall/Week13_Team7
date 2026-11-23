@@ -75,6 +75,10 @@ void UPhysicsAsset::UpdateBodySetupIndexMap()
 
 namespace
 {
+    // 자동 생성 기준값 (엔진 단위 = 미터)
+    constexpr float MinBoneSize = 0.08f;            // 캡슐 전체 길이가 이보다 짧은 본은 바디를 만들지 않는다
+    constexpr float MinBoneRadius = 0.035f;         // 캡슐 반지름이 이보다 가는 본도 만들지 않는다 (손가락)
+
     //정점이 하나도 없는 본은 박스가 뒤집혀 있다.
     static bool HasVertices(const FBox& Box)
     {
@@ -144,9 +148,17 @@ UPhysicsAsset* UPhysicsAsset::CreateFromSkeletalMesh(const USkeletalMesh* Mesh)
         if (!HasVertices(Bounds[i])) continue;
 
         int32 BoneAxis = 0;
+        const FKSphylElem Capsule = MakeCapsule(Bounds[i], Bones[i].InverseBindPose, BoneAxis);   // BoneBounds로 크기 결정
+
+        // 너무 작은 본(손가락 마디 등)은 바디를 만들지 않는다. 몸통과 질량비가 수백 배라 솔버가 관절을 못 지키고 폭발한다
+        // (UE FPhysAssetCreateParams::MinBoneSize와 같은 역할). 건너뛴 본은 BlendInPhysics에서 부모를 따라간다
+        if (Capsule.Length + 2.f * Capsule.Radius < MinBoneSize) continue;
+        // 길이는 충분해도 너무 가는 본(손가락 첫 마디 등)은 사슬 끝에서 오차를 떠안고 계속 떨린다
+        if (Capsule.Radius < MinBoneRadius) continue;
+
         auto* Body = NewObject<USkeletalBodySetup>(PhysicsAsset);
         Body->BoneName = Bones[i].Name;
-        Body->AggGeom.SphylElems.Add(MakeCapsule(Bounds[i], Bones[i].InverseBindPose, BoneAxis));    // BoneBounds로 크기 결정
+        Body->AggGeom.SphylElems.Add(Capsule);
         PhysicsAsset->SkeletalBodySetups.Add(Body);
         PhysicsAsset->UpdateBodySetupIndexMap();
 
@@ -169,6 +181,7 @@ UPhysicsAsset* UPhysicsAsset::CreateFromSkeletalMesh(const USkeletalMesh* Mesh)
         CI.ConstraintBone2 = Bones[P].Name;
         CI.Frame1 = QT;
         CI.Frame2 = FTransform(QT.GetLocalMatrix() * BindCS[i] * BindCS[P].Inverse());
+        // Motion · Limit은 FConstraintInstance(ConstraintInstance.h)의 기본값을 그대로 쓴다. 관절별 조정은 Physics Asset Editor에서 한다
         PhysicsAsset->ConstraintSetup.Add(CT);
     }
 

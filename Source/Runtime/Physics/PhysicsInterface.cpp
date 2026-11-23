@@ -168,6 +168,30 @@ void FPhysicsInterface::ReleaseJoint(physx::PxD6Joint*& Joint)
 	Joint = nullptr;
 }
 
+void FPhysicsInterface::SetSolverIterationCounts(const FPhysicsActorHandle& Handle, uint32 PositionIters, uint32 VelocityIters)
+{
+	if (auto* Dynamic = Handle.IsValid() ? Handle.SyncActor->is<physx::PxRigidDynamic>() : nullptr)
+		Dynamic->setSolverIterationCounts(PositionIters, VelocityIters);
+}
+
+void FPhysicsInterface::SetDamping(const FPhysicsActorHandle& Handle, float Linear, float Angular)
+{
+	if (auto* Dynamic = Handle.IsValid() ? Handle.SyncActor->is<physx::PxRigidDynamic>() : nullptr)
+	{
+		Dynamic->setLinearDamping(Linear);
+		Dynamic->setAngularDamping(Angular);
+	}
+}
+
+void FPhysicsInterface::SetSleepThresholds(const FPhysicsActorHandle& Handle, float Sleep, float Stabilization)
+{
+	if (auto* Dynamic = Handle.IsValid() ? Handle.SyncActor->is<physx::PxRigidDynamic>() : nullptr)
+	{
+		Dynamic->setSleepThreshold(Sleep);
+		Dynamic->setStabilizationThreshold(Stabilization);
+	}
+}
+
 void FPhysicsInterface::ReleaseActor(FPhysicsActorHandle& Handle)
 {
 	if (Handle.SyncActor)

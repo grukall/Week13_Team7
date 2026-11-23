@@ -26,10 +26,11 @@ struct FConstraintInstance
     FString ConstraintBone2;            // 부모
     FTransform Frame1;                  // 자식(Bone1) 입장에서 조인트 위치
     FTransform Frame2;                  // 부모(Bone2) 입장에서 조인트 위치
-    EAngularMotion TwistMotion = EAngularMotion::Free;
-    EAngularMotion Swing1Motion = EAngularMotion::Free;
-    EAngularMotion Swing2Motion = EAngularMotion::Free;
-    float TwistLimitDeg = 30, Swing1LimitDeg = 45, Swing2LimitDeg = 45;
+    EAngularMotion TwistMotion = EAngularMotion::Limited;
+    EAngularMotion Swing1Motion = EAngularMotion::Limited;
+    EAngularMotion Swing2Motion = EAngularMotion::Limited;
+    // 자동 생성(CreateFromSkeletalMesh)도 이 기본값을 그대로 쓴다. 기본값은 여기 한 곳에서만 바꾼다
+    float TwistLimitDeg = 20, Swing1LimitDeg = 35, Swing2LimitDeg = 35;
 
     // 런타임
     physx::PxD6Joint* ConstraintHandle = nullptr;

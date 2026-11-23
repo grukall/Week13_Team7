@@ -110,10 +110,6 @@ bool USkeletalMesh::Build(FSkeletalMeshData&& ImportData, FString& OutError)
 	RenderData.LODRenderData.Add(std::move(LOD));
 	RenderStates.Reset();
 
-	//Phyics Asset이 없으면 생성
-	if (!PhysicsAsset)
-		PhysicsAsset = UPhysicsAsset::CreateFromSkeletalMesh(this);
-
 	return true;
 }
 

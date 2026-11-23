@@ -203,7 +203,8 @@ void FBodyInstance::SetInstanceSimulatePhysics(bool bSimulate)
 	PhysicsScene->WaitPhysScenes();
 	if (!bSimulate)
 		SyncComponentToRBPhysics();
-	if (bSimulate && OwnerComponent->GetAttachParent())
+	// 컴포넌트를 대표하는 단일 바디만 컴포넌트를 떼어 낸다. 래그돌 바디(스켈레탈 메시의 본 바디)는 컴포넌트를 건드리지 않는다
+	if (bSimulate && OwnerComponent->GetBodyInstance() == this && OwnerComponent->GetAttachParent())
 		OwnerComponent->DetachFromParent(EAttachmentRule::KeepWorld);
 
 	bSimulatePhysics = bSimulate;
@@ -243,6 +244,15 @@ void FBodyInstance::SetBodyTransform(const FTransform& Transform)
 	}
 	else
 		Actor->setGlobalPose(Pose);
+}
+
+// PhysX 바디의 월드 위치·회전. PhysX에는 스케일이 없으므로 Scale은 1이다
+FTransform FBodyInstance::GetUnrealWorldTransform() const
+{
+	if (!IsValidBodyInstance())
+		return FTransform();
+	const physx::PxTransform Pose = ActorHandle.SyncActor->getGlobalPose();
+	return FTransform(FQuat(Pose.q.x, Pose.q.y, Pose.q.z, Pose.q.w), FVector(Pose.p.x, Pose.p.y, Pose.p.z));
 }
 
 void FBodyInstance::SyncComponentToRBPhysics()

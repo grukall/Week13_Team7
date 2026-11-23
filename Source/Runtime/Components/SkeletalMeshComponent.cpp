@@ -27,6 +27,21 @@
 #include "Physics/PhysicsConstraintTemplate.h"
 #include "Engine/World.h"
 #include "ActorComponent.h"
+#include "Physics/PhysicsInterface.h"
+
+namespace
+{
+	// 래그돌 바디 솔버/감쇠 설정 (UE 래그돌도 위치 반복 8회 정도를 쓴다)
+	constexpr uint32 RagdollPositionIterations = 8;
+	constexpr uint32 RagdollVelocityIterations = 1;
+	constexpr float RagdollLinearDamping = 0.05f;
+	constexpr float RagdollAngularDamping = 0.1f;
+	// 질량으로 나눈 운동에너지(≈ 0.5·v²) 기준. PhysX 기본값(0.00005 × 속도 스케일²)은 끝 바디의 미세 떨림 때문에
+	// 래그돌 덩어리(island)가 영원히 깨어 있다. 대략 0.1~0.15 m/s 이하로 느려지면 잠들게 한다
+	constexpr float RagdollSleepThreshold = 0.01f;
+	// Stabilization은 씬에 PxSceneFlag::eENABLE_STABILIZATION이 켜져 있을 때만 동작한다 (현재 꺼져 있음 → Sleep만 효과)
+	constexpr float RagdollStabilizationThreshold = 0.005f;
+}
 
 void USkeletalMeshComponent::SetAnimInstance(UAnimInstance* InInstance)
 {
@@ -110,7 +125,13 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
 		}
         bUpdatingAnimation = false;
 	}
-	Super::TickComponent(DeltaTime);
+
+
+
+	Super::TickComponent(DeltaTime);   // 여기서 CS가 갱신된다
+
+	if (!bRagdollActive)
+		UpdateKinematicBodies();
 }
 
 const TArray<FBoneInfo>& USkeletalMeshComponent::GetBones() const
@@ -316,13 +337,109 @@ void USkeletalMeshComponent::OnCreatePhysicsState()
 	FPhysScene* PhysScene = GetWorld() ? GetWorld()->GetPhysicsScene() : nullptr;
 	InitArticulated(PhysScene);
 
+	// 바디 → 본 동기화는 fetchResults 이후여야 하므로 PostPhysics 틱을 따로 건다
+	PostPhysicsTick.Target = this;
+	PostPhysicsTick.bCanEverTick = true;
+	PostPhysicsTick.TickGroup = ETickingGroup::PostPhysics;
+	PostPhysicsTick.RegisterTickFunction(GetWorld()->GetTickTaskManager());
+
+	// 씬에 Ragdoll ON으로 저장돼 있었으면 바로 적용
+	if (bSimulateRagdoll)
+		SetSimulatePhysics(true);
+
 	UActorComponent::OnCreatePhysicsState();
 }
 
 void USkeletalMeshComponent::OnDestroyPhysicsState()
 {
+	PostPhysicsTick.UnRegisterTickFunction();
+	bRagdollActive = false;
 	TermArticulated();
 	UActorComponent::OnDestroyPhysicsState();
+}
+
+void FSkeletalMeshPostPhysicsTickFunction::ExecuteTick(float DeltaTime)
+{
+	if (Target)
+		Target->BlendInPhysics();
+}
+
+void USkeletalMeshComponent::SetSimulatePhysics(bool bSimulate)
+{
+	bSimulateRagdoll = bSimulate;
+	if (Bodies.IsEmpty())
+	{
+		// 아직 물리 상태가 없다. OnCreatePhysicsState가 bSimulateRagdoll을 보고 적용한다
+		bRagdollActive = false;
+		return;
+	}
+
+	// eKINEMATIC 플래그를 끄면 PhysX가 중력·관절을 적용하기 시작한다. 켜면 다시 애니메이션이 끌고 다닌다
+	for (FBodyInstance* Body : Bodies)
+		if (Body && Body->IsValidBodyInstance())
+			Body->SetInstanceSimulatePhysics(bSimulate);
+	bRagdollActive = bSimulate;
+}
+
+void USkeletalMeshComponent::PostEditChangeProperty(const FProperty& Property)
+{
+	Super::PostEditChangeProperty(Property);
+	if (Property.Name == "bSimulateRagdoll")
+		SetSimulatePhysics(bSimulateRagdoll);
+}
+
+// Ragdoll OFF: 애니메이션 포즈의 본 월드 위치로 Kinematic 바디를 끌고 간다 (StartFrame이 서브스텝마다 보간)
+void USkeletalMeshComponent::UpdateKinematicBodies()
+{
+	for (FBodyInstance* Body : Bodies)
+	{
+		if (!Body || !Body->IsValidBodyInstance())
+			continue;
+		Body->SetBodyTransform(FTransform(GetBoneWorldMatrix(Body->InstanceBoneIndex)));
+	}
+}
+
+// Ragdoll ON: PhysX 바디 월드 → 컴포넌트 공간(CS) → 부모 기준 Local 로 되돌려 BoneSpaceTransforms에 넣는다
+void USkeletalMeshComponent::BlendInPhysics()
+{
+	if (!bRagdollActive)
+		return;
+	const TArray<FBoneInfo>& Bones = GetBones();
+	const int32 NumBones = Bones.Num();
+	if (BoneSpaceTransforms.Num() != NumBones || BoneToBody.Num() != NumBones)
+		return;
+
+	const FMatrix WorldToComponent = GetWorldMatrix().Inverse();
+	const FVector ComponentScale = GetWorldScale3D();
+
+	TArray<FMatrix> CS;
+	CS.SetNum(NumBones);
+	// 부모가 항상 앞 인덱스라 0번부터 돌면 부모 CS가 먼저 확정된다
+	for (int32 i = 0; i < NumBones; ++i)
+	{
+		const int32 Parent = Bones[i].ParentIndex;
+		const int32 BodyIndex = BoneToBody[i];
+
+		if (BodyIndex != -1)
+		{
+			// 1단계: 월드 → 컴포넌트 공간. PhysX에는 스케일이 없으니 생성 때처럼 컴포넌트 스케일을 넣어 상쇄시킨다
+			FTransform BodyWorld = Bodies[BodyIndex]->GetUnrealWorldTransform();
+			BodyWorld.Scale = ComponentScale;
+			const FMatrix BodyCS = BodyWorld.GetLocalMatrix() * WorldToComponent;
+
+			// 2단계: 컴포넌트 공간 → 부모 기준 Local. 스케일은 애니메이션 값을 유지한다
+			FTransform Local(Parent >= 0 ? BodyCS * CS[Parent].Inverse() : BodyCS);
+			Local.Scale = BoneSpaceTransforms[i].Scale;
+			BoneSpaceTransforms[i] = Local;
+		}
+
+		// RefreshBoneTransforms와 같은 식으로 CS를 다시 만들어 자식 계산에 쓴다 (바디 없는 본은 부모를 따라감)
+		const FMatrix LocalMatrix = BoneSpaceTransforms[i].GetLocalMatrix();
+		CS[i] = Parent >= 0 ? LocalMatrix * CS[Parent] : LocalMatrix;
+	}
+
+	// 3단계: CS 재계산 + 스키닝 데이터 전송
+	RefreshBoneTransformsNow();
 }
 
 //BodyInstance와 ConstraintInstance 생성, 추가
@@ -341,17 +458,26 @@ void USkeletalMeshComponent::InitArticulated(FPhysScene* Scene)
 		FMatrix WorldBoneMatrix = GetBoneWorldMatrix(BoneIdx);
 		FTransform TM(WorldBoneMatrix);
 
-		//캡슐 크기를 컴포넌트 크기로
-		TM.Scale = GetWorldScale3D();
+		// TM.Scale = 본의 월드 스케일(본 CS 스케일 × 컴포넌트 스케일). 캡슐 크기는 본 공간 값이라 이 스케일을 곱해야 맞다
+		// (예: Armature 본 스케일 100 × 액터 스케일 0.01 = 1). 컴포넌트 스케일만 쓰면 캡슐이 1/100이 되어 관성이 극소 → 폭발
 
 		auto* Body = new FBodyInstance();
-		Body->bSimulatePhysics = true;
+		Body->bSimulatePhysics = false;
 		Body->ObjectType = ECollisionChannel::ECC_PhysicsBody;
+		// Character 캡슐(Pawn) 안에서 시작하므로 Pawn과 충돌하면 켜는 순간 밀려 튕겨 나간다
+		Body->CollisionResponses.SetResponse(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
 		Body->InstanceBodyIndex = i;
 		Body->InstanceBoneIndex = BoneIdx;
 
-		//강체 생성
+		//강체 생성 (필터 데이터는 InitBody에서 CollisionResponses로 만들어진다)
 		Body->InitBody(Setup, TM, this, Scene);
+		if (Body->IsValidBodyInstance())
+		{
+			// 관절이 많은 사슬은 기본 반복(4회)으로는 오차가 남아 쌓인다. 감쇠로 쌓이는 에너지도 조금씩 뺀다 (InitBody가 이미 WaitPhysScenes 함)
+			FPhysicsInterface::SetSolverIterationCounts(Body->ActorHandle, RagdollPositionIterations, RagdollVelocityIterations);
+			FPhysicsInterface::SetDamping(Body->ActorHandle, RagdollLinearDamping, RagdollAngularDamping);
+			FPhysicsInterface::SetSleepThresholds(Body->ActorHandle, RagdollSleepThreshold, RagdollStabilizationThreshold);
+		}
 		Bodies.Add(Body);
 	}
 	for (UPhysicsConstraintTemplate* T : PA->ConstraintSetup)
@@ -367,6 +493,14 @@ void USkeletalMeshComponent::InitArticulated(FPhysScene* Scene)
 		//조인트 생성
 		C->InitConstraint(Bodies[Child], Bodies[Parent], Scene);
 		Constraints.Add(C);
+	}
+
+	// 본 → 바디 표. BlendInPhysics가 본마다 바디를 찾지 않게 한 번 만들어 둔다
+	BoneToBody.Init(-1, GetBones().Num());
+	for (int32 i = 0; i < Bodies.Num(); ++i)
+	{
+		if (Bodies[i] && Bodies[i]->IsValidBodyInstance() && BoneToBody.IsValidIndex(Bodies[i]->InstanceBoneIndex))
+			BoneToBody[Bodies[i]->InstanceBoneIndex] = i;
 	}
 }
 
@@ -386,6 +520,7 @@ void USkeletalMeshComponent::TermArticulated()
 		delete(Bodies[i]);
 	}
 	Bodies.Empty();
+	BoneToBody.Empty();
 }
 
 UAnimSingleNodeInstance* USkeletalMeshComponent::GetSingleNodeInstance() const

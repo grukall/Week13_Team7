@@ -53,4 +53,10 @@ public:
 	static physx::PxD6Joint* CreateD6Joint(const FPhysicsActorHandle& Parent, const FTransform& ParentFrame,
 	                                       const FPhysicsActorHandle& Child, const FTransform& ChildFrame);
 	static void ReleaseJoint(physx::PxD6Joint*& Joint);
+
+	// 관절이 많은 바디(래그돌)용: 솔버 반복 횟수와 감쇠. 호출 측에서 WaitPhysScenes() 후 호출할 것
+	static void SetSolverIterationCounts(const FPhysicsActorHandle& Handle, uint32 PositionIters, uint32 VelocityIters);
+	static void SetDamping(const FPhysicsActorHandle& Handle, float Linear, float Angular);
+	// 질량으로 나눈 운동에너지가 Sleep 기준 아래로 유지되면 잠든다. Stabilization 기준 아래면 미세 떨림을 감쇠시킨다
+	static void SetSleepThresholds(const FPhysicsActorHandle& Handle, float Sleep, float Stabilization);
 };

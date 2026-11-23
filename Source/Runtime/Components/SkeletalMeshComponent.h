@@ -17,6 +17,14 @@ extern bool GShowSkeletalRootDebug;
 class UAnimationAsset;
 class UAnimSingleNodeInstance;
 class UAnimGraphInstance;
+class USkeletalMeshComponent;
+
+// 물리 결과(fetchResults) 이후에 BlendInPhysics를 부르는 두 번째 틱. 기본 틱은 애니메이션 때문에 PrePhysics에 있다
+struct FSkeletalMeshPostPhysicsTickFunction : public FTickFunction
+{
+	USkeletalMeshComponent* Target = nullptr;
+	void ExecuteTick(float DeltaTime) override;
+};
 
 
 UCLASS()
@@ -78,6 +86,15 @@ public:
 
 	void SetSkeletalMesh(USkeletalMesh* InMesh) override;
 
+	// Ragdoll ON/OFF. ON이면 모든 본 바디를 시뮬레이션하고 PostPhysics에서 바디 → 본으로 되돌린다
+	void SetSimulatePhysics(bool bSimulate);
+	bool IsSimulatingRagdoll() const { return bRagdollActive; }
+	void PostEditChangeProperty(const FProperty& Property) override;
+
+	// 테스트용: Details에서 켜고 끈다 (PostEditChangeProperty → SetSimulatePhysics)
+	UPROPERTY(EditAnywhere)
+	bool bSimulateRagdoll = false;
+
 protected:
 	// 단일 애니메이션 에셋 경로/루프/재생 속도를 씬에 저장·복원한다 (Serialize에서 부른다)
 	void SerializeSingleAnimation(FStructuredArchive::FRecord& Record);
@@ -110,8 +127,13 @@ private:
 
 	TArray<struct FBodyInstance*>       Bodies;
 	TArray<struct FConstraintInstance*> Constraints;
+	TArray<int32> BoneToBody;                    // 본 인덱스 → Bodies 인덱스 (바디 없으면 -1)
+	bool bRagdollActive = false;                 // 실제로 시뮬레이션 중인지 (bSimulateRagdoll은 요청값)
+	FSkeletalMeshPostPhysicsTickFunction PostPhysicsTick;
+	friend struct FSkeletalMeshPostPhysicsTickFunction;
+
 	void InitArticulated(FPhysScene* Scene);
 	void TermArticulated();
-	void SetSimulatePhysics(bool bSimulate);     // Ragdoll ON/OFF
-	void BlendInPhysics();                       // PostPhysics에서 호출
+	void UpdateKinematicBodies();                // Ragdoll OFF: 본 → 바디 (PrePhysics, 애니메이션 직후)
+	void BlendInPhysics();                       // Ragdoll ON: 바디 → 본 (PostPhysics)
 };

@@ -89,6 +89,7 @@ namespace
 		"Script",
 		"File",
 		"Widget",
+		"PhysicsAsset",
 		"ViewWireframe",
 		"ViewDepth",
 		"ViewNormal",

@@ -12,6 +12,7 @@
 #include "Animation/AnimBlueprintFile.h"
 
 #include "Particles/ParticleSystemFile.h"
+#include "Physics/PhysicsAssetFile.h"
 
 #include <imgui_internal.h>
 #include <algorithm>
@@ -36,6 +37,7 @@ namespace
 		Font,
 		Sound,
 		Script,
+		PhysicsAsset,
 		Other,
 
 		Count
@@ -63,6 +65,7 @@ namespace
 		{ "Font",               EEditorIcon::Font,         IM_COL32(190, 190, 190, 255) },
 		{ "Sound",              EEditorIcon::Sound,        IM_COL32(130, 130, 255, 255) },
 		{ "Script",             EEditorIcon::Script,       IM_COL32(242, 210, 75, 255) },
+		{ "Physics Asset",      EEditorIcon::PhysicsAsset, IM_COL32(255, 192, 128, 255) },
 		{ "File",               EEditorIcon::File,         IM_COL32(150, 150, 150, 255) },
 	};
 	static_assert(IM_ARRAYSIZE(CategoryInfos) == static_cast<int>(EAssetCategory::Count));
@@ -88,6 +91,7 @@ namespace
 		if (BlendSpaceFile::IsBlendSpacePath(PathString)) return EAssetCategory::BlendSpace;
 		if (AnimBlueprintFile::IsAnimBlueprintPath(PathString)) return EAssetCategory::AnimBlueprint;
 		if (ParticleSystemFile::IsParticleSystemPath(PathString)) return EAssetCategory::Particle;
+		if (PhysicsAssetFile::IsPhysicsAssetPath(PathString)) return EAssetCategory::PhysicsAsset;
 		if (FFbxMeshBake::IsBakedPath(PathString))
 			return PathString.ends_with("_Static.fbx.bin") ? EAssetCategory::StaticMesh : EAssetCategory::SkeletalMesh;
 
@@ -1049,8 +1053,10 @@ void FContentDrawerPanel::DrawAssetGrid()
 			}
 			else if ((Entry.Path.extension() == ".obj" || FFbxMeshBake::IsBakedPath(Entry.PathString)
 				|| Entry.Category == EAssetCategory::Animation || Entry.Category == EAssetCategory::BlendSpace
-				|| Entry.Category == EAssetCategory::AnimBlueprint || Entry.Category == EAssetCategory::Particle) && OnOpenMesh)
+				|| Entry.Category == EAssetCategory::AnimBlueprint || Entry.Category == EAssetCategory::Particle
+				|| Entry.Category == EAssetCategory::PhysicsAsset) && OnOpenMesh)
 			{
+				// 이름은 OnOpenMesh지만 EditorManager::OpenEditor로 가서 확장자별로 에디터를 고른다
 				OnOpenMesh(Entry.PathString);
 			}
 		}

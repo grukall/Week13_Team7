@@ -422,7 +422,7 @@ void USkeletalMeshComponent::BlendInPhysics()
 
 		if (BodyIndex != -1)
 		{
-			// 1단계: 월드 → 컴포넌트 공간. PhysX에는 스케일이 없으니 생성 때처럼 컴포넌트 스케일을 넣어 상쇄시킨다
+			// 1단계: 월드 → 컴포넌트 공간.
 			FTransform BodyWorld = Bodies[BodyIndex]->GetUnrealWorldTransform();
 			BodyWorld.Scale = ComponentScale;
 			const FMatrix BodyCS = BodyWorld.GetLocalMatrix() * WorldToComponent;

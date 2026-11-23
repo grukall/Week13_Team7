@@ -13,9 +13,11 @@
 #include "Animation/AnimSequenceFile.h"
 #include "Animation/BlendSpaceFile.h"
 #include "Animation/AnimBlueprintFile.h"
+#include "Physics/PhysicsAssetFile.h"
 #include "Core/Misc/Paths.h"
 #include "Editor/AnimBlueprintEditor/AnimBlueprintEditor.h"
 #include "Editor/ParticleEditor/ParticleSystemEditor.h"
+#include "Editor/PhysicsAssetEditor/PhysicsAssetEditor.h"
 #include "Particles/ParticleSystemFile.h"
 
 #include <filesystem>
@@ -149,6 +151,38 @@ void FEditorManager::CreateEditor(const FString& AssetPath)
 			return;
 		}
 		Editors.Add(std::move(Editor));
+		return;
+	}
+
+	if (PhysicsAssetFile::IsPhysicsAssetPath(AssetPath))
+	{
+		// .physasset은 짝이 되는 메시(.fbx.bin)를 로드해 그 메시가 들고 있는 PhysicsAsset을 편집한다.
+		const FString FilePath = FAssetUtils::ResolveAssetFilePath(AssetPath);
+		const FString MeshPath = PhysicsAssetFile::GetMeshPathForAsset(FilePath.empty() ? AssetPath : FilePath);
+
+		FString Error;
+		USkeletalMesh* Mesh = Cast<USkeletalMesh>(UAssetManager::LoadFbxMesh(MeshPath, Error));
+		if (!Mesh)
+		{
+			HTR_LOG(Warning, "PhysicsAsset editor: cannot load skeletal mesh {} ({})", MeshPath, Error);
+			return;
+		}
+		if (!Mesh->GetPhysicsAsset())
+		{
+			HTR_LOG(Warning, "PhysicsAsset editor: mesh has no physics asset: {}", MeshPath);
+			return;
+		}
+
+		TUniquePtr<FAssetEditor> Editor = MakeUnique<FPhysicsAssetEditor>(EditorEngine, *this, AssetPath, *Mesh);
+		if (!Editor->Initialize())
+		{
+			Editor->Shutdown();
+			HTR_LOG(Warning, "Physics editor initialization failed: {}", AssetPath);
+			return;
+		}
+
+		Editors.Add(std::move(Editor));
+		HTR_LOG(Info, "Opened asset editor: {}", AssetPath.c_str());
 		return;
 	}
 

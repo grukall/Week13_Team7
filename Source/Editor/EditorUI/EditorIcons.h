@@ -67,6 +67,7 @@ enum class EEditorIcon : uint8
 	Script,
 	File,
 	Widget,
+	PhysicsAsset,   // 캡슐로 만든 사람 (Physics Asset)
 	// 뷰 모드 (Lit은 위의 Lit을 쓴다)
 	ViewWireframe,
 	ViewDepth,

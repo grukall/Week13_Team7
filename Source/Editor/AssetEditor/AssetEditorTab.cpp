@@ -36,6 +36,7 @@ bool FAssetEditorTab::GetTabIcon(EEditorIcon& OutIcon, ImU32& OutColor) const
 		{ "AnimBlueprint",  EEditorIcon::Animation,    IM_COL32(230, 120, 50, 255) },
 		{ "ParticleSystem", EEditorIcon::Particle,     IM_COL32(245, 245, 245, 255) },
 		{ "Widget",         EEditorIcon::Widget,       IM_COL32(80, 160, 255, 255) },
+		{ "PhysicsAsset",   EEditorIcon::PhysicsAsset, IM_COL32(255, 192, 128, 255) },
 	};
 
 	const FString TypeName = Editor.GetEditorTypeName();

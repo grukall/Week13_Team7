@@ -14,6 +14,14 @@
 #include "Serialization/Formatter/JsonArchiveInputFormatter.h"
 #include "Serialization/Formatter/JsonArchiveOutputFormatter.h"
 
+bool PhysicsAssetFile::IsPhysicsAssetPath(const FString& Path)
+{
+	FString Extension = std::filesystem::path(Path).extension().string();
+	std::transform(Extension.begin(), Extension.end(), Extension.begin(),
+		[](unsigned char C) { return static_cast<char>(std::tolower(C)); });
+	return Extension == ".physasset";
+}
+
 bool PhysicsAssetFile::Read(const std::filesystem::path& Path, UPhysicsAsset& Asset, FString& OutError)
 {
 	OutError.clear();
@@ -98,6 +106,13 @@ std::filesystem::path PhysicsAssetFile::GetPathForMesh(const FString& MeshPath)
 	std::filesystem::path Path = FPaths::FromUtf8(Base);
 	Path.replace_extension(".physasset");
 	return Path;
+}
+
+FString PhysicsAssetFile::GetMeshPathForAsset(const FString& AssetPath)
+{
+	std::filesystem::path Path = FPaths::FromUtf8(AssetPath);
+	Path.replace_extension(".fbx.bin");
+	return FPaths::ToUtf8(Path);
 }
 
 UPhysicsAsset* PhysicsAssetFile::LoadOrCreate(const FString& MeshPath, const USkeletalMesh* Mesh)

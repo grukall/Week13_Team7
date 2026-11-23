@@ -3,9 +3,70 @@
 #include "Physics/BodyInstance.h"
 #include "Engine/Engine.h"
 #include <PxPhysicsAPI.h>
+#include "Serialization/StructuredArchive.h"
+#include "Serialization/StructuredArchiveSlots.h"
+#include "Serialization/MathSerialization.h"
 #include <cstring>
 #include <bcrypt.h>
 #pragma comment(lib, "bcrypt.lib")
+
+void UBodySetup::Serialize(FStructuredArchive::FRecord Record)
+{
+	Super::Serialize(Record);
+	FArchive& Ar = Record.GetUnderlyingArchive();
+	const bool bLoading = Ar.IsLoading();
+
+	int32 NumBoxes = bLoading ? 0 : static_cast<int32>(AggGeom.BoxElems.Num());
+	auto Boxes = Record.EnterArray("Boxes", NumBoxes);
+	if (bLoading) AggGeom.BoxElems.SetNum(NumBoxes);
+	for (int32 i = 0; i < NumBoxes; ++i)
+	{
+		FKBoxElem& E = AggGeom.BoxElems[i];
+		auto R = Boxes.EnterElement().EnterRecord();
+		R << SA_VALUE("Center", E.Center);
+		SerializeQuat(R.EnterRecord("Rotation"), E.Rotation);
+		R << SA_VALUE("X", E.X) << SA_VALUE("Y", E.Y) << SA_VALUE("Z", E.Z);
+	}
+
+	int32 NumSpheres = bLoading ? 0 : static_cast<int32>(AggGeom.SphereElems.Num());
+	auto Spheres = Record.EnterArray("Spheres", NumSpheres);
+	if (bLoading) AggGeom.SphereElems.SetNum(NumSpheres);
+	for (int32 i = 0; i < NumSpheres; ++i)
+	{
+		FKSphereElem& E = AggGeom.SphereElems[i];
+		auto R = Spheres.EnterElement().EnterRecord();
+		R << SA_VALUE("Center", E.Center) << SA_VALUE("Radius", E.Radius);
+	}
+
+	int32 NumCapsules = bLoading ? 0 : static_cast<int32>(AggGeom.SphylElems.Num());
+	auto Capsules = Record.EnterArray("Capsules", NumCapsules);
+	if (bLoading) AggGeom.SphylElems.SetNum(NumCapsules);
+	for (int32 i = 0; i < NumCapsules; ++i)
+	{
+		FKSphylElem& E = AggGeom.SphylElems[i];
+		auto R = Capsules.EnterElement().EnterRecord();
+		R << SA_VALUE("Center", E.Center);
+		SerializeQuat(R.EnterRecord("Rotation"), E.Rotation);
+		R << SA_VALUE("Radius", E.Radius) << SA_VALUE("Length", E.Length);
+	}
+
+	// Convex는 꼭짓점만 저장한다. PhysX 메시는 로드 후 CreatePhysicsMeshes가 다시 쿠킹한다
+	int32 NumConvex = bLoading ? 0 : static_cast<int32>(AggGeom.ConvexElems.Num());
+	auto Convexes = Record.EnterArray("Convexes", NumConvex);
+	if (bLoading) AggGeom.ConvexElems.SetNum(NumConvex);
+	for (int32 i = 0; i < NumConvex; ++i)
+	{
+		TArray<FVector>& Points = AggGeom.ConvexElems[i].VertexData;
+		int32 NumPoints = bLoading ? 0 : static_cast<int32>(Points.Num());
+		auto PointArray = Convexes.EnterElement().EnterArray(NumPoints);
+		if (bLoading) Points.SetNum(NumPoints);
+		for (int32 p = 0; p < NumPoints; ++p)
+			PointArray.EnterElement() << Points[p];
+	}
+
+	if (bLoading)
+		InvalidatePhysicsData();
+}
 
 namespace
 {

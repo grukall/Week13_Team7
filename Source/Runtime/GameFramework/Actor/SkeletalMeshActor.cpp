@@ -1,6 +1,7 @@
 #include "EnginePCH.h"
 #include "SkeletalMeshActor.h"
 #include "Render/SkeletalMesh.h"
+#include "Physics/PhysicsAsset.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimSequenceFile.h"
 #include "Animation/BlendSpace1D.h"
@@ -16,7 +17,11 @@ namespace
         USkeletalMesh* Mesh = NewObject<USkeletalMesh>();
         FString Error;
         if (Mesh->Build(MakeTestBoneStick(3, 1.0f), Error))
+        {
+            // 파일 경로가 없는 메시라 저장된 .physasset 없이 본 정보로 바로 생성한다
+            Mesh->SetPhysicsAsset(UPhysicsAsset::CreateFromSkeletalMesh(Mesh));
             Cached = Mesh;   // 실패하면(렌더러 초기화 전 등) 다음 생성 때 다시 시도한다
+        }
         return Cached;
     }
 }

@@ -18,6 +18,7 @@ class UAnimationAsset;
 class UAnimSingleNodeInstance;
 class UAnimGraphInstance;
 
+
 UCLASS()
 class USkeletalMeshComponent : public USkinnedMeshComponent
 {
@@ -75,12 +76,20 @@ public:
 	// 디버그: root 본 구체 + 액터 위치(root 높이)에서 root까지의 선
 	void DrawRootDebug(FLineBatcher* LineBatcher) const;
 
+	void SetSkeletalMesh(USkeletalMesh* InMesh) override;
+
 protected:
 	// 단일 애니메이션 에셋 경로/루프/재생 속도를 씬에 저장·복원한다 (Serialize에서 부른다)
 	void SerializeSingleAnimation(FStructuredArchive::FRecord& Record);
 
 	void RefreshBoneTransforms() override;
 	void OnSkeletalMeshChanged() override;
+
+//Physics
+	// 메시가 바뀌면 Physics Asset도 바뀌므로 바디/조인트를 다시 만든다
+	bool ShouldCreatePhysicsState() override;
+	void OnCreatePhysicsState() override;
+	void OnDestroyPhysicsState() override;
 
 private:
     UPROPERTY()
@@ -98,4 +107,11 @@ private:
 
 	FTransform PendingRootMotion;           // 월드 공간 누적값
 	bool bHasPendingRootMotion = false;
+
+	TArray<struct FBodyInstance*>       Bodies;
+	TArray<struct FConstraintInstance*> Constraints;
+	void InitArticulated(FPhysScene* Scene);
+	void TermArticulated();
+	void SetSimulatePhysics(bool bSimulate);     // Ragdoll ON/OFF
+	void BlendInPhysics();                       // PostPhysics에서 호출
 };

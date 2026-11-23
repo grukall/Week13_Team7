@@ -45,9 +45,86 @@ FMatrix FMatrix::ApplyScale(float Scale) const
 	);
 }
 
-FVector4 FMatrix::GetOrigin()
+FVector4 FMatrix::GetOrigin() const
 {
 	return FVector4(M[3][0], M[3][1], M[3][2], M[3][3]);
+}
+
+FVector FMatrix::GetScaleVector() const
+{
+	FVector Scale(
+		sqrtf(M[0][0] * M[0][0] + M[0][1] * M[0][1] + M[0][2] * M[0][2]),
+		sqrtf(M[1][0] * M[1][0] + M[1][1] * M[1][1] + M[1][2] * M[1][2]),
+		sqrtf(M[2][0] * M[2][0] + M[2][1] * M[2][1] + M[2][2] * M[2][2]));
+
+	// 3x3 행렬식이 음수면 미러링된 행렬이다. UE처럼 X축 하나를 음수로 돌려 회전을 정규 직교로 유지한다.
+	const float Det3 =
+		M[0][0] * (M[1][1] * M[2][2] - M[1][2] * M[2][1]) -
+		M[0][1] * (M[1][0] * M[2][2] - M[1][2] * M[2][0]) +
+		M[0][2] * (M[1][0] * M[2][1] - M[1][1] * M[2][0]);
+	if (Det3 < 0.0f)
+	{
+		Scale.X = -Scale.X;
+	}
+	return Scale;
+}
+
+FQuat FMatrix::GetRotation() const
+{
+	constexpr float SmallNumber = 1.e-8f;
+	const FVector Scale = GetScaleVector();
+	if (fabsf(Scale.X) < SmallNumber || fabsf(Scale.Y) < SmallNumber || fabsf(Scale.Z) < SmallNumber)
+	{
+		return FQuat::Identity();
+	}
+
+	// 스케일 제거한 회전 행렬 R. 행 벡터 규약이라 FQuat::ToFMatrix()와 같은 배치(R[i] = i번째 축)다.
+	float R[3][3];
+	const float InvScale[3] = { 1.0f / Scale.X, 1.0f / Scale.Y, 1.0f / Scale.Z };
+	for (int32 Row = 0; Row < 3; ++Row)
+	{
+		for (int32 Col = 0; Col < 3; ++Col)
+		{
+			R[Row][Col] = M[Row][Col] * InvScale[Row];
+		}
+	}
+
+	// Shepperd: trace 또는 가장 큰 대각 성분을 기준으로 골라 sqrt 인자가 작아지는 것을 피한다.
+	FQuat Q;
+	const float Trace = R[0][0] + R[1][1] + R[2][2];
+	if (Trace > 0.0f)
+	{
+		const float S = sqrtf(Trace + 1.0f) * 2.0f; // S = 4W
+		Q.W = 0.25f * S;
+		Q.X = (R[1][2] - R[2][1]) / S;
+		Q.Y = (R[2][0] - R[0][2]) / S;
+		Q.Z = (R[0][1] - R[1][0]) / S;
+	}
+	else if (R[0][0] > R[1][1] && R[0][0] > R[2][2])
+	{
+		const float S = sqrtf(1.0f + R[0][0] - R[1][1] - R[2][2]) * 2.0f; // S = 4X
+		Q.W = (R[1][2] - R[2][1]) / S;
+		Q.X = 0.25f * S;
+		Q.Y = (R[0][1] + R[1][0]) / S;
+		Q.Z = (R[0][2] + R[2][0]) / S;
+	}
+	else if (R[1][1] > R[2][2])
+	{
+		const float S = sqrtf(1.0f + R[1][1] - R[0][0] - R[2][2]) * 2.0f; // S = 4Y
+		Q.W = (R[2][0] - R[0][2]) / S;
+		Q.X = (R[0][1] + R[1][0]) / S;
+		Q.Y = 0.25f * S;
+		Q.Z = (R[1][2] + R[2][1]) / S;
+	}
+	else
+	{
+		const float S = sqrtf(1.0f + R[2][2] - R[0][0] - R[1][1]) * 2.0f; // S = 4Z
+		Q.W = (R[0][1] - R[1][0]) / S;
+		Q.X = (R[0][2] + R[2][0]) / S;
+		Q.Y = (R[1][2] + R[2][1]) / S;
+		Q.Z = 0.25f * S;
+	}
+	return Q.Normalized();
 }
 
 FMatrix FMatrix::GetTransposed() const

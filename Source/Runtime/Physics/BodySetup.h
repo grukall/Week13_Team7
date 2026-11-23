@@ -55,6 +55,10 @@ class UBodySetup : public UObject
 	GENERATED_BODY()
 
 public:
+	// "Properties"(PhysMaterial 경로 등)는 리플렉션, AggGeom 도형 배열은 직접 쓴다. 쿠킹 결과는 저장하지 않는다
+	using Super::Serialize;
+	virtual void Serialize(FStructuredArchive::FRecord Record) override;
+
 	UPROPERTY(EditAnywhere)
 	UPhysicalMaterial* PhysMaterial = nullptr;
 	FKAggregateGeom AggGeom;

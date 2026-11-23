@@ -6,6 +6,7 @@
 struct FVector;
 struct FVector4;
 struct FRotator;
+struct FQuat;
 
 // Row Vector sys
 struct FMatrix {
@@ -29,7 +30,11 @@ public:
 	//XMMATRIX FMatrixToXMMatrix() const;
 
 	FVector4 GetColumn(int32 i) const;
-	FVector4 GetOrigin();
+	FVector4 GetOrigin() const;
+	// 각 축(행) 길이. 행렬식이 음수(미러)면 X 스케일을 음수로 돌려준다.
+	FVector GetScaleVector() const;
+	// 스케일을 제거한 회전을 쿼터니언으로 돌려준다 (Shepperd). 축 길이가 0이면 Identity.
+	FQuat GetRotation() const;
 	FVector4 GetScaledAxis(FVector4& X, FVector4& Y, FVector4& Z) const;
 	FVector4 TransformFVector4(const FVector4& V) const;	
 	FVector4 TransformFVector4NoScale(const FVector4& V) const;

@@ -18,6 +18,15 @@
 #include "Animation/BlendSpace1D.h"
 #include "Animation/BlendSpaceFile.h"
 #include "Asset/AssetManager.h"
+#include "Render/SkeletalMesh.h"
+#include "UObject/Object.h"
+#include "Physics/PhysicsAsset.h"
+#include "Physics/BodyInstance.h"
+#include "Physics/SkeletalBodySetup.h"
+#include "Physics/ConstraintInstance.h"
+#include "Physics/PhysicsConstraintTemplate.h"
+#include "Engine/World.h"
+#include "ActorComponent.h"
 
 void USkeletalMeshComponent::SetAnimInstance(UAnimInstance* InInstance)
 {
@@ -282,6 +291,103 @@ void USkeletalMeshComponent::OnSkeletalMeshChanged()
 	for (const FBoneInfo& Bone : GetBones())
 		BoneSpaceTransforms.Add(Bone.LocalBindPose);
 }
+void USkeletalMeshComponent::SetSkeletalMesh(USkeletalMesh* InMesh)
+{
+	if (GetSkeletalMesh() == InMesh) return;
+	Super::SetSkeletalMesh(InMesh);
+
+	RecreatePhysicsState();
+}
+
+bool USkeletalMeshComponent::ShouldCreatePhysicsState()
+{
+	USkeletalMesh* SkeletalMesh = GetSkeletalMesh();
+	if (!SkeletalMesh) return false;
+
+	const UPhysicsAsset* PhysicsAsset = SkeletalMesh->GetPhysicsAsset();
+	return IsValid(PhysicsAsset);
+}
+
+void USkeletalMeshComponent::OnCreatePhysicsState()
+{
+	//강체와 조인트를 생성하기 전에 본 포즈부터 확정
+	RefreshBoneTransformsNow();
+
+	FPhysScene* PhysScene = GetWorld() ? GetWorld()->GetPhysicsScene() : nullptr;
+	InitArticulated(PhysScene);
+
+	UActorComponent::OnCreatePhysicsState();
+}
+
+void USkeletalMeshComponent::OnDestroyPhysicsState()
+{
+	TermArticulated();
+	UActorComponent::OnDestroyPhysicsState();
+}
+
+//BodyInstance와 ConstraintInstance 생성, 추가
+void USkeletalMeshComponent::InitArticulated(FPhysScene* Scene)
+{
+	UPhysicsAsset* PA = GetSkeletalMesh()->GetPhysicsAsset();
+	assert(PA && Scene);
+
+	for (int32 i = 0; i < PA->SkeletalBodySetups.Num(); ++i)
+	{
+		USkeletalBodySetup* Setup = PA->SkeletalBodySetups[i];
+		int32 BoneIdx = Setup ? FindBoneIndex(Setup->BoneName) : -1;
+		// 건너뛰어도 자리를 비워 둬야 Bodies[i] == PA 바디 i 가 유지된다 (Constraint가 FindBodyIndex로 접근)
+		if (BoneIdx == -1) { Bodies.Add(nullptr); continue; }
+
+		FMatrix WorldBoneMatrix = GetBoneWorldMatrix(BoneIdx);
+		FTransform TM(WorldBoneMatrix);
+
+		//캡슐 크기를 컴포넌트 크기로
+		TM.Scale = GetWorldScale3D();
+
+		auto* Body = new FBodyInstance();
+		Body->bSimulatePhysics = true;
+		Body->ObjectType = ECollisionChannel::ECC_PhysicsBody;
+		Body->InstanceBodyIndex = i;
+		Body->InstanceBoneIndex = BoneIdx;
+
+		//강체 생성
+		Body->InitBody(Setup, TM, this, Scene);
+		Bodies.Add(Body);
+	}
+	for (UPhysicsConstraintTemplate* T : PA->ConstraintSetup)
+	{
+		if (!T) continue;
+		// 인덱스 검사를 new보다 먼저 해야 건너뛸 때 누수가 없다
+		const int32 Child = PA->FindBodyIndex(T->DefaultInstance.ConstraintBone1);
+		const int32 Parent = PA->FindBodyIndex(T->DefaultInstance.ConstraintBone2);
+		if (!Bodies.IsValidIndex(Child) || !Bodies.IsValidIndex(Parent)) continue;
+
+		auto* C = new FConstraintInstance(T->DefaultInstance);
+
+		//조인트 생성
+		C->InitConstraint(Bodies[Child], Bodies[Parent], Scene);
+		Constraints.Add(C);
+	}
+}
+
+void USkeletalMeshComponent::TermArticulated()
+{
+	for (int32 i = Constraints.Num() - 1; i >= 0; --i)
+	{
+		Constraints[i]->TermConstraint();
+		delete(Constraints[i]);
+	}
+	Constraints.Empty();
+
+	for (int32 i = Bodies.Num() - 1; i >= 0; --i)
+	{
+		if (!Bodies[i]) continue;
+		Bodies[i]->TermBody();
+		delete(Bodies[i]);
+	}
+	Bodies.Empty();
+}
+
 UAnimSingleNodeInstance* USkeletalMeshComponent::GetSingleNodeInstance() const
 {
 	return Cast<UAnimSingleNodeInstance>(AnimInstance);

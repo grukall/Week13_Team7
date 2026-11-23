@@ -19,7 +19,8 @@ enum class ECollisionChannel : uint8
 	ECC_Camera,
 	ECC_PhysicsBody,
 	ECC_Vehicle,
-	ECC_Destructible
+	ECC_Destructible,
+	ECC_Cloth
 };
 
 UENUM()
@@ -60,6 +61,8 @@ struct FCollisionResponseContainer
 	ECollisionResponse Vehicle = ECollisionResponse::ECR_Block;
 	UPROPERTY(EditAnywhere)
 	ECollisionResponse Destructible = ECollisionResponse::ECR_Block;
+	UPROPERTY(EditAnywhere)
+	ECollisionResponse Cloth = ECollisionResponse::ECR_Ignore;	// 기본 Ignore: 켠(Block) 물체만 천 충돌체가 되도록. 다른 채널과 달리 Block이 기본이 아님
 	ECollisionResponse GetResponse(ECollisionChannel Channel) const;
 	void SetResponse(ECollisionChannel Channel, ECollisionResponse Response);
 };

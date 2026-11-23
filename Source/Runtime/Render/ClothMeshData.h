@@ -10,10 +10,59 @@
 // TUniquePtr 때문에 복사할 수 없으므로 배열에 넣을 때는 std::move를 쓴다.
 struct FClothMeshData
 {
-	TArray<FVertex> Vertices;					// CPU 정점. Position·Normal은 매 프레임 갱신, UV는 고정
-	TArray<uint32>  Indices;					// 삼각형 점 번호 3개씩. IB 생성과 법선 계산에 쓴다
+	TArray<FVertex> Vertices;					// CPU 정점 2N개. Position·Normal은 매 프레임 갱신, UV는 고정
+	TArray<uint32>  Indices;					// 두 겹 삼각형 점 번호 3개씩. IB 생성과 법선 계산에 쓴다
+	uint32 NumSimVertices = 0;					// N. 시뮬레이션 파티클 수 (= 앞면 정점 수)
 	TUniquePtr<FVertexBuffer> VertexBuffer;		// Dynamic. 매 프레임 Vertices를 올린다
 	TUniquePtr<FIndexBuffer>  IndexBuffer;		// Static. 연결 구조는 바뀌지 않으므로 한 번만 만든다
+
+	void InitTwoSided(const TArray<FVector>& Positions, const TArray<FVector2>& UVs, const TArray<uint32>& SimIndices)
+	{
+		const uint32 N = Positions.Num();
+		NumSimVertices = N;
+
+		Vertices.SetNum(N * 2);
+		for (uint32 j = 0; j < N; ++j)
+		{
+			Vertices[j].Position = Positions[j];
+			Vertices[j].UV = UVs[j];
+			Vertices[j + N].Position = Positions[j];
+			Vertices[j + N].UV = UVs[j];			// 뒷면도 같은 UV (텍스처가 뒤에서 보면 좌우 반전됨)
+		}
+
+		Indices.Reset();
+		Indices.Reserve(SimIndices.Num() * 2);
+		for (int32 i = 0; i + 2 < SimIndices.Num(); i += 3)		// 앞면: 원래 순서
+		{
+			Indices.Add(SimIndices[i]); Indices.Add(SimIndices[i + 1]); Indices.Add(SimIndices[i + 2]);
+		}
+		for (int32 i = 0; i + 2 < SimIndices.Num(); i += 3)		// 뒷면: 감는 순서 반대 (b, c 교환)
+		{
+			Indices.Add(SimIndices[i] + N); Indices.Add(SimIndices[i + 2] + N); Indices.Add(SimIndices[i + 1] + N);
+		}
+	}
+
+	void FinalizeTwoSided(float Thickness)
+	{
+		const uint32 N = NumSimVertices;
+		for (uint32 j = 0; j < N; ++j)
+		{
+			Vertices[j + N].Position = Vertices[j].Position;	// 오프셋 전에는 두 겹이 같은 위치
+		}
+
+		BuildNormal();		// 앞면 +n, 뒷면 -n
+
+		const float HalfThickness = Thickness > 0.0f ? Thickness * 0.5f : 0.0f;
+		if (HalfThickness > 0.0f)
+		{
+			for (FVertex& Vertex : Vertices)
+			{
+				Vertex.Position += Vertex.Normal * HalfThickness;	// 각자 자기 법선 쪽으로 → 두 겹 사이 간격 = Thickness
+			}
+		}
+
+		BuildTangentSpace();	// Normal을 읽으므로 마지막에
+	}
 
 	void BuildTangentSpace() {
 		const int32 VertexCount{ Vertices.Num() };

@@ -20,8 +20,11 @@ namespace
 		&FCollisionResponseContainer::Camera,
 		&FCollisionResponseContainer::PhysicsBody,
 		&FCollisionResponseContainer::Vehicle,
-		&FCollisionResponseContainer::Destructible
+		&FCollisionResponseContainer::Destructible,
+		&FCollisionResponseContainer::Cloth		// ECollisionChannel::ECC_Cloth와 같은 번호(맨 끝)여야 한다
 	};
+	// 채널을 추가할 때 응답 필드 목록과 개수가 어긋나면 컴파일 단계에서 잡는다
+	static_assert(std::size(ResponseFields) == static_cast<size_t>(ECollisionChannel::ECC_Cloth) + 1, "ResponseFields must list one entry per ECollisionChannel");
 }
 
 ECollisionResponse FCollisionResponseContainer::GetResponse(ECollisionChannel Channel) const

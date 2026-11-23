@@ -78,6 +78,14 @@ public:
 
 	void SetSkeletalMesh(USkeletalMesh* InMesh) override;
 
+	UPROPERTY(EditAnywhere)
+	bool bUseArticulatedPhysics = true;
+
+	void SetUseArticulatedPhysics(bool bInUse);
+	void SetSingleBodySetupOverride(UBodySetup* InBodySetup);
+	UBodySetup* GetBodySetup() override;
+	void PostEditChangeProperty(const FProperty& Property) override;
+
 protected:
 	// 단일 애니메이션 에셋 경로/루프/재생 속도를 씬에 저장·복원한다 (Serialize에서 부른다)
 	void SerializeSingleAnimation(FStructuredArchive::FRecord& Record);
@@ -110,6 +118,7 @@ private:
 
 	TArray<struct FBodyInstance*>       Bodies;
 	TArray<struct FConstraintInstance*> Constraints;
+	UBodySetup* SingleBodySetupOverride = nullptr;
 	void InitArticulated(FPhysScene* Scene);
 	void TermArticulated();
 	void SetSimulatePhysics(bool bSimulate);     // Ragdoll ON/OFF

@@ -110,6 +110,24 @@ bool FBodyInstance::UpdateMassProperties() const
 	return true;
 }
 
+void FBodyInstance::AddIgnoredFilterShape(physx::PxShape* InfilterShape)
+{
+	IgnoredFilterShapes.AddUnique(InfilterShape);
+}
+
+void FBodyInstance::RemoveIgnoredFilterShape(physx::PxShape* InFilterShape)
+{
+	uint32 IndexToRemove = IgnoredFilterShapes.Find(InFilterShape);
+
+	// Nothing to remove
+	if(IndexToRemove == IgnoredFilterShapes.Num())
+	{
+		return;
+	}
+
+	IgnoredFilterShapes.RemoveAt(IndexToRemove);
+}
+
 void FBodyInstance::SetPhysMaterialOverride(UPhysicalMaterial* Material)
 {
 	PhysMaterialOverride = Material;

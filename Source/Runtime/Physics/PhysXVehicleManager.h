@@ -5,6 +5,8 @@
 #include <PxBatchQueryDesc.h>
 #include <vehicle/PxVehicleUpdate.h>
 
+class UWheeledVehicleMovementComponent;
+
 namespace physx
 {
 	class PxScene;
@@ -23,12 +25,16 @@ public:
 	FPhysXVehicleManager& operator=(const FPhysXVehicleManager&) = delete;
 
 	void AddVehicle(physx::PxVehicleWheels* Vehicle);
+	void AddVehicle(UWheeledVehicleMovementComponent* Comp, physx::PxVehicleWheels* Vehicle);
 	void RemoveVehicle(physx::PxVehicleWheels* Vehicle);
+	void RemoveVehicle(UWheeledVehicleMovementComponent* Comp, physx::PxVehicleWheels* Vehicle);
 
 	void SetupBatchedSceneQuery();
 	void UpdateTireFrictionTable();
 
 	void Update(float SubstepDeltaTime);
+
+	const physx::PxVehicleWheelQueryResult* GetWheelQueryResults(const physx::PxVehicleWheels* Vehicle) const;
 
 private:
 	physx::PxScene* Scene = nullptr;
@@ -39,6 +45,7 @@ private:
 	TArray<physx::PxRaycastHit> RaycastHits;
 	TArray<physx::PxVehicleWheelQueryResult> VehicleWheelQueryResults;
 	TArray<physx::PxWheelQueryResult> WheelQueryResults;
+	TArray< UWheeledVehicleMovementComponent*> VehicleComponents;
 
 	physx::PxVehicleDrivableSurfaceToTireFrictionPairs* SurfaceTirePairs = nullptr;
 

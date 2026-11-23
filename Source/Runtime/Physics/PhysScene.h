@@ -70,6 +70,7 @@ private:
 	friend class FPhysScene;
 	friend class UBodySetup;
 	friend class FPhysicsInterface;
+	friend class UWheeledVehicleMovementComponent;
 	physx::PxFoundation* Foundation = nullptr;
 	physx::PxPhysics* Physics = nullptr;
 	physx::PxCooking* Cooking = nullptr;

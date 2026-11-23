@@ -3,6 +3,8 @@
 #include "Physics/BodyInstance.h"
 #include "Physics/PhysicalMaterial.h"
 
+#include "Components/WheeledVehicleMovementComponent.h"
+
 #include "Engine/Engine.h"
 
 #include <PxPhysicsAPI.h>
@@ -64,6 +66,19 @@ void FPhysXVehicleManager::AddVehicle(physx::PxVehicleWheels* Vehicle)
 	bBatchQueryDirty = true;
 }
 
+void FPhysXVehicleManager::AddVehicle(UWheeledVehicleMovementComponent* Comp, physx::PxVehicleWheels* Vehicle)
+{
+	AddVehicle(Vehicle);
+
+	if(!Comp)
+	{
+		return;
+	}
+
+	VehicleComponents.AddUnique(Comp);
+	bBatchQueryDirty = true;
+}
+
 void FPhysXVehicleManager::RemoveVehicle(physx::PxVehicleWheels* Vehicle)
 {
 	if (!Vehicle)
@@ -76,6 +91,26 @@ void FPhysXVehicleManager::RemoveVehicle(physx::PxVehicleWheels* Vehicle)
 		if (Vehicles[i] == Vehicle)
 		{
 			Vehicles.RemoveAtSwap(static_cast<uint32>(i));
+			bBatchQueryDirty = true;
+			return;
+		}
+	}
+}
+
+void FPhysXVehicleManager::RemoveVehicle(UWheeledVehicleMovementComponent* Comp, physx::PxVehicleWheels* Vehicle)
+{
+	RemoveVehicle(Vehicle);
+
+	if (!Comp)
+	{
+		return;
+	}
+
+	for (int32 i = 0; i < VehicleComponents.Num(); ++i)
+	{
+		if (VehicleComponents[i] == Comp)
+		{
+			VehicleComponents.RemoveAtSwap(static_cast<uint32>(i));
 			bBatchQueryDirty = true;
 			return;
 		}
@@ -201,6 +236,14 @@ void FPhysXVehicleManager::Update(float SubstepDeltaTime)
 		}
 	}
 
+	for(UWheeledVehicleMovementComponent* Comp : VehicleComponents)
+	{
+		if(Comp)
+		{
+			Comp->PreTick(SubstepDeltaTime);
+		}
+	}
+
 	physx::PxVehicleSuspensionRaycasts(
 		BatchQuery,
 		static_cast<physx::PxU32>(Vehicles.Num()),
@@ -215,4 +258,22 @@ void FPhysXVehicleManager::Update(float SubstepDeltaTime)
 		static_cast<physx::PxU32>(Vehicles.Num()),
 		Vehicles.GetData(),
 		VehicleWheelQueryResults.GetData());
+}
+
+const physx::PxVehicleWheelQueryResult* FPhysXVehicleManager::GetWheelQueryResults(const physx::PxVehicleWheels* Vehicle) const
+{
+	if (!Vehicle || bBatchQueryDirty)
+	{
+		return nullptr;
+	}
+
+	for (int32 i = 0; i < Vehicles.Num(); ++i)
+	{
+		if (Vehicles[i] == Vehicle)
+		{
+			return VehicleWheelQueryResults.IsValidIndex(i) ? &VehicleWheelQueryResults[i] : nullptr;
+		}
+	}
+
+	return nullptr;
 }

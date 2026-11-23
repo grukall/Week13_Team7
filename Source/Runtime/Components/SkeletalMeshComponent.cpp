@@ -299,8 +299,53 @@ void USkeletalMeshComponent::SetSkeletalMesh(USkeletalMesh* InMesh)
 	RecreatePhysicsState();
 }
 
+void USkeletalMeshComponent::SetUseArticulatedPhysics(bool bInUse)
+{
+	if (bUseArticulatedPhysics == bInUse)
+		return;
+	bUseArticulatedPhysics = bInUse;
+	RecreatePhysicsState();
+}
+
+void USkeletalMeshComponent::SetSingleBodySetupOverride(UBodySetup* InBodySetup)
+{
+	if (SingleBodySetupOverride == InBodySetup)
+		return;
+	SingleBodySetupOverride = InBodySetup;
+	if (!bUseArticulatedPhysics)
+		RecreatePhysicsState();
+}
+
+UBodySetup* USkeletalMeshComponent::GetBodySetup()
+{
+	if (SingleBodySetupOverride)
+		return SingleBodySetupOverride;
+
+	USkeletalMesh* SkeletalMesh = GetSkeletalMesh();
+	UPhysicsAsset* PhysicsAsset = SkeletalMesh ? SkeletalMesh->GetPhysicsAsset() : nullptr;
+	if (IsValid(PhysicsAsset))
+	{
+		for (USkeletalBodySetup* Setup : PhysicsAsset->SkeletalBodySetups)
+		{
+			if (Setup && !Setup->AggGeom.IsEmpty())
+				return Setup;
+		}
+	}
+	return nullptr;
+}
+
+void USkeletalMeshComponent::PostEditChangeProperty(const FProperty& Property)
+{
+	Super::PostEditChangeProperty(Property);
+	if (Property.Name == "bUseArticulatedPhysics")
+		RecreatePhysicsState();
+}
+
 bool USkeletalMeshComponent::ShouldCreatePhysicsState()
 {
+	if (!bUseArticulatedPhysics)
+		return UPrimitiveComponent::ShouldCreatePhysicsState();
+
 	USkeletalMesh* SkeletalMesh = GetSkeletalMesh();
 	if (!SkeletalMesh) return false;
 
@@ -313,6 +358,12 @@ void USkeletalMeshComponent::OnCreatePhysicsState()
 	//강체와 조인트를 생성하기 전에 본 포즈부터 확정
 	RefreshBoneTransformsNow();
 
+	if (!bUseArticulatedPhysics)
+	{
+		UPrimitiveComponent::OnCreatePhysicsState();
+		return;
+	}
+
 	FPhysScene* PhysScene = GetWorld() ? GetWorld()->GetPhysicsScene() : nullptr;
 	InitArticulated(PhysScene);
 
@@ -321,7 +372,10 @@ void USkeletalMeshComponent::OnCreatePhysicsState()
 
 void USkeletalMeshComponent::OnDestroyPhysicsState()
 {
-	TermArticulated();
+	if (!Bodies.IsEmpty() || !Constraints.IsEmpty())
+		TermArticulated();
+	if (BodyInstance.IsValidBodyInstance())
+		BodyInstance.TermBody();
 	UActorComponent::OnDestroyPhysicsState();
 }
 

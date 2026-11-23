@@ -17,6 +17,9 @@ class UPhysicsAsset : public UObject
 	GENERATED_BODY()
 
 public:
+	using Super::Serialize;
+	virtual void Serialize(FStructuredArchive::FRecord Record) override;
+
 	int32 FindBodyIndex(const FString &BoneName) const;
 	void UpdateBodySetupIndexMap();
 	static UPhysicsAsset* CreateFromSkeletalMesh(const USkeletalMesh* Mesh);

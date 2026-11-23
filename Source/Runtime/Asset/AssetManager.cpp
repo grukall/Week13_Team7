@@ -1,6 +1,7 @@
 #include "EnginePCH.h"
 #include "AssetManager.h"
 #include "Physics/PhysicalMaterial.h"
+#include "Physics/PhysicsAssetFile.h"
 #include "Serialization/MemoryReader.h"
 #include "Serialization/Formatter/JsonArchiveInputFormatter.h"
 #include "Render/Buffer.h"
@@ -678,6 +679,8 @@ URenderAsset* UAssetManager::LoadFbxMesh(const FString& Path, FString& OutError)
 	{
 		auto* Mesh = NewObject<USkeletalMesh>();
 		if (!Mesh->Build(std::move(Data.SkeletalMesh), OutError)) return nullptr;
+		// 메시 옆 .physasset을 읽고, 없으면 본 정보로 자동 생성한다
+		Mesh->SetPhysicsAsset(PhysicsAssetFile::LoadOrCreate(Path, Mesh));
 		Asset = Mesh;
 	}
 	if (!Asset) { OutError = "FBX binary: mesh resource creation failed: " + Path; return nullptr; }

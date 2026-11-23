@@ -84,6 +84,8 @@ protected:
 	void OnSkeletalMeshChanged() override;
 
 //Physics
+	// 메시가 바뀌면 Physics Asset도 바뀌므로 바디/조인트를 다시 만든다
+	void SetSkeletalMesh(USkeletalMesh* InMesh) override;
 	bool ShouldCreatePhysicsState() override;
 	void OnCreatePhysicsState() override;
 	void OnDestroyPhysicsState() override;

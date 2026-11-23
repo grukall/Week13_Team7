@@ -11,5 +11,8 @@ class UPhysicsConstraintTemplate : public UObject
 	GENERATED_BODY()
 
 public:
+	using Super::Serialize;
+	virtual void Serialize(FStructuredArchive::FRecord Record) override;
+
 	FConstraintInstance DefaultInstance;
 };

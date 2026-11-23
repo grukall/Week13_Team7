@@ -9,6 +9,51 @@
 #include <Math/EngineMath.h>
 #include "ConstraintInstance.h"
 #include <Math/Transform.h>
+#include "Serialization/StructuredArchive.h"
+#include "Serialization/StructuredArchiveSlots.h"
+
+void UPhysicsAsset::Serialize(FStructuredArchive::FRecord Record)
+{
+	Super::Serialize(Record);
+	FArchive& Ar = Record.GetUnderlyingArchive();
+
+	int32 Version = Ar.IsSaving() ? 1 : 0;
+	Record << SA_VALUE("Version", Version);
+	if (Version != 1)
+	{
+		Ar.SetError();
+		return;
+	}
+
+	// 같은 객체에 다시 읽는 경우(되돌리기 등) 이전 목록을 비운다
+	if (Ar.IsLoading())
+	{
+		SkeletalBodySetups.Reset();
+		ConstraintSetup.Reset();
+	}
+
+	int32 NumBodies = Ar.IsSaving() ? static_cast<int32>(SkeletalBodySetups.Num()) : 0;
+	auto Bodies = Record.EnterArray("Bodies", NumBodies);
+	for (int32 i = 0; i < NumBodies; ++i)
+	{
+		if (Ar.IsLoading())
+			SkeletalBodySetups.Add(NewObject<USkeletalBodySetup>(this));
+		SkeletalBodySetups[i]->Serialize(Bodies.EnterElement().EnterRecord());
+	}
+
+	int32 NumConstraints = Ar.IsSaving() ? static_cast<int32>(ConstraintSetup.Num()) : 0;
+	auto Constraints = Record.EnterArray("Constraints", NumConstraints);
+	for (int32 i = 0; i < NumConstraints; ++i)
+	{
+		if (Ar.IsLoading())
+			ConstraintSetup.Add(NewObject<UPhysicsConstraintTemplate>(this));
+		ConstraintSetup[i]->Serialize(Constraints.EnterElement().EnterRecord());
+	}
+
+	// 맵은 저장하지 않고 다시 만든다. 빠뜨리면 FindBodyIndex가 전부 -1이 된다
+	if (Ar.IsLoading())
+		UpdateBodySetupIndexMap();
+}
 
 // 본 이름 → SkeletalBodySetups 인덱스. 바디가 없는 본이면 -1
 int32 UPhysicsAsset::FindBodyIndex(const FString& BoneName) const

@@ -16,7 +16,7 @@ public:
 
 	virtual void TickComponent(float DeltaTime);
 
-	void SetSkeletalMesh(USkeletalMesh* InMesh);
+	virtual void SetSkeletalMesh(USkeletalMesh* InMesh);
 	USkeletalMesh* GetSkeletalMesh() const { return SkeletalMesh; }
 	FSkeletalMeshObject* GetMeshObject() const { return MeshObject.get(); }
 

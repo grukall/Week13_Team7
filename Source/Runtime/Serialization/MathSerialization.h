@@ -37,6 +37,12 @@ inline void operator<<(FStructuredArchiveSlot Slot, FRotator& R)
 	Record << SA_VALUE("Pitch", R.Pitch) << SA_VALUE("Yaw", R.Yaw) << SA_VALUE("Roll", R.Roll);
 }
 
+// 쿼터니언을 성분 그대로 저장한다. FTransform처럼 오일러각을 거치면 Pitch ±90°(짐벌락)에서 회전이 흐트러진다
+inline void SerializeQuat(FStructuredArchiveRecord Record, FQuat& Q)
+{
+	Record << SA_VALUE("X", Q.X) << SA_VALUE("Y", Q.Y) << SA_VALUE("Z", Q.Z) << SA_VALUE("W", Q.W);
+}
+
 inline void operator<<(FStructuredArchiveSlot Slot, FTransform& T)
 {
 	FStructuredArchiveRecord Record = Slot.EnterRecord();
@@ -45,4 +51,9 @@ inline void operator<<(FStructuredArchiveSlot Slot, FTransform& T)
 	Record << SA_VALUE("Location", T.Location) << SA_VALUE("Rotation", Rotation) << SA_VALUE("Scale", T.Scale);
 	if (Record.GetUnderlyingArchive().IsLoading())
 		T.Rotation = Rotation.Quaternion();
+}
+
+inline void SerializeQuat(FStructuredArchiveRecord Record, FQuat& Q)
+{
+	Record << SA_VALUE("X", Q.X) << SA_VALUE("Y", Q.Y) << SA_VALUE("Z", Q.Z) << SA_VALUE("W", Q.W);
 }

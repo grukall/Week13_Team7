@@ -9,6 +9,7 @@
 
 class UPhysicsAsset;
 class USceneComponent;
+class FLineBatcher;
 
 // 에디터가 여는 경로는 .physasset이고, 프리뷰와 편집 대상은 짝이 되는 메시(Foo.fbx.bin)와
 // 그 메시가 들고 있는 PhysicsAsset이다 (EditorManager::CreateEditor 참고)
@@ -22,11 +23,13 @@ public:
 		Mesh = &InMesh;
 	}
 
+	void OnRenderLine(FLineBatcher& LineBatcher) override;
 	const char* GetEditorTypeName() const override { return "PhysicsAsset"; }
 	const FGizmo* GetPreviewGizmo() const override { return BoneGizmo.GetTarget() ? &BoneGizmo : nullptr; }
 
 	// 편집 대상. 메시와 같은 객체라 수정 내용이 씬의 컴포넌트에도 그대로 반영된다
 	UPhysicsAsset* GetPhysicsAsset() const;
+	bool IsGizmoDragging() const { return BoneGizmo.IsUsing(); }
 
 protected:
 	// 이 에디터에 연결된 탭을 생성합니다.

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Editor/AssetEditor/AssetEditorTab.h"
+#include "Panels/PhysicsAssetEditorPanel.h"
 
 class FPhysicsAssetEditor;
 
@@ -19,6 +20,7 @@ private:
 	void BuildDefaultLayout(ImGuiID InDockSpaceId, const ImVec2& Size);
 
 	FPhysicsAssetEditor& AssetEditor;
+	TArray<TUniquePtr<FPhysicsAssetEditorPanel>> Panels;
 	ImGuiID DockSpaceId = 0;
 	ImGuiID PanelClassId = 0;
 	bool bLayoutInitialized = false;

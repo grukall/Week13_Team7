@@ -36,6 +36,8 @@ enum class EPSOType : uint8
 	ParticleSprite_Additive,     // 새로 추가
 	ParticleTrail_AlphaBlend,    // 새로 추가
 	ParticleTrail_Additive,      // 새로 추가
+	DepthOfFieldTiles,
+	DepthOfFieldGather,
 	Count
 };
 

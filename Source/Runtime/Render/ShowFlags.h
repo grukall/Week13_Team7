@@ -11,6 +11,7 @@ struct FEngineShowFlags
 	bool Fog = true;
 	// 안티에일리어싱(FXAA)
 	bool AntiAliasing = false;
+	bool DepthOfField = true;
 	// 데칼
 	bool Decals = true;
 	// 화면 가장자리를 어둡게 하는 비네트

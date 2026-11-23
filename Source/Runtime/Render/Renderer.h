@@ -49,6 +49,7 @@ public:
 	FCameraOverlayRenderer* GetCameraOverlay() const { return CameraOverlay.get(); }
 	FTextRenderer* GetSceneText() const { return SceneText.get(); }
 
+	FConstantBuffer* GetDepthOfFieldConstants() const { return DepthOfFieldConstants.get(); }
 	FConstantBuffer* GetToneMapConstants() const { return ToneMapConstants.get(); }
 	FConstantBuffer* GetDecalConstants() const { return DecalConstants.get(); }
 	
@@ -63,6 +64,7 @@ private:
 	TUniquePtr<FConstantBuffer> MaterialCB;
 	TUniquePtr<FConstantBuffer> PerObjectSlotCB;
 	TUniquePtr<FVertexBuffer> MeshParticleInstanceBuffer;
+	TUniquePtr<FConstantBuffer> DepthOfFieldConstants;
 	TUniquePtr<FConstantBuffer> ToneMapConstants;
 	TUniquePtr<FConstantBuffer> DecalConstants;
 	uint32 PerObjectSlotCapacity = 0;

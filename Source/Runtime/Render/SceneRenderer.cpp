@@ -20,6 +20,7 @@
 #include "Render/PostProcess/CameraOverlayRenderer.h"
 #include "Render/PostProcess/FXAARenderer.h"
 #include "Render/PostProcess/ToneMapData.h"
+#include "Render/PostProcess/DepthOfFieldData.h"
 #include "Render/DecalData.h"
 #include "Text/TextRenderer.h"
 #include "UObject/UObjectIterator.h"
@@ -352,6 +353,52 @@ bool FSceneRenderer::AddWorldNormalPass(FRenderGraphBuilder& Graph, FRenderer* R
 		});
 }
 
+bool FSceneRenderer::AddDepthOfFieldPasses(FRenderGraphBuilder& Graph, FRenderer* Renderer, const FRenderGraphTextureDesc& HDRDesc, FRenderGraphTextureRef Depth, float InfinityRadius, FRenderGraphTextureRef& Color)
+{
+	FPipelineState* Tiles = FRenderResourceManager::GetPSO(EPSOType::DepthOfFieldTiles);
+	FPipelineState* Gather = FRenderResourceManager::GetPSO(EPSOType::DepthOfFieldGather);
+	FConstantBuffer* Constants = Renderer->GetDepthOfFieldConstants();
+	if (!Constants || !Constants->GetBuffer() || !Tiles || !Tiles->Shader || !Gather || !Gather->Shader)
+		return false;
+
+	constexpr uint32 TileSize = 8; // DepthOfFieldGatherCommon.hlsli
+	const auto TileRadius = Graph.CreateTexture({ (HDRDesc.Width + TileSize - 1) / TileSize, (HDRDesc.Height + TileSize - 1) / TileSize, ETextureFormat::R32_Float }, "DOFTileNearRadius");
+	const auto BlurredColor = Graph.CreateTexture(HDRDesc, "DOFSceneColor");
+	if (!TileRadius || !BlurredColor)
+		return false;
+
+	const FDepthOfFieldData Lens{ View.ProjectionMatrix.M[0][2], View.ProjectionMatrix.M[3][2], View.DepthOfField.FocusDistanceMeters, InfinityRadius };
+	FRenderGraphRasterPassDesc Reduce{};
+	Reduce.Name = "DOFNearRadiusTiles";
+	Reduce.ReadTextures = { Depth };
+	Reduce.ColorAttachments = { { TileRadius } };
+	if (!Graph.AddRasterPass(std::move(Reduce), [Tiles, Constants, Lens]
+		{
+			RenderCommand::UpdateBufferData(Constants, &Lens, sizeof(Lens));
+			RenderCommand::BindPipelineState(*Tiles);
+			RenderCommand::BindConstantBuffer(0, Constants, EShaderBindFlagBits::Pixel);
+			RenderCommand::BindVertexBuffer(nullptr);
+			RenderCommand::Draw(3);
+		}))
+		return false;
+
+	FRenderGraphRasterPassDesc Combine{};
+	Combine.Name = "DOFGatherAndRecombine";
+	Combine.ReadTextures = { Color, Depth, TileRadius };
+	Combine.ColorAttachments = { { BlurredColor } };
+	if (!Graph.AddRasterPass(std::move(Combine), [Gather, Constants]
+		{
+			RenderCommand::BindPipelineState(*Gather);
+			RenderCommand::BindConstantBuffer(0, Constants, EShaderBindFlagBits::Pixel);
+			RenderCommand::BindVertexBuffer(nullptr);
+			RenderCommand::Draw(3);
+		}))
+		return false;
+
+	Color = BlurredColor;
+	return true;
+}
+
 bool FSceneRenderer::AddCorePasses(FRenderGraphBuilder& Graph, FRenderer* Renderer, FSceneViewTargets& Targets,
 	const FSceneRenderOptions& Options, FSkyboxRenderer* Skybox)
 {
@@ -522,11 +569,19 @@ bool FSceneRenderer::AddCorePasses(FRenderGraphBuilder& Graph, FRenderer* Render
 
 	
 
+	FRenderGraphTextureRef ToneMapInput = LightingHDR;
+	if (ViewFamily.EngineShowFlags.Rendering && ViewFamily.EngineShowFlags.DepthOfField && ViewFamily.ViewMode == VMI_Lit && View.bIsPerspective)
+	{
+		const float InfinityRadius = View.GetInfinityCoCRadiusPixels(Width);
+		if (InfinityRadius > 0 && !AddDepthOfFieldPasses(Graph, Renderer, HDRDesc, Depth, InfinityRadius, ToneMapInput))
+			return false;
+	}
+
 	FRenderGraphRasterPassDesc ToneMap{};
 	ToneMap.Name = "ToneMap";
-	ToneMap.ReadTextures = { LightingHDR };
+	ToneMap.ReadTextures = { ToneMapInput };
 	ToneMap.ColorAttachments = { { SceneColor, ERenderGraphLoadAction::Clear, { 0.0f, 0.0f, 0.0f, 1.0f } } };
-	if (!Graph.AddRasterPass(std::move(ToneMap), [this, Renderer, &Graph, LightingHDR, bGamma = Options.bGammaCorrection, DisplayGamma = Options.DisplayGamma]
+	if (!Graph.AddRasterPass(std::move(ToneMap), [this, Renderer, bGamma = Options.bGammaCorrection, DisplayGamma = Options.DisplayGamma]
 		{
 			if (bCorePassSucceeded)
 			{

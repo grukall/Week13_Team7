@@ -108,6 +108,7 @@ public:
 	const FSceneRenderData& GetRenderData() const { return RenderData; }
 	
 private:
+	bool AddDepthOfFieldPasses(FRenderGraphBuilder& Graph, FRenderer* Renderer, const FRenderGraphTextureDesc& HDRDesc, FRenderGraphTextureRef Depth, float InfinityRadius, FRenderGraphTextureRef& Color);
 	bool AddCorePasses(FRenderGraphBuilder& Graph, FRenderer* Renderer, FSceneViewTargets& Targets,
 		const FSceneRenderOptions& Options, FSkyboxRenderer* Skybox);
 	bool AddWorldNormalPass(FRenderGraphBuilder& Graph, FRenderer* Renderer, FSceneViewTargets& Targets,

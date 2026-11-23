@@ -14,7 +14,32 @@
 
 namespace
 {
-	FClothBuildInput MakeDefaultGridInput(int32 Rows, int32 Cols, float Spacing)		// 에셋 등록 전 Default로 사용하는 천의 FClothBuildInput 만드는 함수
+	// 격자 점 (row, col) 하나의 반경(MaxDistance). 0 = 고정, 클수록 자유
+	// MakeDefaultGridInput에서 쓰므로 그보다 위에 있어야 한다
+	float ComputeGridMaxDistance(int32 row, int32 col, int32 Rows, int32 Cols, const FClothPinSettings& PinSetting)
+	{
+		const bool onRowFirst = PinSetting.bPinRowFirst && row == 0;
+		const bool onRowLast  = PinSetting.bPinRowLast  && row == Rows - 1;
+		const bool onColFirst = PinSetting.bPinColFirst && col == 0;
+		const bool onColLast  = PinSetting.bPinColLast  && col == Cols - 1;
+
+		const bool onChecked = onRowFirst || onRowLast || onColFirst || onColLast;	// 체크한 변 중 하나라도 위에 있으면
+
+		bool pinned;
+		if (PinSetting.bCornersOnly)
+		{
+			const bool isCorner = (row == 0 || row == Rows - 1) && (col == 0 || col == Cols - 1);
+			pinned = onChecked && isCorner;		// 체크한 변의 양 끝 점만
+		}
+		else
+		{
+			pinned = onChecked;
+		}
+
+		return pinned ? 0.0f : std::max(PinSetting.FreeMaxDistance, 0.0f);	// 음수 반경은 NvCloth가 0(고정)으로 처리하므로 막는다
+	}
+
+	FClothBuildInput MakeDefaultGridInput(int32 Rows, int32 Cols, float Spacing, const FClothPinSettings& PinSettings)		// 에셋 등록 전 Default로 사용하는 천의 FClothBuildInput 만드는 함수
 	{
 		FClothBuildInput Input;
 
@@ -28,6 +53,7 @@ namespace
 		Input.Positions.Reserve(static_cast<uint32>(NumPoints));
 		Input.InvMasses.Reserve(static_cast<uint32>(NumPoints));
 		Input.UVs.Reserve(static_cast<uint32>(NumPoints));
+		Input.MaxDistances.Reserve(static_cast<uint32>(NumPoints));
 		Input.Indices.Reserve(static_cast<uint32>(NumIndices));
 
 		for (int32 r = 0; r < Rows; ++r)
@@ -38,6 +64,7 @@ namespace
 				Input.InvMasses.Add(1.0f);
 				//Input.InvMasses.Add(r == 0 ? 0.0f : 1.0f);	// 첫 줄(r == 0)만 고정점. 모든 점에 하나씩 넣어야 Positions와 개수가 맞는다
 				Input.UVs.Add(FVector2(c / static_cast<float>(Cols - 1), r / static_cast<float>(Rows - 1)));	// 격자 전체를 0~1로 펼친 UV
+				Input.MaxDistances.Add(ComputeGridMaxDistance(r, c, Rows, Cols, PinSettings));	// 점마다 1개 (Positions와 같은 번호)
 			}
 		}
 
@@ -194,7 +221,7 @@ void UClothComponent::OnRegister()
 	}
 
 	// 에셋 등록 전에는 기본 격자 천 하나를 추가한다. 에셋이 생기면 그 입력으로 CreateCloth를 호출한다.
-	CreateCloth(MakeDefaultGridInput(DefaultGridRows, DefaultGridCols, DefaultGridSpacing));
+	CreateCloth(MakeDefaultGridInput(DefaultGridRows, DefaultGridCols, DefaultGridSpacing, PinSettings));	// 고정 설정으로 점마다 반경(MaxDistances)을 채운다
 	OnTransformDirty();		// Proxy가 천 생성 전에 만들어졌을 수 있으므로 초기 바운드를 반영
 
 }
@@ -225,7 +252,7 @@ bool UClothComponent::CreateCloth(const FClothBuildInput& Input)
 		HTR_LOG(Error, "[NvCloth] Factory is null (NvClothManager not initialized)");
 		return false;
 	}
-	if (Input.Positions.Num() == 0 || Input.InvMasses.Num() != Input.Positions.Num() || Input.UVs.Num() != Input.Positions.Num() || Input.Indices.Num() % 3 != 0)
+	if (Input.Positions.Num() == 0 || Input.InvMasses.Num() != Input.Positions.Num() || Input.UVs.Num() != Input.Positions.Num() || Input.Indices.Num() % 3 != 0 || Input.MaxDistances.Num() != Input.Positions.Num())
 	{
 		HTR_LOG(Error, "[NvCloth] Cloth build input is invalid");
 		return false;
@@ -286,9 +313,6 @@ bool UClothComponent::CreateCloth(const FClothBuildInput& Input)
 	Cloth->setDragCoefficient(0.2f);   // 공기 저항
 	Cloth->setLiftCoefficient(0.2f);   // 양력 (천이 들썩이는 힘)
 
-	// 자기 충돌용 휴지 위치 = 생성 시 파티클 위치.
-	// 이게 있으면 "원래부터 SelfCollisionDistance보다 가까웠던 점 쌍(격자 이웃)"은 서로 밀어내지 않는다.
-	// 없으면 이웃 점끼리도 밀어내서 거리를 격자 간격 이상으로 줄 수 없고, 크게 주면 천이 부풀어 오른다 (SwSelfCollision.cpp)
 	Cloth->setRestPositions(ParticleRange);
 
 	FClothMeshData ClothData;	// Cloth Rendering용 데이터 생성 (앞면·뒷면 두 겹, 정점 2N개)
@@ -364,13 +388,14 @@ void UClothComponent::TickComponent(float DeltaTime)
 			Instance.Cloth->setWindVelocity(Wind);	
 			Instance.Cloth->setGravity(bEnableGravity ? physx::PxVec3(0.0f, 0.0f, -9.81f) : physx::PxVec3(0.0f));
 			Instance.Cloth->setSelfCollisionDistance(bEnableSelfCollision ? std::max(SelfCollisionDistance, 0.0f) : 0.0f);
-			Instance.Cloth->setSelfCollisionStiffness(std::clamp(SelfCollisionStiffness, 0.0f, 1.0f));	
+			Instance.Cloth->setSelfCollisionStiffness(std::clamp(SelfCollisionStiffness, 0.0f, 1.0f));
+			Instance.Cloth->setFriction(Friction);
 			ApplyClothCollision(*Instance.Cloth, CollisionShapes);	// 수집한 전체 충돌체를 Cloth에 등록, 해당 Cloth와 충돌체가 상호작용하도록 함
 		}
 	}
 
 	if (!Solver->beginSimulation(dt)) return;
-	for (int i = 0;i < Solver->getSimulationChunkCount();i++)		
+	for (int i = 0;i < Solver->getSimulationChunkCount();i++)		 
 	// Factory의 종류 (CPU,CUDA,GPU) 에 따라서 Solver가 한 프레임에 Simulation 돌릴 양을 얼마나 나눠서 돌릴지가 다름
 	// CPU는 천 당 하나의 Chunk로 나눠서 돌림
 	{

@@ -14,6 +14,7 @@ struct FClothBuildInput
 	TArray<uint32>  Indices;	// 삼각형 점 번호, 3개씩 (파티클 번호 기준)
 	TArray<float>   InvMasses;	// 점 역질량. 0 = 고정점, Positions와 개수가 같아야 한다
 	TArray<FVector2> UVs;
+	TArray<float> MaxDistances;   // 점마다 1개. 0 = 고정, 클수록 자유. Positions와 개수가 같아야 한다
 };
 
 struct FClothInstance			// 천 한장을 정의하는 구조체
@@ -23,7 +24,7 @@ struct FClothInstance			// 천 한장을 정의하는 구조체
 	TArray<uint32> Indices;
 };
 
-struct FClothCollisionShapes
+struct FClothCollisionShapes	// Collision 처리를 위해 Collision이 발생한 Shape들 모아놓는 배열
 {
 	TArray<FVector4> Spheres;       
 	TArray<uint32>   CapsuleIndices;  
@@ -32,13 +33,26 @@ struct FClothCollisionShapes
 	void Reset() { Spheres.Reset(); CapsuleIndices.Reset(); Planes.Reset(); ConvexMasks.Reset(); }
 };
 
+USTRUCT()
+struct FClothPinSettings
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere) bool  bPinRowFirst = false;   // Row 첫줄을 Pin으로
+	UPROPERTY(EditAnywhere) bool  bPinRowLast = false;   // Row 끝줄을 Pin으로
+	UPROPERTY(EditAnywhere) bool  bPinColFirst = true;    // Col 첫줄을 Pin으로 => 깃발 기본값
+	UPROPERTY(EditAnywhere) bool  bPinColLast = false;   // Col 막줄을 Pin으로 
+	UPROPERTY(EditAnywhere) bool  bCornersOnly = false;   // 체크된 줄을 양쪽 끝점만 Pin
+	UPROPERTY(EditAnywhere) float FreeMaxDistance = 1e4f; // 고정 안 된 점의 반경
+};
+
 UCLASS()
 class UClothComponent : public UMeshComponent
 {
 	GENERATED_BODY()
 public:
 	UClothComponent();
-	 ~UClothComponent() override;
+	~UClothComponent() override;
 
 	void OnRegister() override;
 	void OnUnregister() override;
@@ -64,17 +78,20 @@ private:
 	TArray<FClothInstance> ClothInstances;		// Component가 소유중인 천 모음, Solver에 들어가있는것과는 별개임
 	TArray<FClothMeshData> ClothMeshDatas;		// Cloth 렌더링용 데이터 배열
 	FClothCollisionShapes CollisionShapes;		// Collision 발생시킬 Shape 모음
+	UPROPERTY(EditAnywhere) FClothPinSettings PinSettings;
 	UPROPERTY(EditAnywhere) float WindTime = 0.0f;
 	UPROPERTY(EditAnywhere) float BaseWind = 3.0f;
+	UPROPERTY(EditAnywhere) float Friction = 3.0f;
 	UPROPERTY(EditAnywhere) bool bEnableGravity = false;
 	UPROPERTY(EditAnywhere) bool bEnableWind = true;
 	// 자기 충돌 (접힌 천이 자기 자신을 통과하지 않게). 비용이 커서 점 수가 많으면 프레임을 확인할 것
 	UPROPERTY(EditAnywhere) bool bEnableSelfCollision = true;
-	UPROPERTY(EditAnywhere) float SelfCollisionDistance = 0.1f;		// 점끼리 최소 간격. 격자 간격(0.2)의 절반 정도에서 시작, 렌더 두께보다 커야 겹이 파고들지 않음
+	UPROPERTY(EditAnywhere) float SelfCollisionDistance = 0.06f;	// 점끼리 최소 간격. 격자 간격(0.12)의 절반 정도, 렌더 두께(0.05)보다 커야 겹이 파고들지 않음
 	UPROPERTY(EditAnywhere) float SelfCollisionStiffness = 1.0f;	// 0~1	// 끄면 바람 속도 0 (끈 뒤에도 남지 않게 매 Tick 0을 넣음)
 	// 기본 격자 천 (에셋이 없을 때). OnRegister에서 한 번 만들므로 값을 바꾸면 다시 등록(재스폰)해야 반영된다
-	UPROPERTY(EditAnywhere) int32 DefaultGridRows = 20;
-	UPROPERTY(EditAnywhere) int32 DefaultGridCols = 20;
-	UPROPERTY(EditAnywhere) float DefaultGridSpacing = 0.2f;	// 20×20이면 약 3.8 × 3.8 크기
+	// Rows·Cols는 "점" 개수. 33×33 점 = 32×32칸 = 사각형 면 1024개(삼각형 2048개)
+	UPROPERTY(EditAnywhere) int32 DefaultGridRows = 33;
+	UPROPERTY(EditAnywhere) int32 DefaultGridCols = 33;
+	UPROPERTY(EditAnywhere) float DefaultGridSpacing = 0.12f;	// 32칸 × 0.12 = 약 3.84 × 3.84 크기 (이전 20점·0.2 간격과 비슷한 크기)
 	UPROPERTY(EditAnywhere) float RenderThickness = 0.05f;	// 렌더링 전용 두께 (앞면·뒷면 간격). 0이면 두께 없는 양면. 시뮬레이션에는 영향 없음
 };

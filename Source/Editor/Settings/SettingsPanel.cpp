@@ -100,6 +100,13 @@ void FSettingsPanel::OnRender()
 		0.1f, 10000.0f, "%.1f", ImGuiSliderFlags_AlwaysClamp))
 		ApplySceneDepthRange();
 	ImGui::TextDisabled("White represents this distance from the camera.");
+	ImGui::Checkbox("Visualize DOF radius", &Settings.bVisualizeDOFRadius);
+	if (Settings.bVisualizeDOFRadius)
+	{
+		ImGui::DragFloat("Focus distance (m)", &Settings.DOFFocusDistanceMeters, 0.05f, 0.1f, 10000.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
+		ImGui::DragFloat("F-stop", &Settings.DOFFStop, 0.1f, 1.0f, 32.0f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
+		ImGui::TextDisabled("Perspective Scene Depth: blue = near, orange = far, black = in focus. Full intensity at 8 px.");
+	}
 
 	//////////////////////////////////////////////////////////
 

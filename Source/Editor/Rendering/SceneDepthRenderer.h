@@ -11,6 +11,10 @@ struct alignas(16) FSceneDepthData
 	float B;
 	float MaxRange;
 	uint32 bIsPerspective;
+	float FocusDistanceMeters;
+	float InfinityRadiusPixels;
+	uint32 bVisualizeDOFRadius;
+	float Padding;
 };
 
 class FSceneDepthRenderer
@@ -19,7 +23,8 @@ public:
 	// Shader와 상수 버퍼를 준비한다.
 	void Init(FRenderer* InRenderer);
 	// Depth Buffer에 있는 값을 바탕으로 viewport 전체를 회색값으로 그린다.
-	bool OnRender(const FSceneView& View, FTexture2D* DepthTarget, FTexture2D* ColorTarget, float MaxRange);
+	bool OnRender(const FSceneView& View, FTexture2D* DepthTarget, FTexture2D* ColorTarget, float MaxRange,
+		bool bVisualizeDOFRadius, float FocusDistanceMeters, float FStop);
 
 private:
 	FRenderer* Renderer;

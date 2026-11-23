@@ -114,9 +114,10 @@ void FLevelEditorViewportClient::Draw(const FSceneView* View, FScenePassCallback
 	// 뷰 모드가 Scene Depth, Cascade일 때 깊이를 색으로 바꿔 보여 준다.
 	FTexture2D* ColorTarget = Viewport->GetViewTargets().SceneColor.get();
 	FTexture2D* DepthTarget = Viewport->GetViewTargets().Depth.get();
-	Callbacks.DepthVisualization = [this, &SceneView, DepthTarget, ColorTarget]
+	Callbacks.DepthVisualization = [this, &SceneView, DepthTarget, ColorTarget, &Settings]
 		{
-			SceneDepthRenderer.OnRender(SceneView, DepthTarget, ColorTarget, MaxRange);
+			SceneDepthRenderer.OnRender(SceneView, DepthTarget, ColorTarget, MaxRange,
+				Settings.bVisualizeDOFRadius, Settings.DOFFocusDistanceMeters, Settings.DOFFStop);
 		};
 	if (IsCascade())
 		Callbacks.CascadeVisualization = [this, &SceneView, DepthTarget, ColorTarget]

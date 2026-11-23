@@ -41,6 +41,9 @@ struct FEditorSettings
 
 	// Values
 	float SceneDepthMaxRange = 50.0f;
+	bool bVisualizeDOFRadius = false;
+	float DOFFocusDistanceMeters = 5.0f;
+	float DOFFStop = 2.8f;
 	float CameraSpeed = 1.0f;
 	float MouseSensitivity = 1.0f;
 	int32 GridSpacing = 1;

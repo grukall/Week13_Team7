@@ -4,6 +4,10 @@ cbuffer SceneDepthConstants : register(b0)
     float B;
     float MaxRange;
     uint bIsPerspective;
+    float FocusDistanceMeters;
+    float InfinityRadiusPixels;
+    uint bVisualizeDOFRadius;
+    float Padding;
 };
 
 Texture2D<float> SceneDepthTexture : register(t0);
@@ -52,6 +56,12 @@ float4 mainPS(VSOutput Input) : SV_Target
     }
 
     float ViewDepth = ConvertFromDeviceZ(DeviceZ);
+    if (bVisualizeDOFRadius != 0)
+    {
+        float radiusPx = InfinityRadiusPixels * (ViewDepth - FocusDistanceMeters) / ViewDepth;
+        float3 tint = radiusPx < 0.0f ? float3(0.1f, 0.4f, 1.0f) : float3(1.0f, 0.45f, 0.05f);
+        return float4(tint * saturate(abs(radiusPx) / 8.0f), 1.0f);
+    }
     float Grey = saturate(ViewDepth / MaxRange);
 
     return float4(Grey, Grey, Grey, 1);

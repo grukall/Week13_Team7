@@ -820,7 +820,7 @@ bool FPhysicsAssetEditor::SnapConstraintFrameToDefault(int32 ConstraintIndex, EC
 	}
 	FConstraintInstance& CI = PhysicsAsset->ConstraintSetup[ConstraintIndex]->DefaultInstance;
 	FTransform DefaultFrame1, DefaultFrame2;
-	if (!UPhysicsAsset::CalcDefaultConstraintFrames(Mesh, CI.ConstraintBone1, CI.ConstraintBone2, DefaultFrame1, DefaultFrame2))
+	if (!UPhysicsAsset::CalcDefaultConstraintFrames(Mesh, CI.ConstraintBone1, CI.ConstraintBone2, DefaultFrame1, DefaultFrame2, CreateParams.VertWeight))
 	{
 		return false;
 	}
@@ -851,7 +851,7 @@ bool FPhysicsAssetEditor::IsConstraintFrameAtDefault(int32 ConstraintIndex, ECon
 	}
 	const FConstraintInstance& CI = PhysicsAsset->ConstraintSetup[ConstraintIndex]->DefaultInstance;
 	FTransform DefaultFrame1, DefaultFrame2;
-	if (!UPhysicsAsset::CalcDefaultConstraintFrames(Mesh, CI.ConstraintBone1, CI.ConstraintBone2, DefaultFrame1, DefaultFrame2))
+	if (!UPhysicsAsset::CalcDefaultConstraintFrames(Mesh, CI.ConstraintBone1, CI.ConstraintBone2, DefaultFrame1, DefaultFrame2, CreateParams.VertWeight))
 	{
 		return true;   // 기본값을 모르면 ↶를 숨긴다
 	}
@@ -1001,5 +1001,52 @@ bool FPhysicsAssetEditor::Save()
 	bDirty = false;
 	SaveMessage = "Saved.";
 	HTR_LOG(Info, "PhysicsAsset saved: {} ({} components refreshed)", GetAssetPath(), Refreshed);
+	return true;
+}
+
+// ─────────────────────────────────────────────────────────────
+// 전체 재생성
+// ─────────────────────────────────────────────────────────────
+
+bool FPhysicsAssetEditor::RegenerateAllBodies()
+{
+	UPhysicsAsset* PhysicsAsset = GetPhysicsAsset();
+	if (!PhysicsAsset || !Mesh)
+	{
+		return false;
+	}
+	UPhysicsAsset* Generated = UPhysicsAsset::CreateFromSkeletalMesh(Mesh, CreateParams);
+	if (!Generated)
+	{
+		// 기준값이 커서 바디가 하나도 안 나오면 생성기가 nullptr을 돌려준다. 지금 에셋은 그대로 둔다
+		SaveMessage = "Regenerate failed: no bone passed the size limits";
+		HTR_LOG(Warning, "PhysicsAsset regenerate produced no bodies: {}", GetAssetPath());
+		return false;
+	}
+	Gizmo.EndDrag();
+
+	// 메시 · 씬 컴포넌트 · 이 에디터가 모두 같은 UPhysicsAsset 객체를 가리키므로, 객체는 그대로 두고 내용만 바꾼다.
+	// 이전 바디 · 관절 객체는 delete하지 않는다 (씬 컴포넌트의 FBodyInstance가 저장 전까지 포인터를 들고 있다)
+	PhysicsAsset->SkeletalBodySetups = Generated->SkeletalBodySetups;
+	PhysicsAsset->ConstraintSetup = Generated->ConstraintSetup;
+	for (USkeletalBodySetup* Setup : PhysicsAsset->SkeletalBodySetups)
+	{
+		if (Setup) Setup->SetOuter(PhysicsAsset);
+	}
+	for (UPhysicsConstraintTemplate* Template : PhysicsAsset->ConstraintSetup)
+	{
+		if (Template) Template->SetOuter(PhysicsAsset);
+	}
+	PhysicsAsset->UpdateBodySetupIndexMap();
+
+	// 내용을 넘겨받았으니 임시 에셋만 지운다 (배열을 비워 둬야 새 바디까지 지워지지 않는다)
+	Generated->SkeletalBodySetups.Empty();
+	Generated->ConstraintSetup.Empty();
+	delete Generated;
+
+	SetSelection(EPhysicsSelection::None, -1);
+	MarkDirty();
+	SaveMessage.clear();
+	HTR_LOG(Info, "PhysicsAsset regenerated: {} bodies, {} constraints", PhysicsAsset->SkeletalBodySetups.Num(), PhysicsAsset->ConstraintSetup.Num());
 	return true;
 }

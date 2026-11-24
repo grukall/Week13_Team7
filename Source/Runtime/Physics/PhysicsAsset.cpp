@@ -75,9 +75,7 @@ void UPhysicsAsset::UpdateBodySetupIndexMap()
 
 namespace
 {
-    // 자동 생성 기준값 (엔진 단위 = 미터)
-    constexpr float MinBoneSize = 0.08f;            // 캡슐 전체 길이가 이보다 짧은 본은 바디를 만들지 않는다
-    constexpr float MinBoneRadius = 0.035f;         // 캡슐 반지름이 이보다 가는 본도 만들지 않는다 (손가락)
+    // 자동 생성 기준값(MinBoneSize 등)은 PhysicsAsset.h의 FPhysAssetCreateParams에 있다
 
     //정점이 하나도 없는 본은 박스가 뒤집혀 있다.
     static bool HasVertices(const FBox& Box)
@@ -150,12 +148,53 @@ namespace
     }
 }
 
+namespace
+{
+    // 본마다 바인드 포즈 정점의 AABB (컴포넌트 공간). Any는 메시가 미리 만든 BoneBounds와 같다
+    TArray<FBox> BuildBoneBounds(const FSkeletalMeshLODRenderData& LOD, int32 NumBones, EPhysAssetFitVertWeight VertWeight)
+    {
+        if (VertWeight == EPhysAssetFitVertWeight::AnyWeight)
+            return LOD.BoneBounds;
+
+        TArray<FBox> Bounds;
+        Bounds.SetNum(NumBones);
+        for (FBox& Box : Bounds)
+            Box = FBox{ FVector(FLT_MAX, FLT_MAX, FLT_MAX), FVector(-FLT_MAX, -FLT_MAX, -FLT_MAX) };
+
+        // Dominant: 정점마다 가중치가 가장 큰 본 하나에만 넣는다
+        for (int32 V = 0; V < LOD.BindVertices.Num() && V < LOD.SkinWeights.Num(); ++V)
+        {
+            const FSkinWeight& Weight = LOD.SkinWeights[V];
+            int32 Best = -1;
+            float BestWeight = 0.0f;
+            for (int32 K = 0; K < MaxBoneInfluences; ++K)
+            {
+                if (Weight.Weight[K] > BestWeight)
+                {
+                    BestWeight = Weight.Weight[K];
+                    Best = Weight.BoneIndex[K];
+                }
+            }
+            if (!Bounds.IsValidIndex(Best))
+                continue;
+            const FVector& Position = LOD.BindVertices[V].Position;
+            FBox& Box = Bounds[Best];
+            for (int32 Axis = 0; Axis < 3; ++Axis)
+            {
+                Box.Min[Axis] = std::min(Box.Min[Axis], Position[Axis]);
+                Box.Max[Axis] = std::max(Box.Max[Axis], Position[Axis]);
+            }
+        }
+        return Bounds;
+    }
+}
+
 bool UPhysicsAsset::CalcDefaultConstraintFrames(const USkeletalMesh* Mesh, const FString& ChildBone, const FString& ParentBone,
-    FTransform& OutFrame1, FTransform& OutFrame2)
+    FTransform& OutFrame1, FTransform& OutFrame2, EPhysAssetFitVertWeight VertWeight)
 {
     if (!Mesh || Mesh->GetRenderData().LODRenderData.Num() == 0) return false;
     const TArray<FBoneInfo>& Bones = Mesh->GetRefSkeleton();
-    const TArray<FBox>& Bounds = Mesh->GetRenderData().LODRenderData[0].BoneBounds;
+    const TArray<FBox> Bounds = BuildBoneBounds(Mesh->GetRenderData().LODRenderData[0], Bones.Num(), VertWeight);
     const int32 Child = Mesh->FindBoneIndex(ChildBone);
     const int32 Parent = Mesh->FindBoneIndex(ParentBone);
     if (Child == -1 || Parent == -1 || !Bounds.IsValidIndex(Child)) return false;
@@ -169,11 +208,12 @@ bool UPhysicsAsset::CalcDefaultConstraintFrames(const USkeletalMesh* Mesh, const
     return true;
 }
 
-UPhysicsAsset* UPhysicsAsset::CreateFromSkeletalMesh(const USkeletalMesh* Mesh)
+UPhysicsAsset* UPhysicsAsset::CreateFromSkeletalMesh(const USkeletalMesh* Mesh, const FPhysAssetCreateParams& Params)
 {
     if (!Mesh || Mesh->GetRenderData().LODRenderData.Num() == 0) return nullptr;
     const TArray<FBoneInfo>& Bones = Mesh->GetRefSkeleton();
-    const TArray<FBox>& Bounds = Mesh->GetRenderData().LODRenderData[0].BoneBounds;
+    const FSkeletalMeshLODRenderData& LOD = Mesh->GetRenderData().LODRenderData[0];
+    const TArray<FBox> Bounds = BuildBoneBounds(LOD, Bones.Num(), Params.VertWeight);
     if (Bones.Num() == 0 || Bounds.Num() < Bones.Num()) return nullptr;
 
 	UPhysicsAsset* PhysicsAsset = NewObject<UPhysicsAsset>();
@@ -184,23 +224,28 @@ UPhysicsAsset* UPhysicsAsset::CreateFromSkeletalMesh(const USkeletalMesh* Mesh)
 
     for (int32 i = 0; i < Bones.Num(); ++i)
     {
-        // 바디
+        // 바디 (정점이 하나도 없는 본은 크기를 정할 수 없어 bBodyForAll이어도 건너뛴다)
         if (!HasVertices(Bounds[i])) continue;
 
         int32 BoneAxis = 0;
-        const FKSphylElem Capsule = MakeCapsule(Bounds[i], Bones[i].InverseBindPose, BoneAxis);   // BoneBounds로 크기 결정
+        const FKSphylElem Capsule = MakeCapsule(Bounds[i], Bones[i].InverseBindPose, BoneAxis);   // 본 AABB로 크기 결정
 
-        // 너무 작은 본(손가락 마디 등)은 바디를 만들지 않는다. 몸통과 질량비가 수백 배라 솔버가 관절을 못 지키고 폭발한다
-        // (UE FPhysAssetCreateParams::MinBoneSize와 같은 역할). 건너뛴 본은 BlendInPhysics에서 부모를 따라간다
-        if (Capsule.Length + 2.f * Capsule.Radius < MinBoneSize) continue;
-        // 길이는 충분해도 너무 가는 본(손가락 첫 마디 등)은 사슬 끝에서 오차를 떠안고 계속 떨린다
-        if (Capsule.Radius < MinBoneRadius) continue;
+        if (!Params.bBodyForAll)
+        {
+            // 너무 작은 본(손가락 마디 등)은 바디를 만들지 않는다. 몸통과 질량비가 수백 배라 솔버가 관절을 못 지키고 폭발한다
+            // (UE FPhysAssetCreateParams::MinBoneSize와 같은 역할). 건너뛴 본은 BlendInPhysics에서 부모를 따라간다
+            if (Capsule.Length + 2.f * Capsule.Radius < Params.MinBoneSize) continue;
+            // 길이는 충분해도 너무 가는 본(손가락 첫 마디 등)은 사슬 끝에서 오차를 떠안고 계속 떨린다
+            if (Capsule.Radius < Params.MinBoneRadius) continue;
+        }
 
         auto* Body = NewObject<USkeletalBodySetup>(PhysicsAsset);
         Body->BoneName = Bones[i].Name;
-        Body->AggGeom.SphylElems.Add(Capsule);
+        Body->AggGeom.SphylElems.Add(Capsule);   // GeomType은 지금 Capsule뿐
         PhysicsAsset->SkeletalBodySetups.Add(Body);
         PhysicsAsset->UpdateBodySetupIndexMap();
+
+        if (!Params.bCreateConstraints) continue;
 
         // ② 바디가 있는 조상 찾기
         int32 P = Bones[i].ParentIndex;
@@ -218,7 +263,8 @@ UPhysicsAsset* UPhysicsAsset::CreateFromSkeletalMesh(const USkeletalMesh* Mesh)
         CI.ConstraintBone2 = Bones[P].Name;
         CI.Frame1 = QT;
         CI.Frame2 = MakeParentFrame(QT, BindCS[i], BindCS[P]);
-        // Motion · Limit은 FConstraintInstance(ConstraintInstance.h)의 기본값을 그대로 쓴다. 관절별 조정은 Physics Asset Editor에서 한다
+        // 제한 각도는 FConstraintInstance(ConstraintInstance.h)의 기본값을 그대로 쓴다. 관절별 조정은 Physics Asset Editor에서 한다
+        CI.Swing1Motion = CI.Swing2Motion = CI.TwistMotion = Params.AngularConstraintMode;
         PhysicsAsset->ConstraintSetup.Add(CT);
     }
 

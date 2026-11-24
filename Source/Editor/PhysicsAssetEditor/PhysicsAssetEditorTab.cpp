@@ -5,6 +5,7 @@
 #include "Panels/PhysicsAssetSkeletonTreePanel.h"
 #include "Panels/PhysicsAssetDetailsPanel.h"
 #include "Panels/PhysicsAssetSettingsPanel.h"
+#include "Panels/PhysicsAssetToolPanel.h"
 #include "Editor/EditorUI/EditorIcons.h"
 
 #include <imgui_internal.h>
@@ -18,11 +19,12 @@ FPhysicsAssetEditorTab::FPhysicsAssetEditorTab(FPhysicsAssetEditor& InEditor)
 	DockSpaceId = ImHashStr("PhysicsAssetDockSpace", 0, AssetId);
 	PanelClassId = ImHashStr("PhysicsAssetPanelClass", 0, AssetId);
 
-	// 순서 = BuildDefaultLayout이 쓰는 인덱스. [0] 뷰포트, [1] 스켈레톤 트리, [2] 디테일, [3] 설정
+	// 순서 = BuildDefaultLayout이 쓰는 인덱스. [0] 뷰포트, [1] 스켈레톤 트리, [2] 디테일, [3] 설정, [4] 툴
 	Panels.Add(MakeUnique<FPhysicsAssetViewportPanel>(InEditor));
 	Panels.Add(MakeUnique<FPhysicsAssetSkeletonTreePanel>(InEditor));
 	Panels.Add(MakeUnique<FPhysicsAssetDetailsPanel>(InEditor));
 	Panels.Add(MakeUnique<FPhysicsAssetSettingsPanel>(InEditor));
+	Panels.Add(MakeUnique<FPhysicsAssetToolPanel>(InEditor));
 	for (auto& Panel : Panels)
 	{
 		Panel->SetDockClass(PanelClassId);
@@ -66,9 +68,38 @@ void FPhysicsAssetEditorTab::DrawToolbar()
 		ImGui::SetTooltip("Save (Ctrl+S)");
 	}
 
-	// 실패했을 때만 이유를 옆에 띄운다 (성공은 탭 이름의 *가 사라지는 것으로 보인다)
+	// 전체 바디 재생성: Tool 패널 옵션으로 바디 · 관절을 모두 다시 만든다. 손으로 고친 값이 사라지니 한 번 묻는다
+	ImGui::SameLine(0.0f, 4.0f * S);
+	if (EditorIcons::Button("##RegenerateBodies", EEditorIcon::Reset, ImGui::GetColorU32(ImGuiCol_Text), "Regenerate Bodies"))
+	{
+		ImGui::OpenPopup("Regenerate Bodies?");
+	}
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Regenerate all bodies and constraints with the Tool panel settings.");
+	}
+	ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+	if (ImGui::BeginPopupModal("Regenerate Bodies?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::TextUnformatted("All bodies and constraints will be replaced.");
+		ImGui::TextDisabled("Edits made in this editor are lost. The file changes only when you save.");
+		ImGui::Spacing();
+		if (ImGui::Button("Regenerate", ImVec2(120.0f * S, 0.0f)))
+		{
+			AssetEditor.RegenerateAllBodies();
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel", ImVec2(120.0f * S, 0.0f)) || ImGui::IsKeyPressed(ImGuiKey_Escape, false))
+		{
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
+
+	// 실패했을 때만 이유를 옆에 띄운다 (성공은 탭 이름의 *가 바뀌는 것으로 보인다)
 	const FString& Message = AssetEditor.GetSaveMessage();
-	if (Message.rfind("Save failed", 0) == 0)
+	if (Message.find("failed") != FString::npos)
 	{
 		ImGui::SameLine();
 		ImGui::AlignTextToFramePadding();
@@ -81,16 +112,17 @@ void FPhysicsAssetEditorTab::DrawToolbar()
 
 void FPhysicsAssetEditorTab::BuildDefaultLayout(ImGuiID InDockSpaceId, const ImVec2& Size)
 {
-	// 왼쪽 22% 스켈레톤 트리, 오른쪽 28% 디테일(아래 25%는 설정), 가운데 뷰포트 (UE Physics Asset Editor와 같은 배치)
+	// 왼쪽 22% 스켈레톤 트리, 오른쪽 28% 디테일(아래 40%는 툴 · 설정 탭), 가운데 뷰포트 (UE Physics Asset Editor와 같은 배치)
 	ImGui::DockBuilderAddNode(InDockSpaceId, ImGuiDockNodeFlags_DockSpace);
 	ImGui::DockBuilderSetNodeSize(InDockSpaceId, Size);
 	ImGuiID ViewportId = InDockSpaceId;
 	const ImGuiID TreeId = ImGui::DockBuilderSplitNode(ViewportId, ImGuiDir_Left, 0.22f, nullptr, &ViewportId);
 	ImGuiID DetailsId = ImGui::DockBuilderSplitNode(ViewportId, ImGuiDir_Right, 0.36f, nullptr, &ViewportId);
-	const ImGuiID SettingsId = ImGui::DockBuilderSplitNode(DetailsId, ImGuiDir_Down, 0.25f, nullptr, &DetailsId);
+	const ImGuiID SettingsId = ImGui::DockBuilderSplitNode(DetailsId, ImGuiDir_Down, 0.4f, nullptr, &DetailsId);
 	ImGui::DockBuilderDockWindow(Panels[0]->GetWindowName(), ViewportId);
 	ImGui::DockBuilderDockWindow(Panels[1]->GetWindowName(), TreeId);
 	ImGui::DockBuilderDockWindow(Panels[2]->GetWindowName(), DetailsId);
+	ImGui::DockBuilderDockWindow(Panels[4]->GetWindowName(), SettingsId);
 	ImGui::DockBuilderDockWindow(Panels[3]->GetWindowName(), SettingsId);
 	ImGui::DockBuilderFinish(InDockSpaceId);
 }

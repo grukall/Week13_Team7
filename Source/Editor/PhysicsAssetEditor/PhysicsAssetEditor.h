@@ -4,6 +4,7 @@
 #include "Editor/EditorModeManager.h"
 #include "Editor/Gizmo/Gizmo.h"
 #include "Physics/BodySetup.h"
+#include "Physics/PhysicsAsset.h"
 #include <Editor/AssetEditor/AssetEditor.h>
 #include <Core/EngineString.h>
 #include <Core/Types.h>
@@ -55,6 +56,11 @@ public:
 	bool Save();
 	const FString& GetSaveMessage() const { return SaveMessage; }
 
+	// 자동 생성 옵션 (Tool 패널). 전체 재생성 · 바디 재생성이 이 값으로 만든다
+	FPhysAssetCreateParams& GetCreateParams() { return CreateParams; }
+	// 지금 바디 · 관절을 모두 버리고 CreateParams로 다시 만든다 (툴바 Regenerate Bodies)
+	bool RegenerateAllBodies();
+
 	// 바디 편집 (스켈레톤 트리 우클릭 메뉴 · Delete 키)
 	bool AddCapsuleToBody(int32 BodyIndex);     // 바디에 캡슐 하나를 더한다 (지금 지원하는 프리미티브는 캡슐뿐)
 	bool DeleteBody(int32 BodyIndex);           // 바디와, 그 바디를 부모나 자식으로 잇던 관절을 모두 지운다
@@ -92,6 +98,7 @@ private:
 	EPhysicsSelection SelectionType = EPhysicsSelection::None;
 	int32 SelectedIndex = -1;
 	bool bDirty = false;
+	FPhysAssetCreateParams CreateParams;
 	FString SaveMessage;                     // 마지막 저장 결과 ("Saved." / 실패 이유)
 
 	FEditorModeTools ModeTools;

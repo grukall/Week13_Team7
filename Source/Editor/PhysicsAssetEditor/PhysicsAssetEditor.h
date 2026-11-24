@@ -3,6 +3,7 @@
 #include "Editor/SkeletalPreviewEditor/SkeletalPreviewEditor.h"
 #include "Editor/EditorModeManager.h"
 #include "Editor/Gizmo/Gizmo.h"
+#include "Physics/BodySetup.h"
 #include <Editor/AssetEditor/AssetEditor.h>
 #include <Core/EngineString.h>
 #include <Core/Types.h>
@@ -10,12 +11,17 @@
 class UPhysicsAsset;
 class USceneComponent;
 class FLineBatcher;
+class FTriangleBatcher;
+struct FRay;
 
 // 에디터가 여는 경로는 .physasset이고, 프리뷰와 편집 대상은 짝이 되는 메시(Foo.fbx.bin)와
 // 그 메시가 들고 있는 PhysicsAsset이다 (EditorManager::CreateEditor 참고)
 class FPhysicsAssetEditor : public FSkeletalPreviewEditor
 {
 public:
+	// 뷰포트에서 선택한 대상. 인덱스는 SkeletalBodySetups / ConstraintSetup의 인덱스
+	enum class EPhysicsSelection : uint8 { None, Body, Constraint };
+
 	FPhysicsAssetEditor(UEditorEngine& InEditorEngine, FEditorManager& InEditorManager,
 		const FString& InAssetPath, USkeletalMesh& InMesh)
 		: FSkeletalPreviewEditor(InEditorEngine, InEditorManager, InAssetPath)
@@ -24,27 +30,58 @@ public:
 	}
 
 	void OnRenderLine(FLineBatcher& LineBatcher) override;
+	void OnRenderTranslucent(FTriangleBatcher& TriangleBatcher) override;
 	const char* GetEditorTypeName() const override { return "PhysicsAsset"; }
-	const FGizmo* GetPreviewGizmo() const override { return BoneGizmo.GetTarget() ? &BoneGizmo : nullptr; }
+	const FGizmo* GetPreviewGizmo() const override { return Gizmo.GetTarget() ? &Gizmo : nullptr; }
 
 	// 편집 대상. 메시와 같은 객체라 수정 내용이 씬의 컴포넌트에도 그대로 반영된다
 	UPhysicsAsset* GetPhysicsAsset() const;
-	bool IsGizmoDragging() const { return BoneGizmo.IsUsing(); }
+	bool IsGizmoDragging() const { return Gizmo.IsUsing(); }
+
+	// 기즈모 모드 (뷰포트 툴바 · W/E/R · Space). 관절은 스케일 모드에서 기즈모가 숨는다
+	void SetGizmoMode(UE::Widget::EWidgetMode Mode);
+	UE::Widget::EWidgetMode GetGizmoMode() const { return ModeTools.GetWidgetMode(); }
+
+	// 선택 (Index가 -1이면 해제). 스케일 모드에서 관절을 고르면 이동 모드로 바뀐다
+	void SetSelection(EPhysicsSelection Type, int32 Index);
+	EPhysicsSelection GetSelectionType() const { return SelectionType; }
+	int32 GetSelectedIndex() const { return SelectedIndex; }
 
 protected:
 	// 이 에디터에 연결된 탭을 생성합니다.
 	TUniquePtr<IEditorTab> CreateTab() override;
-	bool InitializeResources() override;     // InitializePreview() 후 BoneGizmoTarget 생성
-	void ShutdownResources() override;       // 기즈모 정리 후 Super
+	bool InitializeResources() override;     // InitializePreview() 후 GizmoTarget 생성
+	void ShutdownResources() override;       // 기즈모 · 선택 정리 후 Super
 
+	// 본 피킹 대신 바디 · 관절 피킹과 기즈모 편집을 한다
 	void TickAfterWorld(float DeltaTime) override;
-	bool IsViewportInteractionBusy() const override { return BoneGizmo.IsUsing(); }
-	void OnBoneSelected() override { BoneGizmo.EndDrag(); SyncPhysicsGizmo(); }
-	void CancelViewportInteraction() override { BoneGizmo.EndDrag(); }
+	bool IsViewportInteractionBusy() const override { return Gizmo.IsUsing(); }
+	void CancelViewportInteraction() override { Gizmo.EndDrag(); }
 
 private:
+	// 피킹
+	void UpdatePhysicsPicking();
+	int32 PickConstraint(const FVector2& MousePosition) const;   // 관절 원점과 마우스의 화면 거리
+	int32 PickBody(const FRay& Ray) const;                        // 레이 ↔ 캡슐
+
+	// 기즈모
+	bool GetSelectionWorldTransform(FTransform& OutTransform) const;
 	void SyncPhysicsGizmo();
+	bool UpdatePhysicsGizmo();               // 기즈모가 입력을 썼으면 true (그 프레임은 피킹하지 않는다)
+	void BeginPhysicsGizmoDrag();
+	void ApplyPhysicsGizmoTransform();
+
+	EPhysicsSelection SelectionType = EPhysicsSelection::None;
+	int32 SelectedIndex = -1;
+
 	FEditorModeTools ModeTools;
-	FGizmo BoneGizmo{ &ModeTools };
-	USceneComponent* BoneGizmoTarget = nullptr;
+	FGizmo Gizmo{ &ModeTools };
+	USceneComponent* GizmoTarget = nullptr;
+
+	// 드래그 시작 값. 매 프레임 "시작 값 + 변화"로 다시 계산한다
+	FKSphylElem DragStartCapsule;
+	FQuat DragStartWorldRotation = FQuat::Identity();
+	FQuat DragStartChildWorldRotation = FQuat::Identity();
+	FVector DragStartWorldLocation = FVector::ZeroVector;
+	FVector DragStartChildWorldLocation = FVector::ZeroVector;
 };

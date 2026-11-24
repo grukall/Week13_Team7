@@ -25,9 +25,10 @@ void FPhysicsAssetViewportPanel::DrawContent()
 		ImGui::GetWindowDrawList()->AddImage(Target->GetSRV(), Origin, ViewMax);
 	}
 
-	// 2. 뷰포트 툴바 (뷰 종류, 카메라, 뷰 모드, 쇼 플래그). 기즈모 버튼은 편집 기능을 붙일 때 넘긴다.
+	// 2. 뷰포트 툴바 (기즈모 도구, 뷰 종류, 카메라, 뷰 모드, 쇼 플래그).
 	//    입력 영역보다 먼저 그려야 툴바 버튼이 마우스를 먼저 받는다
-	const bool bToolbarBusy = EditorViewportUI::DrawAssetViewportToolbar(Client, Origin, ViewMax);
+	const bool bToolbarBusy = EditorViewportUI::DrawAssetViewportToolbar(Client, Origin, ViewMax, Editor.GetGizmoMode(),
+		[this](UE::Widget::EWidgetMode Mode) { Editor.SetGizmoMode(Mode); });
 
 	// 3. 이미지 영역을 입력 항목으로 등록해 드래그 중에도 카메라 조작이 유지되게 한다
 	ImGui::SetCursorScreenPos(Origin);
@@ -80,6 +81,23 @@ void FPhysicsAssetViewportPanel::DrawContent()
 		.MouseY      = IO.MouseDelta.y,
 		.Wheel       = IO.MouseWheel * 120.0f,   // ImGui 휠 단위 → Windows 휠 단위
 	};
+
+	// 5. 기즈모 모드 키 (SkeletalMeshEditor 뷰포트와 같은 규칙).
+	//    우클릭 카메라 조작 중의 W/E는 카메라 이동이므로, 그때는 모드를 바꾸지 않는다
+	if (!bCameraDragging && bFocused && bHovered && !IO.WantTextInput)
+	{
+		if (ImGui::IsKeyPressed(ImGuiKey_W, false)) Editor.SetGizmoMode(UE::Widget::WM_Translate);
+		if (ImGui::IsKeyPressed(ImGuiKey_E, false)) Editor.SetGizmoMode(UE::Widget::WM_Rotate);
+		if (ImGui::IsKeyPressed(ImGuiKey_R, false)) Editor.SetGizmoMode(UE::Widget::WM_Scale);
+
+		// Space를 누를 때마다 이동 → 회전 → 스케일 순환
+		if (!bGizmoDragging && ImGui::IsKeyPressed(ImGuiKey_Space, false))
+		{
+			constexpr int32 GizmoModeCount = 3;
+			const int32 Next = (static_cast<int32>(Editor.GetGizmoMode()) + 1) % GizmoModeCount;
+			Editor.SetGizmoMode(static_cast<UE::Widget::EWidgetMode>(Next));
+		}
+	}
 
 	Editor.SetViewportState(static_cast<uint32>(Size.x), static_cast<uint32>(Size.y), Input, PointerInput);
 }

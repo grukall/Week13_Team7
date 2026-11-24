@@ -4,6 +4,8 @@
 #include "Panels/PhysicsAssetViewportPanel.h"
 #include "Panels/PhysicsAssetSkeletonTreePanel.h"
 #include "Panels/PhysicsAssetDetailsPanel.h"
+#include "Panels/PhysicsAssetSettingsPanel.h"
+#include "Editor/EditorUI/EditorIcons.h"
 
 #include <imgui_internal.h>
 
@@ -16,10 +18,11 @@ FPhysicsAssetEditorTab::FPhysicsAssetEditorTab(FPhysicsAssetEditor& InEditor)
 	DockSpaceId = ImHashStr("PhysicsAssetDockSpace", 0, AssetId);
 	PanelClassId = ImHashStr("PhysicsAssetPanelClass", 0, AssetId);
 
-	// 순서 = BuildDefaultLayout이 쓰는 인덱스. [0] 뷰포트, [1] 스켈레톤 트리, [2] 디테일
+	// 순서 = BuildDefaultLayout이 쓰는 인덱스. [0] 뷰포트, [1] 스켈레톤 트리, [2] 디테일, [3] 설정
 	Panels.Add(MakeUnique<FPhysicsAssetViewportPanel>(InEditor));
 	Panels.Add(MakeUnique<FPhysicsAssetSkeletonTreePanel>(InEditor));
 	Panels.Add(MakeUnique<FPhysicsAssetDetailsPanel>(InEditor));
+	Panels.Add(MakeUnique<FPhysicsAssetSettingsPanel>(InEditor));
 	for (auto& Panel : Panels)
 	{
 		Panel->SetDockClass(PanelClassId);
@@ -45,17 +48,50 @@ void FPhysicsAssetEditorTab::DrawMenuBar()
 	}
 }
 
+void FPhysicsAssetEditorTab::DrawToolbar()
+{
+	const float S = EditorIcons::GetScale();
+	ImGui::Dummy(ImVec2(0.0f, 2.0f * S));
+	ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 4.0f * S);
+
+	// 레벨 에디터 툴바와 같은 아이콘 버튼. 바뀐 게 없으면 흐리게 막아 둔다
+	ImGui::BeginDisabled(!AssetEditor.IsDirty());
+	if (EditorIcons::Button("##SavePhysicsAsset", EEditorIcon::Save, ImGui::GetColorU32(ImGuiCol_Text)))
+	{
+		AssetEditor.Save();
+	}
+	ImGui::EndDisabled();
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+	{
+		ImGui::SetTooltip("Save (Ctrl+S)");
+	}
+
+	// 실패했을 때만 이유를 옆에 띄운다 (성공은 탭 이름의 *가 사라지는 것으로 보인다)
+	const FString& Message = AssetEditor.GetSaveMessage();
+	if (Message.rfind("Save failed", 0) == 0)
+	{
+		ImGui::SameLine();
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "%s", Message.c_str());
+	}
+
+	ImGui::Dummy(ImVec2(0.0f, 2.0f * S));
+	ImGui::Separator();
+}
+
 void FPhysicsAssetEditorTab::BuildDefaultLayout(ImGuiID InDockSpaceId, const ImVec2& Size)
 {
-	// 왼쪽 22% 스켈레톤 트리, 오른쪽 28% 디테일, 가운데 뷰포트 (UE Physics Asset Editor와 같은 배치)
+	// 왼쪽 22% 스켈레톤 트리, 오른쪽 28% 디테일(아래 25%는 설정), 가운데 뷰포트 (UE Physics Asset Editor와 같은 배치)
 	ImGui::DockBuilderAddNode(InDockSpaceId, ImGuiDockNodeFlags_DockSpace);
 	ImGui::DockBuilderSetNodeSize(InDockSpaceId, Size);
 	ImGuiID ViewportId = InDockSpaceId;
 	const ImGuiID TreeId = ImGui::DockBuilderSplitNode(ViewportId, ImGuiDir_Left, 0.22f, nullptr, &ViewportId);
-	const ImGuiID DetailsId = ImGui::DockBuilderSplitNode(ViewportId, ImGuiDir_Right, 0.36f, nullptr, &ViewportId);
+	ImGuiID DetailsId = ImGui::DockBuilderSplitNode(ViewportId, ImGuiDir_Right, 0.36f, nullptr, &ViewportId);
+	const ImGuiID SettingsId = ImGui::DockBuilderSplitNode(DetailsId, ImGuiDir_Down, 0.25f, nullptr, &DetailsId);
 	ImGui::DockBuilderDockWindow(Panels[0]->GetWindowName(), ViewportId);
 	ImGui::DockBuilderDockWindow(Panels[1]->GetWindowName(), TreeId);
 	ImGui::DockBuilderDockWindow(Panels[2]->GetWindowName(), DetailsId);
+	ImGui::DockBuilderDockWindow(Panels[3]->GetWindowName(), SettingsId);
 	ImGui::DockBuilderFinish(InDockSpaceId);
 }
 
@@ -67,6 +103,19 @@ void FPhysicsAssetEditorTab::OnRender(bool bActive)
 	if (AssetEditor.IsCloseRequested())
 	{
 		return;
+	}
+
+	// 툴바를 먼저 그려야 아래 독스페이스가 툴바 아래 남은 영역을 채운다
+	if (bActive)
+	{
+		DrawToolbar();
+
+		// Ctrl+S: 이 탭이 보이고 있을 때만 (레벨 에디터 등 다른 탭과 겹치지 않게)
+		const ImGuiIO& IO = ImGui::GetIO();
+		if (IO.KeyCtrl && !IO.WantTextInput && ImGui::IsKeyPressed(ImGuiKey_S, false) && AssetEditor.IsDirty())
+		{
+			AssetEditor.Save();
+		}
 	}
 
 	if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_DockingEnable)

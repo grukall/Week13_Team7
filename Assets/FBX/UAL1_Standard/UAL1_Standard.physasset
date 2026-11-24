@@ -21,8 +21,15 @@
             ],
             "Convexes": [],
             "Properties": {
+                "AngularDamping": 0.10000000149011612,
                 "BoneName": "pelvis",
-                "PhysMaterial": null
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false
             },
             "Spheres": []
         },
@@ -47,8 +54,15 @@
             ],
             "Convexes": [],
             "Properties": {
+                "AngularDamping": 0.10000000149011612,
                 "BoneName": "spine_01",
-                "PhysMaterial": null
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false
             },
             "Spheres": []
         },
@@ -73,8 +87,15 @@
             ],
             "Convexes": [],
             "Properties": {
+                "AngularDamping": 0.10000000149011612,
                 "BoneName": "spine_02",
-                "PhysMaterial": null
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false
             },
             "Spheres": []
         },
@@ -99,8 +120,15 @@
             ],
             "Convexes": [],
             "Properties": {
+                "AngularDamping": 0.10000000149011612,
                 "BoneName": "spine_03",
-                "PhysMaterial": null
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false
             },
             "Spheres": []
         },
@@ -125,8 +153,15 @@
             ],
             "Convexes": [],
             "Properties": {
+                "AngularDamping": 0.10000000149011612,
                 "BoneName": "neck_01",
-                "PhysMaterial": null
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false
             },
             "Spheres": []
         },
@@ -151,8 +186,15 @@
             ],
             "Convexes": [],
             "Properties": {
+                "AngularDamping": 0.10000000149011612,
                 "BoneName": "Head",
-                "PhysMaterial": null
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false
             },
             "Spheres": []
         },
@@ -177,8 +219,15 @@
             ],
             "Convexes": [],
             "Properties": {
+                "AngularDamping": 0.10000000149011612,
                 "BoneName": "clavicle_l",
-                "PhysMaterial": null
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false
             },
             "Spheres": []
         },
@@ -203,8 +252,15 @@
             ],
             "Convexes": [],
             "Properties": {
+                "AngularDamping": 0.10000000149011612,
                 "BoneName": "upperarm_l",
-                "PhysMaterial": null
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false
             },
             "Spheres": []
         },
@@ -218,7 +274,7 @@
                         "Z": -0.00075574591755867
                     },
                     "Length": 0.26881885528564453,
-                    "Radius": 0.06349775195121765,
+                    "Radius": 0.04600000008940697,
                     "Rotation": {
                         "W": 0.70710688829422,
                         "X": 0.0,
@@ -229,8 +285,15 @@
             ],
             "Convexes": [],
             "Properties": {
+                "AngularDamping": 0.10000000149011612,
                 "BoneName": "lowerarm_l",
-                "PhysMaterial": null
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false
             },
             "Spheres": []
         },
@@ -255,8 +318,15 @@
             ],
             "Convexes": [],
             "Properties": {
+                "AngularDamping": 0.10000000149011612,
                 "BoneName": "hand_l",
-                "PhysMaterial": null
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false
             },
             "Spheres": []
         },
@@ -270,7 +340,7 @@
                         "Z": 0.03224213421344757
                     },
                     "Length": 0.02181294560432434,
-                    "Radius": 0.08322684466838837,
+                    "Radius": 0.10899999737739563,
                     "Rotation": {
                         "W": 0.70710688829422,
                         "X": 0.0,
@@ -281,8 +351,15 @@
             ],
             "Convexes": [],
             "Properties": {
+                "AngularDamping": 0.10000000149011612,
                 "BoneName": "thumb_01_l",
-                "PhysMaterial": null
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false
             },
             "Spheres": []
         },
@@ -307,8 +384,15 @@
             ],
             "Convexes": [],
             "Properties": {
+                "AngularDamping": 0.10000000149011612,
                 "BoneName": "thumb_02_l",
-                "PhysMaterial": null
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false
             },
             "Spheres": []
         },
@@ -333,8 +417,15 @@
             ],
             "Convexes": [],
             "Properties": {
+                "AngularDamping": 0.10000000149011612,
                 "BoneName": "clavicle_r",
-                "PhysMaterial": null
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false
             },
             "Spheres": []
         },
@@ -359,8 +450,15 @@
             ],
             "Convexes": [],
             "Properties": {
+                "AngularDamping": 0.10000000149011612,
                 "BoneName": "upperarm_r",
-                "PhysMaterial": null
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false
             },
             "Spheres": []
         },
@@ -385,8 +483,15 @@
             ],
             "Convexes": [],
             "Properties": {
+                "AngularDamping": 0.10000000149011612,
                 "BoneName": "lowerarm_r",
-                "PhysMaterial": null
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false
             },
             "Spheres": []
         },
@@ -411,8 +516,15 @@
             ],
             "Convexes": [],
             "Properties": {
+                "AngularDamping": 0.10000000149011612,
                 "BoneName": "hand_r",
-                "PhysMaterial": null
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false
             },
             "Spheres": []
         },
@@ -437,8 +549,15 @@
             ],
             "Convexes": [],
             "Properties": {
+                "AngularDamping": 0.10000000149011612,
                 "BoneName": "thumb_01_r",
-                "PhysMaterial": null
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false
             },
             "Spheres": []
         },
@@ -463,8 +582,15 @@
             ],
             "Convexes": [],
             "Properties": {
+                "AngularDamping": 0.10000000149011612,
                 "BoneName": "thumb_02_r",
-                "PhysMaterial": null
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false
             },
             "Spheres": []
         },
@@ -489,8 +615,15 @@
             ],
             "Convexes": [],
             "Properties": {
+                "AngularDamping": 0.10000000149011612,
                 "BoneName": "thigh_l",
-                "PhysMaterial": null
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false
             },
             "Spheres": []
         },
@@ -515,8 +648,15 @@
             ],
             "Convexes": [],
             "Properties": {
+                "AngularDamping": 0.10000000149011612,
                 "BoneName": "calf_l",
-                "PhysMaterial": null
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false
             },
             "Spheres": []
         },
@@ -541,8 +681,15 @@
             ],
             "Convexes": [],
             "Properties": {
+                "AngularDamping": 0.10000000149011612,
                 "BoneName": "foot_l",
-                "PhysMaterial": null
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false
             },
             "Spheres": []
         },
@@ -567,8 +714,15 @@
             ],
             "Convexes": [],
             "Properties": {
+                "AngularDamping": 0.10000000149011612,
                 "BoneName": "ball_l",
-                "PhysMaterial": null
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false
             },
             "Spheres": []
         },
@@ -593,8 +747,15 @@
             ],
             "Convexes": [],
             "Properties": {
+                "AngularDamping": 0.10000000149011612,
                 "BoneName": "thigh_r",
-                "PhysMaterial": null
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false
             },
             "Spheres": []
         },
@@ -619,8 +780,15 @@
             ],
             "Convexes": [],
             "Properties": {
+                "AngularDamping": 0.10000000149011612,
                 "BoneName": "calf_r",
-                "PhysMaterial": null
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false
             },
             "Spheres": []
         },
@@ -645,8 +813,15 @@
             ],
             "Convexes": [],
             "Properties": {
+                "AngularDamping": 0.10000000149011612,
                 "BoneName": "foot_r",
-                "PhysMaterial": null
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false
             },
             "Spheres": []
         },
@@ -671,8 +846,15 @@
             ],
             "Convexes": [],
             "Properties": {
+                "AngularDamping": 0.10000000149011612,
                 "BoneName": "ball_r",
-                "PhysMaterial": null
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false
             },
             "Spheres": []
         }

@@ -51,6 +51,15 @@ public:
 	void MarkDirty() { bDirty = true; }
 	bool IsDirty() const override { return bDirty; }
 
+	// .physasset에 쓰고, 이 메시를 쓰는 씬 컴포넌트의 PhysX 바디 · 관절을 새 값으로 다시 만든다 (툴바 Save · Ctrl+S)
+	bool Save();
+	const FString& GetSaveMessage() const { return SaveMessage; }
+
+	// 바디 편집 (스켈레톤 트리 우클릭 메뉴 · Delete 키)
+	bool AddCapsuleToBody(int32 BodyIndex);     // 바디에 캡슐 하나를 더한다 (지금 지원하는 프리미티브는 캡슐뿐)
+	bool DeleteBody(int32 BodyIndex);           // 바디와, 그 바디를 부모나 자식으로 잇던 관절을 모두 지운다
+	void DeleteSelection();                     // Delete 키. 바디만 지운다 (관절 삭제는 그래프 패널에서)
+
 	// 관절 프레임 하나의 위치 또는 회전을 기본값(자동 생성과 같은 값)으로 되돌린다
 	enum class EConstraintFrameComponent : uint8 { ChildPosition, ChildRotation, ParentPosition, ParentRotation };
 	bool SnapConstraintFrameToDefault(int32 ConstraintIndex, EConstraintFrameComponent Component);
@@ -83,6 +92,7 @@ private:
 	EPhysicsSelection SelectionType = EPhysicsSelection::None;
 	int32 SelectedIndex = -1;
 	bool bDirty = false;
+	FString SaveMessage;                     // 마지막 저장 결과 ("Saved." / 실패 이유)
 
 	FEditorModeTools ModeTools;
 	FGizmo Gizmo{ &ModeTools };

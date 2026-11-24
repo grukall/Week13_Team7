@@ -17,6 +17,8 @@ public:
 	void OnRender(bool bActive) override;
 
 private:
+	// 탭 맨 위 툴바 (레벨 에디터처럼 왼쪽 위 저장 버튼)
+	void DrawToolbar();
 	void BuildDefaultLayout(ImGuiID InDockSpaceId, const ImVec2& Size);
 
 	FPhysicsAssetEditor& AssetEditor;

@@ -99,5 +99,11 @@ void FPhysicsAssetViewportPanel::DrawContent()
 		}
 	}
 
+	// Delete: 선택한 바디와 이어진 관절을 지운다 (관절만 지우는 건 그래프 패널에서)
+	if (bFocused && !IO.WantTextInput && !bGizmoDragging && ImGui::IsKeyPressed(ImGuiKey_Delete, false))
+	{
+		Editor.DeleteSelection();
+	}
+
 	Editor.SetViewportState(static_cast<uint32>(Size.x), static_cast<uint32>(Size.y), Input, PointerInput);
 }

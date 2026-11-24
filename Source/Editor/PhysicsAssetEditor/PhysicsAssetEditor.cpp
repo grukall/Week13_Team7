@@ -6,6 +6,11 @@
 #include "Render/LineBatcher.h"
 #include "Render/TriangleBatcher.h"
 #include "Physics/PhysicsAsset.h"
+#include "Physics/PhysicsAssetFile.h"
+#include "Asset/AssetUtils.h"
+#include "Core/Misc/Paths.h"
+#include "UObject/UObjectIterator.h"
+#include <filesystem>
 #include "Physics/BodySetup.h"
 
 namespace
@@ -862,4 +867,139 @@ bool FPhysicsAssetEditor::IsConstraintFrameAtDefault(int32 ConstraintIndex, ECon
 	const FQuat& A = Frame.Rotation;
 	const FQuat& B = DefaultFrame.Rotation;
 	return std::abs(A.X * B.X + A.Y * B.Y + A.Z * B.Z + A.W * B.W) > 1.0f - 1e-6f;
+}
+
+// ─────────────────────────────────────────────────────────────
+// 바디 추가 · 삭제
+// ─────────────────────────────────────────────────────────────
+
+bool FPhysicsAssetEditor::AddCapsuleToBody(int32 BodyIndex)
+{
+	UPhysicsAsset* PhysicsAsset = GetPhysicsAsset();
+	if (!PhysicsAsset || !PhysicsAsset->SkeletalBodySetups.IsValidIndex(BodyIndex) || !PhysicsAsset->SkeletalBodySetups[BodyIndex])
+	{
+		return false;
+	}
+	TArray<FKSphylElem>& Capsules = PhysicsAsset->SkeletalBodySetups[BodyIndex]->AggGeom.SphylElems;
+
+	// 마지막 캡슐과 같은 크기 · 방향으로 만들고, 겹치지 않게 그 캡슐의 옆(로컬 X)으로 지름만큼 띄운다.
+	// 본 공간 값이라 본 스케일이 큰 메시(Armature 100배 등)에서도 기존 캡슐과 비슷한 크기가 된다
+	FKSphylElem NewCapsule;
+	if (!Capsules.IsEmpty())
+	{
+		NewCapsule = Capsules.Last();
+		NewCapsule.Center = NewCapsule.Center + NewCapsule.Rotation.RotateVector(FVector(NewCapsule.Radius * 2.0f, 0.0f, 0.0f));
+	}
+	else
+	{
+		// 캡슐이 하나도 없으면 본 원점에 작은 캡슐 (UE AddNewPrimitive의 기본 크기 자리)
+		NewCapsule.Radius = 0.05f;
+		NewCapsule.Length = 0.1f;
+	}
+	Capsules.Add(NewCapsule);
+
+	SetSelection(EPhysicsSelection::Body, BodyIndex);
+	MarkDirty();
+	return true;
+}
+
+bool FPhysicsAssetEditor::DeleteBody(int32 BodyIndex)
+{
+	UPhysicsAsset* PhysicsAsset = GetPhysicsAsset();
+	if (!PhysicsAsset || !PhysicsAsset->SkeletalBodySetups.IsValidIndex(BodyIndex) || !PhysicsAsset->SkeletalBodySetups[BodyIndex])
+	{
+		return false;
+	}
+	Gizmo.EndDrag();
+	const FString BoneName = PhysicsAsset->SkeletalBodySetups[BodyIndex]->BoneName;
+
+	// 이 바디를 자식(Bone1)이나 부모(Bone2)로 쓰는 관절을 모두 지운다. 뒤에서부터 지워야 인덱스가 안 밀린다.
+	// 예) spine_03을 지우면 spine_02–spine_03, spine_03–Head, spine_03–upperarm_l/r 관절이 함께 사라지고
+	//     Head · upperarm은 관절 없이 남는다 (UE와 같음. 새 관절은 그래프 패널에서 잇는다)
+	TArray<UPhysicsConstraintTemplate*>& Constraints = PhysicsAsset->ConstraintSetup;
+	for (int32 i = Constraints.Num() - 1; i >= 0; --i)
+	{
+		const UPhysicsConstraintTemplate* Template = Constraints[i];
+		if (!Template || Template->DefaultInstance.ConstraintBone1 == BoneName || Template->DefaultInstance.ConstraintBone2 == BoneName)
+		{
+			Constraints.RemoveAt(i);
+		}
+	}
+
+	// 객체는 delete하지 않고 배열에서만 뺀다. 같은 에셋으로 이미 만들어진 씬 컴포넌트의 FBodyInstance가
+	// BodySetup 포인터를 들고 있어서, 지우면 그 컴포넌트를 다시 만들기 전까지 끊어진 포인터가 된다
+	PhysicsAsset->SkeletalBodySetups.RemoveAt(BodyIndex);
+	PhysicsAsset->UpdateBodySetupIndexMap();   // 빠뜨리면 FindBodyIndex가 밀린 인덱스를 돌려준다
+
+	// 인덱스가 밀렸으니 선택은 해제한다
+	SetSelection(EPhysicsSelection::None, -1);
+	MarkDirty();
+	return true;
+}
+
+void FPhysicsAssetEditor::DeleteSelection()
+{
+	if (SelectionType == EPhysicsSelection::Body && !Gizmo.IsUsing())
+	{
+		DeleteBody(SelectedIndex);
+	}
+}
+
+// ─────────────────────────────────────────────────────────────
+// 저장
+// ─────────────────────────────────────────────────────────────
+
+bool FPhysicsAssetEditor::Save()
+{
+	UPhysicsAsset* PhysicsAsset = GetPhysicsAsset();
+	if (!PhysicsAsset)
+	{
+		SaveMessage = "Save failed: no physics asset";
+		return false;
+	}
+	Gizmo.EndDrag();
+
+	const FString Resolved = FAssetUtils::ResolveAssetFilePath(GetAssetPath());
+	const std::filesystem::path FilePath = FPaths::FromUtf8(Resolved.empty() ? GetAssetPath() : Resolved);
+	std::filesystem::path TempPath = FilePath;
+	TempPath += ".saving";
+
+	// 임시 파일에 쓰고 바꿔치기한다. 쓰다가 실패해도 원본 .physasset은 그대로 남는다 (AnimSequenceEditor와 같은 방식)
+	FString Error;
+	if (!PhysicsAssetFile::Write(TempPath, *PhysicsAsset, Error))
+	{
+		std::error_code Ignored;
+		std::filesystem::remove(TempPath, Ignored);
+		SaveMessage = "Save failed: " + Error;
+		HTR_LOG(Error, "PhysicsAsset save failed: {} ({})", GetAssetPath(), Error);
+		return false;
+	}
+	std::error_code Ec;
+	std::filesystem::rename(TempPath, FilePath, Ec);   // 같은 볼륨이면 기존 파일을 교체한다
+	if (Ec)
+	{
+		std::error_code Ignored;
+		std::filesystem::remove(TempPath, Ignored);
+		SaveMessage = "Save failed: cannot replace file (" + Ec.message() + ")";
+		HTR_LOG(Error, "PhysicsAsset save failed: {} ({})", GetAssetPath(), Ec.message());
+		return false;
+	}
+
+	// 이 메시를 쓰고 물리 상태가 있는 컴포넌트(레벨 · PIE · 프리뷰)의 바디와 관절을 새 설정으로 다시 만든다.
+	// 지운 바디를 가리키던 FBodyInstance도 이때 사라진다
+	int32 Refreshed = 0;
+	for (TObjectIterator<USkeletalMeshComponent> Itr; Itr; ++Itr)
+	{
+		USkeletalMeshComponent* Component = *Itr;
+		if (Component && Component->GetSkeletalMesh() == Mesh && Component->IsPhysicsStateCreated())
+		{
+			Component->RecreatePhysicsState();
+			++Refreshed;
+		}
+	}
+
+	bDirty = false;
+	SaveMessage = "Saved.";
+	HTR_LOG(Info, "PhysicsAsset saved: {} ({} components refreshed)", GetAssetPath(), Refreshed);
+	return true;
 }

@@ -41,6 +41,8 @@ public:
 
 	void FocusMesh();
 	void SetCameraSpeed(float Speed) { CameraSpeed = FMath::Clamp(Speed, 1.0f, 150.0f); }
+	// 우클릭 드래그 회전 감도 (마우스 1픽셀당 도). 레벨 에디터 Settings의 Camera Rotate Sensitivity와 같은 역할
+	void SetCameraRotationSensitivity(float Sensitivity) { CameraRotationSensitivity = FMath::Clamp(Sensitivity, 0.01f, 1.0f); }
 	void SelectBone(int32 BoneIndex);        // 선택만 바꾸고 OnBoneSelected() 호출
 	void SetBoneVisualizerVisible(bool bVisible) { bShowBoneVisualizer = bVisible; }
 	void SetBoneVisualizerColor(const FVector4& Color) { BoneVisualizerColor = Color; }
@@ -49,6 +51,7 @@ public:
 	USkeletalMesh* GetMesh() const { return Mesh; }
 	USkeletalMeshComponent* GetMeshComponent() const { return MeshComponent; }
 	float GetCameraSpeed() const { return CameraSpeed; }
+	float GetCameraRotationSensitivity() const { return CameraRotationSensitivity; }
 	const TArray<int32>& GetRootBoneIndices() const { return RootBoneIndices; }
 	const TArray<FEditorBoneItem>& GetBoneItems() const { return BoneItems; }
 	int32 GetSelectedBoneIndex() const { return SelectedBoneIndex; }
@@ -80,7 +83,8 @@ protected:
 
 	FViewportCameraInput CameraInput;
 	FViewportPointerInput PointerInput;
-	float CameraSpeed = 5.0f;
+	float CameraSpeed = 50.0f;
+	float CameraRotationSensitivity = 0.2f;
 	uint32 ViewportWidth = 0;
 	uint32 ViewportHeight = 0;
 	bool bViewportVisible = false;

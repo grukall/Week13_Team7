@@ -71,6 +71,52 @@ void FPhysicsAssetSkeletonTreePanel::DrawContent()
 	ImGui::EndChild();
 
 	bScrollToSelection = false;
+
+	// Delete 키: 이 패널에 포커스가 있을 때 선택한 바디를 지운다 (뷰포트도 같은 키를 받는다)
+	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && !ImGui::GetIO().WantTextInput &&
+		ImGui::IsKeyPressed(ImGuiKey_Delete, false))
+	{
+		Editor.DeleteSelection();
+	}
+
+	// 메뉴에서 고른 작업은 트리를 다 그린 뒤에 한다. 그리는 도중에 바디 배열이 바뀌면
+	// 남은 행들이 밀린 인덱스로 선택 · 클릭을 처리한다
+	if (PendingAddCapsuleBody != -1)
+	{
+		Editor.AddCapsuleToBody(PendingAddCapsuleBody);
+		PendingAddCapsuleBody = -1;
+	}
+	if (PendingDeleteBody != -1)
+	{
+		Editor.DeleteBody(PendingDeleteBody);
+		PendingDeleteBody = -1;
+	}
+}
+
+void FPhysicsAssetSkeletonTreePanel::DrawBodyContextMenu(int32 BodyIndex)
+{
+	EditorIcons::MenuSection("Body");
+
+	if (ImGui::BeginMenu("Add Primitive"))
+	{
+		// 지금은 캡슐만 지원한다 (자동 생성 · 기즈모 · 피킹이 캡슐 기준)
+		EditorIcons::MenuSection("Primitive Type");
+		if (EditorIcons::MenuRow("Add Capsule", EEditorIcon::PhysicsBody))
+		{
+			PendingAddCapsuleBody = BodyIndex;
+		}
+		ImGui::EndMenu();
+	}
+
+	// 바디를 지우면 그 바디에 이어진 관절도 함께 지워진다
+	if (EditorIcons::MenuRow("Delete", EEditorIcon::None, false, true, false, "Delete"))
+	{
+		PendingDeleteBody = BodyIndex;
+	}
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Delete the selected body and the constraints connected to it.");
+	}
 }
 
 void FPhysicsAssetSkeletonTreePanel::CollectChildBodies(int32 BoneIndex, TArray<int32>& OutBodyBones) const
@@ -169,6 +215,17 @@ float FPhysicsAssetSkeletonTreePanel::DrawBody(int32 BoneIndex, int32 Depth)
 	if (bSelected && bScrollToSelection)
 	{
 		ImGui::SetScrollHereY(0.5f);
+	}
+
+	// 우클릭: 그 바디를 고르고 메뉴를 띄운다 (UE 스켈레톤 트리 메뉴의 "바디" 섹션 중 일부)
+	if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
+	{
+		Editor.SetSelection(ESelection::Body, BodyIndex);
+	}
+	if (ImGui::BeginPopupContextItem("BodyContextMenu"))
+	{
+		DrawBodyContextMenu(BodyIndex);
+		ImGui::EndPopup();
 	}
 	ImGui::PopID();
 

@@ -63,7 +63,7 @@ void FSkeletalPreviewEditor::Tick(float DeltaTime)
 			.ViewWidth = static_cast<float>(ViewportWidth),
 			.bPerspective = true
 		};
-		ApplyViewportCameraMovement(Camera, CameraInput, DeltaTime, CameraSpeed, 0.2f);
+		ApplyViewportCameraMovement(Camera, CameraInput, DeltaTime, CameraSpeed, CameraRotationSensitivity);
 		ViewportClient->SetViewLocation(Camera.Location);
 		ViewportClient->SetViewRotation(Camera.Rotation);
 	}

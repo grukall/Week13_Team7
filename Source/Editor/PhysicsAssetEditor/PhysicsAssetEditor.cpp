@@ -1050,3 +1050,124 @@ bool FPhysicsAssetEditor::RegenerateAllBodies()
 	HTR_LOG(Info, "PhysicsAsset regenerated: {} bodies, {} constraints", PhysicsAsset->SkeletalBodySetups.Num(), PhysicsAsset->ConstraintSetup.Num());
 	return true;
 }
+
+// ─────────────────────────────────────────────────────────────
+// 바디 메뉴: 바디 재생성 · 관절 추가 · 피직스 타입
+// ─────────────────────────────────────────────────────────────
+
+bool FPhysicsAssetEditor::RegenerateBody(int32 BodyIndex)
+{
+	UPhysicsAsset* PhysicsAsset = GetPhysicsAsset();
+	if (!PhysicsAsset || !PhysicsAsset->SkeletalBodySetups.IsValidIndex(BodyIndex) || !PhysicsAsset->SkeletalBodySetups[BodyIndex])
+	{
+		return false;
+	}
+	USkeletalBodySetup* Setup = PhysicsAsset->SkeletalBodySetups[BodyIndex];
+	FKSphylElem Capsule;
+	if (!UPhysicsAsset::CalcBoneCapsule(Mesh, Setup->BoneName, CreateParams.VertWeight, Capsule))
+	{
+		SaveMessage = "Regenerate body failed: bone has no skinned vertices";
+		return false;
+	}
+	Gizmo.EndDrag();
+
+	// 도형만 새로 만든다 (UE "바디 재생성"과 같다). 피직스 타입 · 질량 같은 바디 설정과 관절은 그대로다
+	Setup->AggGeom = FKAggregateGeom();
+	Setup->AggGeom.SphylElems.Add(Capsule);   // GeomType은 지금 Capsule뿐
+
+	SetSelection(EPhysicsSelection::Body, BodyIndex);
+	MarkDirty();
+	return true;
+}
+
+bool FPhysicsAssetEditor::HasConstraintBetween(int32 BodyIndexA, int32 BodyIndexB) const
+{
+	const UPhysicsAsset* PhysicsAsset = GetPhysicsAsset();
+	if (!PhysicsAsset || !PhysicsAsset->SkeletalBodySetups.IsValidIndex(BodyIndexA) || !PhysicsAsset->SkeletalBodySetups.IsValidIndex(BodyIndexB)
+		|| !PhysicsAsset->SkeletalBodySetups[BodyIndexA] || !PhysicsAsset->SkeletalBodySetups[BodyIndexB])
+	{
+		return false;
+	}
+	const FString& A = PhysicsAsset->SkeletalBodySetups[BodyIndexA]->BoneName;
+	const FString& B = PhysicsAsset->SkeletalBodySetups[BodyIndexB]->BoneName;
+	for (const UPhysicsConstraintTemplate* Template : PhysicsAsset->ConstraintSetup)
+	{
+		if (!Template) continue;
+		const FConstraintInstance& CI = Template->DefaultInstance;
+		if ((CI.ConstraintBone1 == A && CI.ConstraintBone2 == B) || (CI.ConstraintBone1 == B && CI.ConstraintBone2 == A))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+int32 FPhysicsAssetEditor::AddConstraint(int32 ChildBodyIndex, int32 ParentBodyIndex)
+{
+	UPhysicsAsset* PhysicsAsset = GetPhysicsAsset();
+	if (!PhysicsAsset || ChildBodyIndex == ParentBodyIndex
+		|| !PhysicsAsset->SkeletalBodySetups.IsValidIndex(ChildBodyIndex) || !PhysicsAsset->SkeletalBodySetups.IsValidIndex(ParentBodyIndex)
+		|| !PhysicsAsset->SkeletalBodySetups[ChildBodyIndex] || !PhysicsAsset->SkeletalBodySetups[ParentBodyIndex]
+		|| HasConstraintBetween(ChildBodyIndex, ParentBodyIndex))
+	{
+		return -1;
+	}
+
+	auto* Template = NewObject<UPhysicsConstraintTemplate>(PhysicsAsset);
+	FConstraintInstance& CI = Template->DefaultInstance;
+	CI.ConstraintBone1 = PhysicsAsset->SkeletalBodySetups[ChildBodyIndex]->BoneName;
+	CI.ConstraintBone2 = PhysicsAsset->SkeletalBodySetups[ParentBodyIndex]->BoneName;
+
+	// 자동 생성과 같은 프레임: 자식 본 원점에 관절을 두고, 바인드 포즈에서 두 프레임이 같은 월드 위치 · 방향이 되게 한다.
+	// 부모가 본 계층의 조상이 아니어도 (예: hand_l ↔ thigh_l) 같은 식으로 맞춰진다
+	if (!UPhysicsAsset::CalcDefaultConstraintFrames(Mesh, CI.ConstraintBone1, CI.ConstraintBone2, CI.Frame1, CI.Frame2, CreateParams.VertWeight))
+	{
+		delete Template;
+		return -1;
+	}
+	CI.Swing1Motion = CI.Swing2Motion = CI.TwistMotion = CreateParams.AngularConstraintMode;
+
+	PhysicsAsset->ConstraintSetup.Add(Template);
+	const int32 NewIndex = PhysicsAsset->ConstraintSetup.Num() - 1;
+	SetSelection(EPhysicsSelection::Constraint, NewIndex);
+	MarkDirty();
+	return NewIndex;
+}
+
+void FPhysicsAssetEditor::SetBodyPhysicsType(int32 BodyIndex, EPhysicsType Type, bool bIncludeBelow)
+{
+	UPhysicsAsset* PhysicsAsset = GetPhysicsAsset();
+	if (!PhysicsAsset || !Mesh || !PhysicsAsset->SkeletalBodySetups.IsValidIndex(BodyIndex) || !PhysicsAsset->SkeletalBodySetups[BodyIndex])
+	{
+		return;
+	}
+	const int32 RootBone = Mesh->FindBoneIndex(PhysicsAsset->SkeletalBodySetups[BodyIndex]->BoneName);
+	const TArray<FBoneInfo>& Bones = Mesh->GetRefSkeleton();
+
+	// 본 계층에서 RootBone이 Bone의 조상(또는 자신)인지
+	const auto IsAtOrBelow = [&](int32 Bone)
+	{
+		for (; Bone != -1; Bone = Bones[Bone].ParentIndex)
+		{
+			if (Bone == RootBone) return true;
+		}
+		return false;
+	};
+
+	bool bChanged = false;
+	for (int32 i = 0; i < PhysicsAsset->SkeletalBodySetups.Num(); ++i)
+	{
+		USkeletalBodySetup* Setup = PhysicsAsset->SkeletalBodySetups[i];
+		if (!Setup) continue;
+		const bool bTarget = i == BodyIndex || (bIncludeBelow && RootBone != -1 && IsAtOrBelow(Mesh->FindBoneIndex(Setup->BoneName)));
+		if (bTarget && Setup->PhysicsType != Type)
+		{
+			Setup->PhysicsType = Type;
+			bChanged = true;
+		}
+	}
+	if (bChanged)
+	{
+		MarkDirty();
+	}
+}

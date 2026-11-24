@@ -208,6 +208,19 @@ bool UPhysicsAsset::CalcDefaultConstraintFrames(const USkeletalMesh* Mesh, const
     return true;
 }
 
+bool UPhysicsAsset::CalcBoneCapsule(const USkeletalMesh* Mesh, const FString& BoneName, EPhysAssetFitVertWeight VertWeight, FKSphylElem& OutCapsule)
+{
+    if (!Mesh || Mesh->GetRenderData().LODRenderData.Num() == 0) return false;
+    const TArray<FBoneInfo>& Bones = Mesh->GetRefSkeleton();
+    const int32 Bone = Mesh->FindBoneIndex(BoneName);
+    const TArray<FBox> Bounds = BuildBoneBounds(Mesh->GetRenderData().LODRenderData[0], Bones.Num(), VertWeight);
+    if (Bone == -1 || !Bounds.IsValidIndex(Bone) || !HasVertices(Bounds[Bone])) return false;
+
+    int32 BoneAxis = 0;
+    OutCapsule = MakeCapsule(Bounds[Bone], Bones[Bone].InverseBindPose, BoneAxis);
+    return true;
+}
+
 UPhysicsAsset* UPhysicsAsset::CreateFromSkeletalMesh(const USkeletalMesh* Mesh, const FPhysAssetCreateParams& Params)
 {
     if (!Mesh || Mesh->GetRenderData().LODRenderData.Num() == 0) return nullptr;

@@ -66,6 +66,14 @@ public:
 	bool DeleteBody(int32 BodyIndex);           // 바디와, 그 바디를 부모나 자식으로 잇던 관절을 모두 지운다
 	void DeleteSelection();                     // Delete 키. 바디만 지운다 (관절 삭제는 그래프 패널에서)
 
+	// 바디 하나의 도형을 Tool 패널 옵션(VertWeight)으로 다시 만든다. 크기 기준은 보지 않고, 바디 설정 · 관절은 그대로 둔다
+	bool RegenerateBody(int32 BodyIndex);
+	// 자식 바디(ChildBodyIndex)와 부모 바디 사이에 관절을 만들고 그 관절을 선택한다. 만든 관절 인덱스, 실패하면 -1
+	int32 AddConstraint(int32 ChildBodyIndex, int32 ParentBodyIndex);
+	bool HasConstraintBetween(int32 BodyIndexA, int32 BodyIndexB) const;   // 방향과 상관없이 이미 이어져 있는지
+	// 피직스 타입 바꾸기. bIncludeBelow면 본 계층에서 이 바디 아래(자손 본)에 있는 바디도 모두 바꾼다
+	void SetBodyPhysicsType(int32 BodyIndex, EPhysicsType Type, bool bIncludeBelow);
+
 	// 관절 프레임 하나의 위치 또는 회전을 기본값(자동 생성과 같은 값)으로 되돌린다
 	enum class EConstraintFrameComponent : uint8 { ChildPosition, ChildRotation, ParentPosition, ParentRotation };
 	bool SnapConstraintFrameToDefault(int32 ConstraintIndex, EConstraintFrameComponent Component);

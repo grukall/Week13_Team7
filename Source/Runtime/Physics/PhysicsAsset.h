@@ -55,6 +55,9 @@ public:
 	static bool CalcDefaultConstraintFrames(const USkeletalMesh* Mesh, const FString& ChildBone, const FString& ParentBone,
 		FTransform& OutFrame1, FTransform& OutFrame2,
 		EPhysAssetFitVertWeight VertWeight = EPhysAssetFitVertWeight::DominantWeight);
+	// 본 하나의 캡슐을 자동 생성과 같은 계산으로 만든다 (크기 기준은 보지 않는다). 에디터의 "바디 재생성"이 쓴다.
+	// 정점이 하나도 없는 본이면 false
+	static bool CalcBoneCapsule(const USkeletalMesh* Mesh, const FString& BoneName, EPhysAssetFitVertWeight VertWeight, FKSphylElem& OutCapsule);
 
 	TArray<USkeletalBodySetup*> SkeletalBodySetups;
 	TArray<UPhysicsConstraintTemplate*> ConstraintSetup;

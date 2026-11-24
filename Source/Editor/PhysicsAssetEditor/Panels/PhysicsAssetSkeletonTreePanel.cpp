@@ -5,6 +5,8 @@
 #include "Physics/PhysicsAsset.h"
 #include "Render/SkeletalMesh.h"
 
+#include <cstdio>
+
 namespace
 {
 	using ESelection = FPhysicsAssetEditor::EPhysicsSelection;
@@ -46,6 +48,8 @@ void FPhysicsAssetSkeletonTreePanel::DrawContent()
 
 	if (ImGui::BeginChild("PhysicsSkeletonTree", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar))
 	{
+		// 행 사이 간격을 없앤다. 우클릭 메뉴는 이 값을 물려받지 않도록 원래 간격을 기억해 둔다
+		MenuItemSpacing = ImGui::GetStyle().ItemSpacing;
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
 
 		// 루트 본에 바디가 없을 수 있으니 "가장 위의 바디들"부터 그린다
@@ -95,21 +99,110 @@ void FPhysicsAssetSkeletonTreePanel::DrawContent()
 
 void FPhysicsAssetSkeletonTreePanel::DrawBodyContextMenu(int32 BodyIndex)
 {
+	const UPhysicsAsset* Asset = Editor.GetPhysicsAsset();
+	const USkeletalBodySetup* Setup = Asset && Asset->SkeletalBodySetups.IsValidIndex(BodyIndex) ? Asset->SkeletalBodySetups[BodyIndex] : nullptr;
+	if (!Setup)
+	{
+		return;
+	}
+
+	// 우클릭으로 연 메뉴라 키보드 탐색 표시(파란 테두리)가 마우스와 다른 줄에 남지 않게 숨긴다
+	ImGui::SetNavCursorVisible(false);
+
+	// 위쪽 메뉴는 ImGui 기본 MenuItem / BeginMenu로 통일한다 (EditorIcons::MenuRow는 아이콘 칸이 있어 글자 위치가 어긋난다)
 	EditorIcons::MenuSection("Body");
+
+	// 도형만 Tool 패널 옵션으로 다시 만든다 (바디 설정 · 관절은 그대로)
+	if (ImGui::MenuItem("Regenerate Body"))
+	{
+		Editor.RegenerateBody(BodyIndex);
+	}
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Regenerate the selected body's shape with the Tool panel settings.");
+	}
 
 	if (ImGui::BeginMenu("Add Primitive"))
 	{
 		// 지금은 캡슐만 지원한다 (자동 생성 · 기즈모 · 피킹이 캡슐 기준)
 		EditorIcons::MenuSection("Primitive Type");
-		if (EditorIcons::MenuRow("Add Capsule", EEditorIcon::PhysicsBody))
+		if (ImGui::MenuItem("Add Capsule"))
 		{
 			PendingAddCapsuleBody = BodyIndex;
 		}
 		ImGui::EndMenu();
 	}
 
+	// 이 바디(자식)를 고른 바디(부모)에 관절로 잇는다. UE처럼 검색 칸 + 바디 목록
+	if (ImGui::BeginMenu("Add Constraint"))
+	{
+		EditorIcons::MenuSection("Create New Constraint With...");
+		if (ImGui::IsWindowAppearing())
+		{
+			ConstraintSearch[0] = '\0';
+			ImGui::SetKeyboardFocusHere();
+		}
+		EditorIcons::SearchBox("##ConstraintSearch", ConstraintSearch, sizeof(ConstraintSearch), "Search bodies...", 220.0f * EditorIcons::GetScale());
+
+		if (ImGui::BeginChild("##ConstraintTargets", ImVec2(220.0f * EditorIcons::GetScale(), 260.0f * EditorIcons::GetScale())))
+		{
+			for (int32 Other = 0; Other < Asset->SkeletalBodySetups.Num(); ++Other)
+			{
+				const USkeletalBodySetup* OtherSetup = Asset->SkeletalBodySetups[Other];
+				if (Other == BodyIndex || !OtherSetup || !EditorIcons::MatchesFilter(OtherSetup->BoneName.c_str(), ConstraintSearch))
+				{
+					continue;
+				}
+				// 이미 이어진 바디는 흐리게 막는다 (같은 두 바디 사이에 관절을 두 개 만들지 않는다)
+				const bool bConnected = Editor.HasConstraintBetween(BodyIndex, Other);
+				ImGui::PushID(Other);
+				if (EditorIcons::MenuRow(OtherSetup->BoneName.c_str(), EEditorIcon::PhysicsBody, false, !bConnected))
+				{
+					Editor.AddConstraint(BodyIndex, Other);
+					ImGui::CloseCurrentPopup();
+				}
+				if (bConnected && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+				{
+					ImGui::SetTooltip("Already connected");
+				}
+				ImGui::PopID();
+			}
+		}
+		ImGui::EndChild();
+		ImGui::EndMenu();
+	}
+
+	// 피직스 타입: 이 바디만, 또는 본 계층에서 이 바디 아래의 모든 바디
+	if (ImGui::BeginMenu("Physics Type"))
+	{
+		static const char* TypeNames[] = { "Default", "Kinematic", "Simulated" };
+		EditorIcons::MenuSection("Selected Body");
+		for (int32 i = 0; i < 3; ++i)
+		{
+			const EPhysicsType Type = static_cast<EPhysicsType>(i);
+			if (ImGui::MenuItem(TypeNames[i], nullptr, Setup->PhysicsType == Type))
+			{
+				Editor.SetBodyPhysicsType(BodyIndex, Type, false);
+			}
+		}
+
+		EditorIcons::MenuSection("All Bodies Below");
+		for (int32 i = 0; i < 3; ++i)
+		{
+			char Label[48];
+			std::snprintf(Label, sizeof(Label), "Set All Bodies Below to %s", TypeNames[i]);
+			if (ImGui::MenuItem(Label))
+			{
+				Editor.SetBodyPhysicsType(BodyIndex, static_cast<EPhysicsType>(i), true);
+			}
+		}
+		ImGui::EndMenu();
+	}
+
+	ImGui::Separator();
+
 	// 바디를 지우면 그 바디에 이어진 관절도 함께 지워진다
-	if (EditorIcons::MenuRow("Delete", EEditorIcon::None, false, true, false, "Delete"))
+	if (ImGui::MenuItem("Delete", "Delete"))
 	{
 		PendingDeleteBody = BodyIndex;
 	}
@@ -222,11 +315,14 @@ float FPhysicsAssetSkeletonTreePanel::DrawBody(int32 BoneIndex, int32 Depth)
 	{
 		Editor.SetSelection(ESelection::Body, BodyIndex);
 	}
+	// 트리가 행 간격을 0으로 바꿔 둬서, 메뉴는 원래 간격으로 되돌려 연다 (안 하면 메뉴 줄이 붙어 보인다)
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, MenuItemSpacing);
 	if (ImGui::BeginPopupContextItem("BodyContextMenu"))
 	{
 		DrawBodyContextMenu(BodyIndex);
 		ImGui::EndPopup();
 	}
+	ImGui::PopStyleVar();
 	ImGui::PopID();
 
 	const ImU32 IconColor = bSelected ? IM_COL32(255, 255, 255, 255) : ImGui::GetColorU32(ImGuiCol_Text, 0.8f);

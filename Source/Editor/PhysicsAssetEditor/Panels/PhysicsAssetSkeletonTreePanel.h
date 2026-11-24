@@ -32,12 +32,18 @@ private:
 	// 선택이 바뀐 프레임에 선택한 바디의 조상을 펼치고 스크롤을 예약한다
 	void UpdateSelectionTracking(const UPhysicsAsset& Asset);
 
-	// 바디 행 우클릭 메뉴: Add Primitive › Add Capsule, Delete
+	// 바디 행 우클릭 메뉴: Regenerate Body, Add Primitive › Add Capsule, Add Constraint, Physics Type, Delete
 	void DrawBodyContextMenu(int32 BodyIndex);
 
 	// 메뉴에서 고른 작업 (트리를 다 그린 뒤 실행). -1 = 없음
 	int32 PendingAddCapsuleBody = -1;
 	int32 PendingDeleteBody = -1;
+
+	// 트리 행 간격(0)을 바꾸기 전의 ItemSpacing. 우클릭 메뉴는 이 간격으로 그린다
+	ImVec2 MenuItemSpacing = ImVec2(8.0f, 4.0f);
+
+	// Add Constraint 메뉴의 바디 검색 칸
+	char ConstraintSearch[64] = {};
 
 	// 본 인덱스로 찾는 표. TArray<bool>은 std::vector<bool> 특수화라 bool&를 못 돌려줘 uint8을 쓴다
 	TArray<int32> BodyIndexByBone;          // 프레임마다 다시 만든다 (-1 = 바디 없음)

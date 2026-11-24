@@ -361,7 +361,7 @@ void UEditorEngine::StartPlayInEditorSession()
 			// Settings > Debug Draw (PIE)
 			Overlays.EditorLines = [this, &SceneView, GameClient]
 				{
-					DrawPIEDebug(GameClient->GetWorld(), SceneView.ViewProjectionMatrix);
+					DrawPIEDebug(GameClient->GetWorld(), SceneView.ViewProjectionMatrix, GameClient->EngineShowFlags);
 				};
 		};
 	}

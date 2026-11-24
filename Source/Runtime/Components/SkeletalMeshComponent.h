@@ -89,6 +89,12 @@ public:
 	// Ragdoll ON/OFF. ON이면 모든 본 바디를 시뮬레이션하고 PostPhysics에서 바디 → 본으로 되돌린다
 	void SetSimulatePhysics(bool bSimulate);
 	bool IsSimulatingRagdoll() const { return bRagdollActive; }
+
+	// Show Flag "Physics": 래그돌 바디를 실제 PhysX 위치로 그린다 (시뮬레이션 = 주황, Kinematic = 하늘색)
+	void DrawPhysicsDebug(FLineBatcher& LineBatcher);
+	// stat physics: 만들어진 바디 수 (OutSimulating = 그중 시뮬레이션 중인 수)와 관절 수
+	int32 GetNumPhysicsBodies(int32& OutSimulating) const;
+	int32 GetNumPhysicsConstraints() const;
 	void PostEditChangeProperty(const FProperty& Property) override;
 
 	// 테스트용: Details에서 켜고 끈다 (PostEditChangeProperty → SetSimulatePhysics)

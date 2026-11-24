@@ -47,6 +47,7 @@
 #include "Physics/Collision.h"
 #include "Components/ShapeComponent.h"
 #include "Particles/ParticleEventManager.h"
+#include "Physics/PhysicsStats.h"
 
 namespace
 {
@@ -214,10 +215,14 @@ void UWorld::GameWorldTick(float DeltaTime)
 	{
 		SCOPE_CYCLE_COUNTER(STAT_ActorTick);
 		TickTaskManager.RunTickGroup(ETickingGroup::PrePhysics, DeltaTime);
-		PhysicsScene->StartFrame(DeltaTime);
-		TickTaskManager.RunTickGroup(ETickingGroup::DuringPhysics, DeltaTime);
-		PhysicsScene->ProcessPhysScene();
-		PhysicsScene->EndFrame();
+		{
+			// stat physics: 시뮬레이션 시작부터 결과를 받을 때까지 (DuringPhysics 틱도 이 사이에 돈다)
+			SCOPE_CYCLE_COUNTER(PhysicsStats::STAT_PhysicsSimulate);
+			PhysicsScene->StartFrame(DeltaTime);
+			TickTaskManager.RunTickGroup(ETickingGroup::DuringPhysics, DeltaTime);
+			PhysicsScene->ProcessPhysScene();
+			PhysicsScene->EndFrame();
+		}
 		TickTaskManager.RunTickGroup(ETickingGroup::PostPhysics, DeltaTime);
 		TickTaskManager.RunTickGroup(ETickingGroup::PostUpdateWork, DeltaTime);
 	}

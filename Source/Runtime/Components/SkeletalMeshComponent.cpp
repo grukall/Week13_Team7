@@ -28,6 +28,8 @@
 #include "Engine/World.h"
 #include "ActorComponent.h"
 #include "Physics/PhysicsInterface.h"
+#include "Physics/PhysicsAssetDebugDraw.h"
+#include "Physics/PhysicsStats.h"
 
 namespace
 {
@@ -464,6 +466,7 @@ void USkeletalMeshComponent::SetSimulatePhysics(bool bSimulate)
 // 시뮬레이션하지 않는 바디만 해당된다 (Ragdoll OFF면 Simulated 외 전부, ON이면 Kinematic 바디)
 void USkeletalMeshComponent::UpdateKinematicBodies()
 {
+	SCOPE_CYCLE_COUNTER(PhysicsStats::STAT_PhysicsUpdateKinematic);   // stat physics
 	for (FBodyInstance* Body : Bodies)
 	{
 		// 시뮬레이션 중인 바디에 SetBodyTransform을 하면 setGlobalPose로 순간이동하니 건너뛴다
@@ -477,6 +480,7 @@ void USkeletalMeshComponent::UpdateKinematicBodies()
 // 컴포넌트 공간(CS) → 부모 기준 Local 로 되돌려 BoneSpaceTransforms에 넣는다
 void USkeletalMeshComponent::BlendInPhysics()
 {
+	SCOPE_CYCLE_COUNTER(PhysicsStats::STAT_PhysicsBlendIn);   // stat physics
 	// Ragdoll OFF여도 Simulated 바디가 있으면 그 본은 물리 결과로 덮어써야 한다
 	if (!bAnyBodySimulating)
 		return;
@@ -773,6 +777,81 @@ void DrawSkeletalRootDebug(UWorld* World, FLineBatcher* LineBatcher)
 		if (!Mesh || Mesh->GetWorld() != World || !Mesh->IsRegistered()) continue;
 		Mesh->DrawRootDebug(LineBatcher);
 	}
+}
+
+void USkeletalMeshComponent::DrawPhysicsDebug(FLineBatcher& LineBatcher)
+{
+	USkeletalMesh* SkeletalMesh = GetSkeletalMesh();
+	const UPhysicsAsset* PA = SkeletalMesh ? SkeletalMesh->GetPhysicsAsset() : nullptr;
+	if (!PA)
+		return;
+
+	const FVector4 SimulatedColor(1.0f, 0.55f, 0.1f, 1.0f);   // 시뮬레이션 중 (주황)
+	const FVector4 KinematicColor(0.3f, 0.8f, 1.0f, 1.0f);    // 애니메이션을 따름 (하늘색)
+
+	// PhysX 바디가 없으면 (에디터 월드는 물리 씬이 없다) 에셋 값 × 본 월드 행렬로 그린다.
+	// Physics Asset 에디터와 같은 방식이라 플레이 전에도 바디 배치를 볼 수 있다
+	bool bHasPhysicsBody = false;
+	for (const FBodyInstance* Body : Bodies)
+	{
+		if (Body && Body->IsValidBodyInstance())
+		{
+			bHasPhysicsBody = true;
+			break;
+		}
+	}
+	if (!bHasPhysicsBody)
+	{
+		for (const USkeletalBodySetup* Setup : PA->SkeletalBodySetups)
+		{
+			const int32 BoneIndex = Setup ? FindBoneIndex(Setup->BoneName) : -1;
+			if (BoneIndex < 0)
+				continue;
+			PhysicsDebugDraw::DrawAggGeom(LineBatcher, Setup->AggGeom, GetBoneWorldMatrix(BoneIndex), KinematicColor);
+		}
+		return;
+	}
+
+	for (const FBodyInstance* Body : Bodies)
+	{
+		if (!Body || !Body->IsValidBodyInstance() || !PA->SkeletalBodySetups.IsValidIndex(Body->InstanceBodyIndex))
+			continue;
+		const USkeletalBodySetup* Setup = PA->SkeletalBodySetups[Body->InstanceBodyIndex];
+		if (!Setup)
+			continue;
+
+		// 위치 · 회전은 PhysX가 들고 있는 실제 값, 스케일은 본 월드 스케일 (InitArticulated가 도형에 곱한 값과 같다)
+		const FTransform Pose = Body->GetUnrealWorldTransform();
+		const FVector Scale = FTransform(GetBoneWorldMatrix(Body->InstanceBoneIndex)).Scale;
+		const FMatrix BodyWorld = FTransform(Pose.Rotation, Pose.Location, Scale).GetLocalMatrix();
+		PhysicsDebugDraw::DrawAggGeom(LineBatcher, Setup->AggGeom, BodyWorld, Body->bSimulatePhysics ? SimulatedColor : KinematicColor);
+	}
+}
+
+int32 USkeletalMeshComponent::GetNumPhysicsBodies(int32& OutSimulating) const
+{
+	int32 Count = 0;
+	OutSimulating = 0;
+	for (const FBodyInstance* Body : Bodies)
+	{
+		if (!Body || !Body->IsValidBodyInstance())
+			continue;
+		++Count;
+		if (Body->bSimulatePhysics)
+			++OutSimulating;
+	}
+	return Count;
+}
+
+int32 USkeletalMeshComponent::GetNumPhysicsConstraints() const
+{
+	int32 Count = 0;
+	for (const FConstraintInstance* Constraint : Constraints)
+	{
+		if (Constraint && Constraint->ConstraintHandle)
+			++Count;
+	}
+	return Count;
 }
 
 USkeletalMeshComponent::USkeletalMeshComponent()

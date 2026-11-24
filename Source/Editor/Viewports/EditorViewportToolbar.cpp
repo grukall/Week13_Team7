@@ -215,6 +215,7 @@ namespace EditorViewportUI
 				{ "Rendering", EEditorIcon::ShowPrimitives, &Flags.Rendering },
 				{ "Skeletal Meshes", EEditorIcon::SkeletalMesh, &Flags.SkeletalMeshes },
 				{ "Particles", EEditorIcon::Particle, &Flags.Particles },
+				{ "Physics", EEditorIcon::PhysicsAsset, &Flags.Physics },
 				{ "Decals", EEditorIcon::ShowDecal, &Flags.Decals },
 				{ "Fog", EEditorIcon::ShowFog, &Flags.Fog },
 				{ "Depth of Field", EEditorIcon::Eye, &Flags.DepthOfField },

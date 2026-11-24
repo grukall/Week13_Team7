@@ -18,6 +18,7 @@
 #include "Engine/Level.h"
 #include "GameFramework/Actor.h"
 #include "Asset/AssetManager.h"
+#include "Physics/PhysicsAssetDebugDraw.h"
 
 FLevelEditorViewportClient* GCurrentLevelEditingViewportClient = nullptr;
 
@@ -193,6 +194,16 @@ void FLevelEditorViewportClient::Draw(const FSceneView* View, FScenePassCallback
 				DrawSpringArms(GetWorld(), LineBatcher, SelectedActor);
 
 				LineBatcher->OnRender(SceneView.ViewProjectionMatrix);
+
+				// Show > Physics: 래그돌 바디는 메시 안에 있어 가려지므로 깊이 테스트 없이 따로 그린다
+				if (EngineShowFlags.Physics)
+				{
+					LineBatcher->BeginFrame();
+					DrawSkeletalPhysicsDebug(GetWorld(), LineBatcher);
+					LineBatcher->SetDepthTest(false);
+					LineBatcher->OnRender(SceneView.ViewProjectionMatrix);
+					LineBatcher->SetDepthTest(true);
+				}
 			};
 	}
 	if (Settings.bDrawBatchLine)

@@ -15,6 +15,7 @@
 #include "Editor/Rendering/SceneDepthRenderer.h"
 #include "Editor/Rendering/CascadeFloorRenderer.h"
 #include "Render/SceneRenderOptions.h"
+#include "Render/ShowFlags.h"
 #include "Render/SceneViewTargets.h"
 #include "Render/RenderGraph/RenderGraph.h"
 
@@ -64,8 +65,9 @@ public:
 
 	// Active View의 입력과 Picking 결과만 Gizmo 및 선택 상태에 반영한다.
 	void UpdateGizmoAndPicking();
-	// PIE 게임 화면 위에 Settings > Debug Draw (PIE)에서 켠 디버그 표시를 그린다.
-	void DrawPIEDebug(UWorld* World, const FMatrix& ViewProjection);
+	// PIE 게임 화면 위에 디버그 표시를 그린다.
+	// Settings > Debug Draw (PIE) 값은 안에서 읽고, 뷰포트마다 다른 Show 메뉴 값은 ShowFlags로 받는다
+	void DrawPIEDebug(UWorld* World, const FMatrix& ViewProjection, const FEngineShowFlags& ShowFlags);
 	void DeleteActor(AActor* Actor);
 	void DeleteComponent(UActorComponent* Component);
 

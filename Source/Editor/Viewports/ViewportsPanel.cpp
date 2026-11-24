@@ -16,8 +16,10 @@
 #include "Render/GPUStats.h"
 #include "Render/SkinningStats.h"
 #include "Particles/ParticleStats.h"
+#include "Physics/PhysicsStats.h"
 #include "Render/SkeletalMeshObject.h"
 #include "Components/SkinnedMeshComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Editor/EditorUI/EditorIcons.h"
 #include "Editor/Viewports/EditorViewportToolbar.h"
 #include "Editor/EditorModeManager.h"
@@ -458,6 +460,39 @@ const FRenderStats& Stats = RenderData.RenderStats;
 		// 시간은 모든 뷰를 합친 값이다 (Simulate는 프레임당 1번, Render Data는 뷰마다 1번)
 		ProfileLines.Add({ "Particles CPU (ms)", TitleColor, { "Last", "Avg", "Max" } });
 		for (TStatId Id : { ParticleStats::STAT_ParticleSimulate, ParticleStats::STAT_ParticleRenderData }) {
+			FProfileStatLine Line{ "  " + FString(Id.GetName()), ValueColor };
+			if (const FCycleStatData* D = FStatRegistry::Find(Id)) {
+				Line.Values[0] = std::format("{:.2f}", D->GetLastMs());
+				Line.Values[1] = std::format("{:.2f}", D->GetRecentAverageMs());
+				Line.Values[2] = std::format("{:.2f}", D->GetMaxMs());
+			}
+			else {
+				Line.Values[0] = Line.Values[1] = Line.Values[2] = "-";
+			}
+			ProfileLines.Add(Line);
+		}
+	}
+
+	if (FStatOverlay::IsEnabled(EStatFlags::Physics)) {
+		// 바디 · 관절이 만들어진(물리 상태가 있는) 스켈레탈 메시만 센다. 에디터 월드는 물리 씬이 없어 PIE · SIE에서만 잡힌다
+		int32 NumComponents = 0, NumBodies = 0, NumSimulating = 0, NumConstraints = 0;
+		for (TObjectIterator<USkeletalMeshComponent> It; It; ++It) {
+			if (!It->IsRegistered()) continue;
+			int32 Simulating = 0;
+			const int32 Bodies = It->GetNumPhysicsBodies(Simulating);
+			if (Bodies == 0) continue;
+			++NumComponents;
+			NumBodies += Bodies;
+			NumSimulating += Simulating;
+			NumConstraints += It->GetNumPhysicsConstraints();
+		}
+		Lines.Add({ "Physics", TitleColor });
+		Lines.Add({ std::format("  Ragdoll Components {}", NumComponents), ValueColor });
+		Lines.Add({ std::format("  Bodies {} (Simulating {} / Kinematic {})", NumBodies, NumSimulating, NumBodies - NumSimulating), ValueColor });
+		Lines.Add({ std::format("  Constraints {}", NumConstraints), ValueColor });
+
+		ProfileLines.Add({ "Physics CPU (ms)", TitleColor, { "Last", "Avg", "Max" } });
+		for (TStatId Id : { PhysicsStats::STAT_PhysicsSimulate, PhysicsStats::STAT_PhysicsUpdateKinematic, PhysicsStats::STAT_PhysicsBlendIn }) {
 			FProfileStatLine Line{ "  " + FString(Id.GetName()), ValueColor };
 			if (const FCycleStatData* D = FStatRegistry::Find(Id)) {
 				Line.Values[0] = std::format("{:.2f}", D->GetLastMs());

@@ -54,6 +54,8 @@
 #include "Components/WheeledVehicleMovementComponent.h"
 
 #include "Physics/Collision.h"
+#include "Physics/PhysicsAssetDebugDraw.h"
+#include "Editor/Viewports/LevelEditorViewport.h"
 
 #include "Audio/AudioDevice.h"
 
@@ -707,6 +709,17 @@ void UEditorEngine::Tick(const float DeltaTime)
 					ShowFlags.CameraOverlay = S.bShowCameraOverlay;
 					ShowFlags.SkeletalMeshes = S.bShowSkeletalMesh;
 				}
+
+				// Show > Physics는 설정 창에 없고 뷰포트 Show 메뉴에만 있다. PIE를 시작한 레벨 뷰포트의 값을 따른다
+				// (새 창 PIE면 지금 활성 뷰포트)
+				if (ViewportsPanel)
+				{
+					const int32 SourceView = PIEStartEditorViewIndex >= 0 ? PIEStartEditorViewIndex : ViewportsPanel->GetActiveViewIndex();
+					if (FLevelEditorViewportClient* SourceClient = ViewportsPanel->GetViewportClient(SourceView))
+					{
+						Context->GameViewport->EngineShowFlags.Physics = SourceClient->GetEngineShowFlags().Physics;
+					}
+				}
 			}
 		}
 	}
@@ -1173,7 +1186,7 @@ void UEditorEngine::SaveSceneAs()
 }
 
 // PIE 디버그 표시 (Settings > Debug Draw (PIE))
-void UEditorEngine::DrawPIEDebug(UWorld* World, const FMatrix& ViewProjection)
+void UEditorEngine::DrawPIEDebug(UWorld* World, const FMatrix& ViewProjection, const FEngineShowFlags& ShowFlags)
 {
 	const FEditorSettings& Settings = SettingsPanel->GetSettings();
 	GShowSkeletalRootDebug = Settings.bShowRootDebug;  // 런타임 "root" 라벨 표시용
@@ -1186,13 +1199,16 @@ void UEditorEngine::DrawPIEDebug(UWorld* World, const FMatrix& ViewProjection)
 	LineBatcher->OnRender(ViewProjection);
 
 	// root 및 차량 디버그(휠/서스펜션/COM)는 메시에 가려지기 쉬우므로 깊이 테스트 없이 따로 그린다 (항상 위에 보임)
-	if (Settings.bShowRootDebug || Settings.bShowVehicleDebug)
+	// Show > Physics 래그돌 바디도 메시 안에 있어 같은 패스로 그린다
+	if (Settings.bShowRootDebug || Settings.bShowVehicleDebug || ShowFlags.Physics)
 	{
 		LineBatcher->BeginFrame();
 		if (Settings.bShowRootDebug)
 			DrawSkeletalRootDebug(World, LineBatcher);
 		if (Settings.bShowVehicleDebug)
 			DrawVehicleDebug(World, LineBatcher);
+		if (ShowFlags.Physics)
+			DrawSkeletalPhysicsDebug(World, LineBatcher);
 		LineBatcher->SetDepthTest(false);
 		LineBatcher->OnRender(ViewProjection);
 		LineBatcher->SetDepthTest(true);

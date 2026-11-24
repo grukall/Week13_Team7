@@ -62,6 +62,8 @@ public:
 	void OnUnregister() override;
 	void TickComponent(float DeltaTime) override;
 
+	// 천 전용 Proxy(FClothSceneProxy)를 만든다. 그림자 패스는 HasDynamicMeshElements가 true인 Proxy만 동적 Caster로 받는다
+	FPrimitiveSceneProxy* CreateSceneProxy() override;
 	void SubmitToRenderQueue(FRenderQueue& RenderQueue, const FViewContext& ViewContext) override;
 
 	// 머티리얼 슬롯 1개. 덮어쓰기(SetMaterial)가 없으면 엔진 기본 머티리얼을 쓴다

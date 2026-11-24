@@ -5,7 +5,8 @@
 #include "Asset/AssetManager.h"
 #include "UObject/UObjectIterator.h"
 #include "Physics/BodySetup.h"
-#include <NvCloth/Factory.h> 
+#include "Engine/ClothSceneProxy.h"
+#include <NvCloth/Factory.h>
 #include <NvCloth/Solver.h> 
 #include <NvCloth/Cloth.h> 
 #include <NvClothExt/ClothFabricCooker.h>
@@ -588,6 +589,11 @@ FBox UClothComponent::CalcLocalBounds() const
 		}
 	}
 	return bHasBounds ? FBox{ Min, Max } : Super::CalcLocalBounds();	// 천이 없으면 기본(크기 0) 박스
+}
+
+FPrimitiveSceneProxy* UClothComponent::CreateSceneProxy()
+{
+	return new FClothSceneProxy(this);	// 그림자 패스가 천을 Caster로 받도록 (HasDynamicMeshElements = true)
 }
 
 void UClothComponent::SubmitToRenderQueue(FRenderQueue& RenderQueue, const FViewContext& ViewContext)

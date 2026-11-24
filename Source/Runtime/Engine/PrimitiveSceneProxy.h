@@ -21,6 +21,9 @@ public:
 
 	virtual bool HasDynamicMeshElements() const { return false; }
 	virtual void GetDynamicMeshElements(FRenderQueue& Queue, const FViewContext& View);
+	// 메시 캐시(RenderState) 없이도 GetDynamicMeshElements 패킷을 그림자 깊이 패스가 그대로 그려도 되는가.
+	// 패킷이 FVertex VB/IB와 Proxy 행렬만 쓰는 경우에만 true (천). 파티클처럼 뷰 의존·전용 정점이면 false로 둔다
+	virtual bool SupportsDynamicShadowDepth() const { return false; }
 
 	bool IsSkinned() const { return bSkinned; }
 	

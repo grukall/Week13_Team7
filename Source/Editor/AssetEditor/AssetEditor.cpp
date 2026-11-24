@@ -7,6 +7,7 @@
 #include "Render/Renderer.h"
 #include "Render/SceneRenderer.h"
 #include "Runtime/Render/LineBatcher.h"
+#include "Runtime/Render/TriangleBatcher.h"
 
 FAssetEditor::FAssetEditor(
 	UEditorEngine& InEditorEngine,
@@ -167,7 +168,15 @@ FAssetEditorViewportClient::FAssetEditorViewportClient(FAssetEditor& InAssetEdit
 	EngineShowFlags.Vignette = false;
 	EngineShowFlags.CameraOverlay = false;
 	RenderOptions.RenderingPath = ERenderingPath::Forward;   // 웨이트 히트맵은 Forward 패스에만 있다
+
+	TriangleBatcher = MakeUnique<FTriangleBatcher>();
+	if (!TriangleBatcher->Init())
+	{
+		TriangleBatcher.reset();
+	}
 }
+
+FAssetEditorViewportClient::~FAssetEditorViewportClient() = default;
 
 // 미리보기 씬 위에 에디터가 주는 선과 기즈모를 올린다. 씬은 기반 클래스의 Draw가 그린다.
 void FAssetEditorViewportClient::Draw(const FSceneView* View, FScenePassCallbacks& Callbacks)
@@ -179,6 +188,14 @@ void FAssetEditorViewportClient::Draw(const FSceneView* View, FScenePassCallback
 	// 추후 AssetEditor 전용 Gizmo 슬롯을 만들어서 그쪽으로 옮기는 게 좋을 듯
 	Callbacks.Overlays.EditorGizmo = [this, View, LineBatcher]
 	{
+		// 반투명 면 → 선 → 기즈모 순서. 면을 먼저 그려야 선과 기즈모가 그 위에 보인다
+		if (TriangleBatcher)
+		{
+			TriangleBatcher->BeginFrame();
+			AssetEditor.OnRenderTranslucent(*TriangleBatcher);
+			TriangleBatcher->OnRender(View->ViewProjectionMatrix);
+		}
+
 		LineBatcher->BeginFrame();
 		AssetEditor.OnRenderLine(*LineBatcher);
 		LineBatcher->OnRender(View->ViewProjectionMatrix);

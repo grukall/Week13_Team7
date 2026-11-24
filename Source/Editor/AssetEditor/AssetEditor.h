@@ -6,6 +6,7 @@
 #include "Editor/Viewports/EditorViewportClient.h"
 
 class FGizmo;
+class FTriangleBatcher;
 
 class FAssetEditor
 {
@@ -41,6 +42,8 @@ public:
 	void Shutdown();
 
 	virtual void OnRenderLine(class FLineBatcher& LineBatcher);
+	// 반투명 면 (바디 · 관절 제한 표시 등). 선보다 먼저 그려져 선이 면 위에 보인다
+	virtual void OnRenderTranslucent(FTriangleBatcher& TriangleBatcher) {}
 
 	////////////////////////////////////////////////////////////
 	// Getter
@@ -96,6 +99,7 @@ class FAssetEditorViewportClient : public FEditorViewportClient
 {
 public:
 	FAssetEditorViewportClient(FAssetEditor& InAssetEditor, FPreviewScene& InPreviewScene);
+	~FAssetEditorViewportClient() override;   // TUniquePtr<FTriangleBatcher>를 완전한 타입에서 지우도록 .cpp에 둔다
 
 	// 씬을 그리는 Draw는 기반 클래스의 것을 그대로 쓴다.
 	using FEditorViewportClient::Draw;
@@ -104,4 +108,6 @@ public:
 private:
 	// 이 클라이언트를 만든 에디터. 클라이언트보다 오래 산다.
 	FAssetEditor& AssetEditor;
+	// 에디터 프리뷰 전용 반투명 면 배처 (월드의 LineBatcher와 달리 이 클라이언트가 소유)
+	TUniquePtr<FTriangleBatcher> TriangleBatcher;
 };

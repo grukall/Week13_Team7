@@ -43,17 +43,44 @@ void AWheeledVehicle::BeginPlay()
 		Mesh->SetUseArticulatedPhysics(false);
 		VehicleMovement->SetUpdatedComponent(Mesh);
 
-		// PhysicsAsset이 없는 테스트용 메쉬도 즉시 주행 테스트가 가능하도록 박스 콜리전 폴백 제공
-		if (!Mesh->GetBodySetup())
+		// USkeletalMesh::Build()가 자동 생성하는 UPhysicsAsset은 래그돌용 본-로컬 공간 캡슐이므로
+		// 컴포넌트 공간 단일 강체인 차량 차체 콜리전에는 BindAABB 기반 전용 차체 박스를 항상 적용한다.
+		FallbackBodySetup = NewObject<UBodySetup>(this);
+		FKBoxElem BoxElem;
+		BoxElem.X = VehicleMovement->ChassisDimensions.X;
+		BoxElem.Y = VehicleMovement->ChassisDimensions.Y;
+		BoxElem.Z = VehicleMovement->ChassisDimensions.Z;
+
+		// SkeletalMesh가 연결되어 있으면 BindAABB에 맞춰 차체 박스를 구성하되,
+		// 바퀴보다 아래로 내려와 바닥과 충돌하지 않도록 지상고(GroundClearance)만큼 밑면을 올린다.
+		if (const USkeletalMesh* SkelMesh = Mesh->GetSkeletalMesh())
 		{
-			FallbackBodySetup = NewObject<UBodySetup>(this);
-			FKBoxElem BoxElem;
-			BoxElem.X = VehicleMovement->ChassisDimensions.X;
-			BoxElem.Y = VehicleMovement->ChassisDimensions.Y;
-			BoxElem.Z = VehicleMovement->ChassisDimensions.Z;
-			FallbackBodySetup->AggGeom.BoxElems.Add(BoxElem);
-			Mesh->SetSingleBodySetupOverride(FallbackBodySetup);
+			const auto& LODs = SkelMesh->GetRenderData().LODRenderData;
+			if (!LODs.IsEmpty())
+			{
+				const FBox& Bounds = LODs[0].BindAABB;
+				const FVector Size = Bounds.Max - Bounds.Min;
+				if (Size.X > 0.1f && Size.Y > 0.1f && Size.Z > 0.1f)
+				{
+					const float GroundClearance = std::clamp(Size.Z * 0.25f, 0.2f, 0.5f);
+					const float BoxMinZ = Bounds.Min.Z + GroundClearance;
+					const float BoxMaxZ = std::max(Bounds.Max.Z, BoxMinZ + 0.3f);
+
+					BoxElem.X = std::max(Size.X * 0.9f, 0.5f);
+					BoxElem.Y = std::max(Size.Y * 0.85f, 0.5f);
+					BoxElem.Z = BoxMaxZ - BoxMinZ;
+					BoxElem.Center = FVector(
+						(Bounds.Min.X + Bounds.Max.X) * 0.5f,
+						(Bounds.Min.Y + Bounds.Max.Y) * 0.5f,
+						(BoxMinZ + BoxMaxZ) * 0.5f);
+
+					VehicleMovement->ChassisDimensions = FVector(BoxElem.X, BoxElem.Y, BoxElem.Z);
+				}
+			}
 		}
+
+		FallbackBodySetup->AggGeom.BoxElems.Add(BoxElem);
+		Mesh->SetSingleBodySetupOverride(FallbackBodySetup);
 	}
 
 	Super::BeginPlay();

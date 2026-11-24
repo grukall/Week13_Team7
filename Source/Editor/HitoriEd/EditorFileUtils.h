@@ -12,6 +12,7 @@ public:
 	static bool SaveSceneAs(UWorld* World);
 	static bool LoadScene(UWorld* World);
 	static void ImportFbx(EFbxImportMode Mode);
+	static void DrawFbxImportPopup();
 
 	static FString CurrentScenePath;
 private:

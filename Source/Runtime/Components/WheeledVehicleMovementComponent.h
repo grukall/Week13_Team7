@@ -63,6 +63,10 @@ struct FWheelRuntimeState
 	float SteerAngle = 0.0f;
 	float RotationAngle = 0.0f;
 	bool bIsInAir = true;
+
+	FQuat InitialCompRotation = FQuat::Identity();
+	FQuat ParentCompRotationInv = FQuat::Identity();
+	FVector LocalSuspAxis = UpVector;
 };
 
 UCLASS()
@@ -78,10 +82,14 @@ public:
 	void BeginPlay() override;
 	void TickComponent(float DeltaTime) override;
 
+	using Super::Serialize;
+	void Serialize(FStructuredArchive::FRecord Record) override;
+
 	void CreateVehicle();
 	void DestroyVehicle();
 	void PreTick(float SubstepDeltaTime);
 	void UpdateWheelBones();
+	bool AutoDetectWheelBones(USkeletalMeshComponent* SkelComp);
 
 	void SetThrottleInput(float Throttle);
 	void SetBrakeInput(float Brake);
@@ -97,6 +105,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	FVector ChassisDimensions = FVector(4.0f, 1.8f, 1.2f);
+
+	UPROPERTY(EditAnywhere)
+	bool bAutoDetectWheelBones = true;
 
 	TArray<FWheelSetup> WheelSetups;
 

@@ -6,7 +6,24 @@
 #include "GameFramework/Actor.h"
 #include "Physics/PhysScene.h"
 #include "Physics/PhysXVehicleManager.h"
+#include "Serialization/StructuredArchive.h"
+#include "Serialization/StructuredArchiveSlots.h"
+#include "Serialization/MathSerialization.h"
 #include <PxPhysicsAPI.h>
+#include <cctype>
+
+namespace
+{
+	bool ContainsWheelKeyword(const FString& BoneName)
+	{
+		FString Lower = BoneName;
+		for (char& Ch : Lower)
+		{
+			Ch = static_cast<char>(std::tolower(static_cast<unsigned char>(Ch)));
+		}
+		return Lower.find("wheel") != FString::npos || Lower.find("tire") != FString::npos;
+	}
+}
 
 UWheeledVehicleMovementComponent::UWheeledVehicleMovementComponent()
 {
@@ -75,20 +92,169 @@ void UWheeledVehicleMovementComponent::OnUnregister()
 	Super::OnUnregister();
 }
 
+void UWheeledVehicleMovementComponent::Serialize(FStructuredArchive::FRecord Record)
+{
+	Super::Serialize(Record);
+
+	const bool bLoading = Record.GetUnderlyingArchive().IsLoading();
+	if (auto Slot = Record.TryEnterField("WheelSetups", !bLoading))
+	{
+		int32 NumSetups = bLoading ? 0 : static_cast<int32>(WheelSetups.Num());
+		auto Array = Slot->EnterArray(NumSetups);
+		if (bLoading && NumSetups > 0)
+		{
+			WheelSetups.SetNum(NumSetups);
+		}
+		for (int32 i = 0; i < NumSetups; ++i)
+		{
+			FWheelSetup& Setup = WheelSetups[i];
+			auto Elem = Array.EnterElement().EnterRecord();
+			Elem << SA_VALUE("BoneName", Setup.BoneName);
+			Elem << SA_VALUE("AdditionalOffset", Setup.AdditionalOffset);
+			Elem << SA_VALUE("Radius", Setup.Radius);
+			Elem << SA_VALUE("Width", Setup.Width);
+			Elem << SA_VALUE("Mass", Setup.Mass);
+			Elem << SA_VALUE("MaxSteerAngle", Setup.MaxSteerAngle);
+			Elem << SA_VALUE("SuspensionMaxRaise", Setup.SuspensionMaxRaise);
+			Elem << SA_VALUE("SuspensionMaxDrop", Setup.SuspensionMaxDrop);
+			Elem << SA_VALUE("SpringStrength", Setup.SpringStrength);
+			Elem << SA_VALUE("SpringDamperRate", Setup.SpringDamperRate);
+			Elem << SA_VALUE("bAffectedByHandbrake", Setup.bAffectedByHandbrake);
+			Elem << SA_VALUE("bDriven", Setup.bDriven);
+		}
+	}
+}
+
+bool UWheeledVehicleMovementComponent::AutoDetectWheelBones(USkeletalMeshComponent* SkelComp)
+{
+	if (!SkelComp)
+	{
+		return false;
+	}
+
+	const TArray<FBoneInfo>& Bones = SkelComp->GetBones();
+	if (Bones.IsEmpty())
+	{
+		return false;
+	}
+
+	SkelComp->RefreshBoneTransformsNow();
+
+	struct FDetectedWheel
+	{
+		int32 BoneIndex;
+		FVector CompPosition;
+	};
+
+	TArray<FDetectedWheel> Detected;
+	for (int32 i = 0; i < Bones.Num(); ++i)
+	{
+		if (!ContainsWheelKeyword(Bones[i].Name))
+		{
+			continue;
+		}
+
+		// 상위 조상 본이 이미 wheel/tire 본이면 하위 장식 본(캘리퍼 등)으로 보고 제외
+		bool bHasWheelAncestor = false;
+		for (int32 Parent = Bones[i].ParentIndex; Parent >= 0 && Parent < Bones.Num(); Parent = Bones[Parent].ParentIndex)
+		{
+			if (ContainsWheelKeyword(Bones[Parent].Name))
+			{
+				bHasWheelAncestor = true;
+				break;
+			}
+		}
+		if (bHasWheelAncestor)
+		{
+			continue;
+		}
+
+		const FVector4 Origin = SkelComp->GetBoneComponentMatrix(i).GetOrigin();
+		Detected.Add({ i, FVector(Origin.X, Origin.Y, Origin.Z) });
+		if (static_cast<uint32>(Detected.Num()) >= PX_MAX_NB_WHEELS)
+		{
+			break;
+		}
+	}
+
+	if (Detected.IsEmpty())
+	{
+		return false;
+	}
+
+	float AvgX = 0.0f;
+	float AvgY = 0.0f;
+	float AvgZ = 0.0f;
+	for (const FDetectedWheel& Item : Detected)
+	{
+		AvgX += Item.CompPosition.X;
+		AvgY += Item.CompPosition.Y;
+		AvgZ += Item.CompPosition.Z;
+	}
+	const float InvCount = 1.0f / static_cast<float>(Detected.Num());
+	AvgX *= InvCount;
+	AvgY *= InvCount;
+	AvgZ *= InvCount;
+
+	const USkeletalMesh* SkelMesh = SkelComp->GetSkeletalMesh();
+	const FSkeletalMeshLODRenderData* LOD0 = (SkelMesh && !SkelMesh->GetRenderData().LODRenderData.IsEmpty())
+		? &SkelMesh->GetRenderData().LODRenderData[0]
+		: nullptr;
+
+	WheelSetups.Reset();
+	WheelSetups.SetNum(Detected.Num());
+	for (int32 i = 0; i < Detected.Num(); ++i)
+	{
+		FWheelSetup& Setup = WheelSetups[i];
+		const int32 BoneIdx = Detected[i].BoneIndex;
+		Setup.BoneName = Bones[BoneIdx].Name;
+		Setup.AdditionalOffset = FVector::ZeroVector;
+
+		// 본 바운드(BoneBounds) 또는 지면(BindAABB.Min.Z)과의 거리로 실제 바퀴 반지름/폭 자동 산출
+		if (LOD0 && LOD0->BoneBounds.IsValidIndex(BoneIdx))
+		{
+			const FBox& WheelBounds = LOD0->BoneBounds[BoneIdx];
+			if (WheelBounds.Min.Z < WheelBounds.Max.Z)
+			{
+				const float MeasuredRadius = (WheelBounds.Max.Z - WheelBounds.Min.Z) * 0.5f;
+				const float MeasuredWidth = WheelBounds.Max.Y - WheelBounds.Min.Y;
+				if (MeasuredRadius >= 0.1f && MeasuredRadius <= 1.5f)
+				{
+					Setup.Radius = MeasuredRadius;
+				}
+				if (MeasuredWidth >= 0.05f && MeasuredWidth <= 1.0f)
+				{
+					Setup.Width = MeasuredWidth;
+				}
+			}
+		}
+		else if (LOD0 && LOD0->BindAABB.Min.Z < LOD0->BindAABB.Max.Z)
+		{
+			const float DistToGround = Detected[i].CompPosition.Z - LOD0->BindAABB.Min.Z;
+			if (DistToGround >= 0.1f && DistToGround <= 1.5f)
+			{
+				Setup.Radius = DistToGround;
+			}
+		}
+
+		const bool bIsFront = (Detected[i].CompPosition.X >= AvgX);
+		Setup.MaxSteerAngle = bIsFront ? 40.0f : 0.0f;
+		Setup.bAffectedByHandbrake = !bIsFront;
+		Setup.bDriven = true;
+	}
+
+	// 무게중심을 감지된 휠 사각형 중심 및 바퀴 중심보다 약간 위(+0.15m)로 자동 정렬
+	COMOffset = FVector(AvgX, AvgY, AvgZ + 0.15f);
+
+	return true;
+}
+
 void UWheeledVehicleMovementComponent::CreateVehicle()
 {
 	// Safety
-
-	if(PVehicle)
+	if (PVehicle)
 	{
 		DestroyVehicle();
-	}
-
-	const uint32 NumWheels = static_cast<uint32>(WheelSetups.Num());
-
-	if(NumWheels == 0 || NumWheels > PX_MAX_NB_WHEELS)
-	{
-		return;
 	}
 
 	if (!UpdatedComponent && GetOwner())
@@ -106,6 +272,33 @@ void UWheeledVehicleMovementComponent::CreateVehicle()
 	{
 		return;
 	}
+
+	// 본 포즈 확정 및 바퀴 본 자동 탐색 (수동 지정된 BoneName이 없을 때만)
+	SkelComp->RefreshBoneTransformsNow();
+	if (bAutoDetectWheelBones && !SkelComp->GetBones().IsEmpty())
+	{
+		bool bHasAnyBoneName = false;
+		for (const FWheelSetup& Setup : WheelSetups)
+		{
+			if (!Setup.BoneName.empty())
+			{
+				bHasAnyBoneName = true;
+				break;
+			}
+		}
+		if (!bHasAnyBoneName)
+		{
+			AutoDetectWheelBones(SkelComp);
+		}
+	}
+
+	const uint32 NumWheels = static_cast<uint32>(WheelSetups.Num());
+	if (NumWheels == 0 || NumWheels > PX_MAX_NB_WHEELS)
+	{
+		return;
+	}
+
+	SkelComp->RefreshBoneTransformsNow();
 
 	// Get PxRigidDynamic
 	FPhysScene* PhysScene = GetWorld() ? GetWorld()->GetPhysicsScene() : nullptr;
@@ -146,6 +339,7 @@ void UWheeledVehicleMovementComponent::CreateVehicle()
 	TArray<physx::PxVec3> WheelCentreCMOffsets;
 	WheelCentreCMOffsets.SetNum(static_cast<int32>(NumWheels));
 
+	const TArray<FBoneInfo>& Bones = SkelComp->GetBones();
 	for (uint32 i = 0; i < NumWheels; ++i)
 	{
 		const int32 Idx = static_cast<int32>(i);
@@ -157,9 +351,21 @@ void UWheeledVehicleMovementComponent::CreateVehicle()
 			const int32 BoneIndex = SkelComp->FindBoneIndex(Setup.BoneName);
 			if (BoneIndex != -1)
 			{
-				WheelStates[Idx].BoneIndex = BoneIndex;
-				WheelStates[Idx].InitialBoneLocalTransform = SkelComp->GetBoneLocalTransform(BoneIndex);
-				const FVector4 BoneOrigin = SkelComp->GetBoneComponentMatrix(BoneIndex).GetOrigin();
+				FWheelRuntimeState& State = WheelStates[Idx];
+				State.BoneIndex = BoneIndex;
+				State.InitialBoneLocalTransform = SkelComp->GetBoneLocalTransform(BoneIndex);
+
+				const FMatrix WheelCompMat = SkelComp->GetBoneComponentMatrix(BoneIndex);
+				State.InitialCompRotation = WheelCompMat.GetRotation().Normalized();
+
+				const int32 ParentIdx = Bones.IsValidIndex(BoneIndex) ? Bones[BoneIndex].ParentIndex : -1;
+				const FMatrix ParentCompMat = (ParentIdx >= 0) ? SkelComp->GetBoneComponentMatrix(ParentIdx) : FMatrix::Identity;
+				State.ParentCompRotationInv = ParentCompMat.GetRotation().Normalized().Inverse();
+
+				const FMatrix ParentInvMat = ParentCompMat.Inverse();
+				State.LocalSuspAxis = ParentInvMat.TransformVector(UpVector);
+
+				const FVector4 BoneOrigin = WheelCompMat.GetOrigin();
 				WheelPos = FVector(BoneOrigin.X, BoneOrigin.Y, BoneOrigin.Z) + Setup.AdditionalOffset;
 			}
 		}
@@ -222,8 +428,9 @@ void UWheeledVehicleMovementComponent::CreateVehicle()
 		physx::PxVehicleTireData TireData;
 		TireData.mType = 0; // UpdateTireFrictionTable()에 등록한 0번 타이어 타입과 매칭
 
-		// 힘 작용점 Z 오프셋(-0.3m): 무게중심보다 약간 아래에 두어 롤링을 유지하면서 전복 억제
-		const physx::PxVec3 ForceAppPointOffset(WheelCMOffset.x, WheelCMOffset.y, -0.3f);
+		// 힘 작용점 Z 오프셋: 바퀴 허브 높이 근처(무게중심 아래 -0.35m ~ -0.05m)로 제한해 전복 억제
+		const float ForceAppZ = std::clamp(WheelCMOffset.z, -0.35f, -0.05f);
+		const physx::PxVec3 ForceAppPointOffset(WheelCMOffset.x, WheelCMOffset.y, ForceAppZ);
 
 		WheelsSimData->setWheelData(i, WheelData);
 		WheelsSimData->setSuspensionData(i, SuspData);
@@ -473,11 +680,13 @@ void UWheeledVehicleMovementComponent::UpdateWheelBones()
 		if (State.BoneIndex != -1)
 		{
 			FTransform NewTM = State.InitialBoneLocalTransform;
-			NewTM.Location.Z += State.SuspOffset;
+			NewTM.Location = State.InitialBoneLocalTransform.Location + State.LocalSuspAxis * State.SuspOffset;
 
+			// 컴포넌트 공간(차체 기준): 초기 자세 -> Y축 구름 -> Z축 조향 순으로 합성 후 부모 본 로컬 공간으로 역변환
 			const FQuat SteerQuat = FQuat::MakeFromAxisAngle(UpVector, State.SteerAngle);
 			const FQuat SpinQuat = FQuat::MakeFromAxisAngle(RightVector, State.RotationAngle);
-			NewTM.Rotation = State.InitialBoneLocalTransform.Rotation * SteerQuat * SpinQuat;
+			const FQuat TargetCompRot = SteerQuat * SpinQuat * State.InitialCompRotation;
+			NewTM.Rotation = (State.ParentCompRotationInv * TargetCompRot).Normalized();
 
 			SkelComp->SetBoneLocalTransform(State.BoneIndex, NewTM);
 			bAnyBoneUpdated = true;

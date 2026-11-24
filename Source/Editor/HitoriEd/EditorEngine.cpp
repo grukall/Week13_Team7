@@ -752,6 +752,7 @@ void UEditorEngine::Tick(const float DeltaTime)
 		ImGuiRenderer->Begin();
 
 		EditorManager->DrawEditorUI();
+		FEditorFileUtils::DrawFbxImportPopup();
 
 		ImGuiRenderer->End();
 	}

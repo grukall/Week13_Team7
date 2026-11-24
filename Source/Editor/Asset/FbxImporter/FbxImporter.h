@@ -15,6 +15,12 @@ struct FFbxAnimationImportOptions
 	int32 ResampleRate = 0; // bResample이 true일 때 0은 자동 계산, 양수는 지정값
 };
 
+struct FFbxImportOptions
+{
+	float ImportUniformScale = 1.0f; // 1.0 = cm(기본), 0.01 = m(cm -> m 1/100 축소)
+	bool bForceReimport = false;
+};
+
 struct FFbxImportResult
 {
 	TArray<FString> Paths;
@@ -49,7 +55,7 @@ public:
 	// 비소유 참조. 다음 Open/Close 또는 이 객체의 소멸 전까지만 유효하다.
 	FbxScene* GetScene() const { return Scene; }
 	// 열린 Scene의 축/단위를 맞추고 Node별 자료를 생성한다. 실패하면 Node 결과는 비운다.
-	bool ReadMeshData(TArray<FString>& OutWarnings, FString& OutError);
+	bool ReadMeshData(TArray<FString>& OutWarnings, FString& OutError, float ImportUniformScale = 1.0f);
 	// 참조는 다음 ReadMeshData/Open/Close/소멸 전까지만 유효하다.
 	const TArray<FFbxMeshNodeData>& GetMeshNodes() const { return MeshNodes; }
 	// Import Static용: Skin 유무와 관계없이 모든 Node를 하나로 합친다.
@@ -70,7 +76,8 @@ public:
 	// ReadSkeletonData 성공 후 호출한다. SDK 수명과 독립적인 Geometry/Weight/Bone 출력을 만든다.
 	bool BuildSkeletalMesh(FSkeletalMeshData& OutData, TArray<FString>& OutWarnings, FString& OutError) const;
 	// Assets/FBX에 저장한 뒤 미로드 Asset을 등록한다. 이미 로드된 객체는 유지한다.
-	static bool ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbxImportResult& OutResult, FString& OutError);
+	static bool ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbxImportResult& OutResult, FString& OutError,
+		const FFbxImportOptions& Options = {});
 
 private:
 	int32 GetMaxSampleRate() const;

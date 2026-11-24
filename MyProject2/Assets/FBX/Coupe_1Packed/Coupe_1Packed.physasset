@@ -1,0 +1,137 @@
+{
+    "Bodies": [
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": 0.8072050213813782,
+                        "Y": 2.9802322387695313e-08,
+                        "Z": -0.0026204586029052734
+                    },
+                    "Length": 2.84959077835083,
+                    "Radius": 0.9483411312103271,
+                    "Rotation": {
+                        "W": 1.0,
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "BoneName": "PBR_BMWM635",
+                "PhysMaterial": null
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": 1.4901161193847656e-08,
+                        "Y": 1.4901161193847656e-07,
+                        "Z": 1.1920928955078125e-07
+                    },
+                    "Length": 1.1920928955078125e-07,
+                    "Radius": 0.324005126953125,
+                    "Rotation": {
+                        "W": 0.70710688829422,
+                        "X": 0.0,
+                        "Y": 0.7071066498756409,
+                        "Z": 0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "BoneName": "PBR_Wheel_BMW-M635.rf",
+                "PhysMaterial": null
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": 0.0,
+                        "Y": 1.4901161193847656e-07,
+                        "Z": -2.9802322387695313e-08
+                    },
+                    "Length": 5.960464477539063e-08,
+                    "Radius": 0.3240051567554474,
+                    "Rotation": {
+                        "W": 0.70710688829422,
+                        "X": 0.0,
+                        "Y": 0.7071066498756409,
+                        "Z": 0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "BoneName": "PBR_Wheel_BMW-M635.rb",
+                "PhysMaterial": null
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": 0.0,
+                        "Y": 1.1920928955078125e-07,
+                        "Z": 0.0
+                    },
+                    "Length": 2.980232238769531e-07,
+                    "Radius": 0.32400521636009216,
+                    "Rotation": {
+                        "W": 1.0,
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "BoneName": "PBR_Wheel_BMW-M635.lf",
+                "PhysMaterial": null
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": 0.0,
+                        "Y": 1.1920928955078125e-07,
+                        "Z": 1.4901161193847656e-07
+                    },
+                    "Length": 1.1920928955078125e-07,
+                    "Radius": 0.32400521636009216,
+                    "Rotation": {
+                        "W": 1.0,
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "BoneName": "PBR_Wheel_BMW-M635.lb",
+                "PhysMaterial": null
+            },
+            "Spheres": []
+        }
+    ],
+    "Constraints": [],
+    "Properties": {},
+    "Version": 1
+}

@@ -5,8 +5,23 @@
 #include <commdlg.h>
 #include "Serialization/JsonArchive.h"
 #include "Editor/Asset/FbxImporter/FbxImporter.h"
+#include "imgui.h"
  
 FString FEditorFileUtils::CurrentScenePath = "";
+
+namespace
+{
+	struct FPendingFbxImport
+	{
+		bool bOpenPopup = false;
+		FString FilePath;
+		EFbxImportMode Mode = EFbxImportMode::Static;
+		float ImportUniformScale = 1.0f;
+		bool bForceReimport = true;
+	};
+
+	FPendingFbxImport GPendingFbxImport;
+}
 
 void FEditorFileUtils::ImportFbx(EFbxImportMode Mode)
 {
@@ -26,16 +41,75 @@ void FEditorFileUtils::ImportFbx(EFbxImportMode Mode)
 		return;
 	}
 
-	// 파일 선택의 UTF-16 경로를 Importer가 받는 UTF-8로 변환한다.
+	// 파일 선택의 UTF-16 경로를 Importer가 받는 UTF-8로 변환해 옵션 팝업을 연다.
 	const auto Utf8 = std::filesystem::path(FilePath).generic_u8string();
-	FFbxImportResult Result;
-	FString Error;
-	if (!FFbxImporter::ImportToAssets(FString(Utf8.begin(), Utf8.end()), Mode, Result, Error))
+	GPendingFbxImport.FilePath = FString(Utf8.begin(), Utf8.end());
+	GPendingFbxImport.Mode = Mode;
+	GPendingFbxImport.bForceReimport = true;
+	GPendingFbxImport.bOpenPopup = true;
+}
+
+void FEditorFileUtils::DrawFbxImportPopup()
+{
+	constexpr const char* PopupId = "FBX Import Options";
+	if (GPendingFbxImport.bOpenPopup)
 	{
-		HTR_LOG(Error, "FBX Import failed: {}", Error);
-		MessageBoxW(Dialog.hwndOwner, L"FBX를 가져오지 못했습니다. Output Log에서 오류를 확인하세요.", L"FBX Import", MB_OK | MB_ICONERROR);
+		ImGui::OpenPopup(PopupId);
+		GPendingFbxImport.bOpenPopup = false;
 	}
-	// 성공·skip·경고는 Importer가 기록하므로 여기서 다시 출력하지 않는다.
+
+	if (!ImGui::BeginPopupModal(PopupId, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		return;
+	}
+
+	const char* ModeLabel = GPendingFbxImport.Mode == EFbxImportMode::Static ? "Static Mesh" : "Skeletal Mesh";
+	const FString FileName = std::filesystem::path(
+		std::u8string(GPendingFbxImport.FilePath.begin(), GPendingFbxImport.FilePath.end())).filename().string();
+
+	ImGui::Text("Mode: %s", ModeLabel);
+	ImGui::Text("File: %s", FileName.c_str());
+	ImGui::Separator();
+
+	ImGui::InputFloat("Import Uniform Scale", &GPendingFbxImport.ImportUniformScale, 0.01f, 0.1f, "%.4f");
+	if (GPendingFbxImport.ImportUniformScale <= 0.0001f)
+	{
+		GPendingFbxImport.ImportUniformScale = 0.0001f;
+	}
+
+	ImGui::TextUnformatted("Presets:");
+	ImGui::SameLine();
+	if (ImGui::SmallButton("1.0 (cm)")) GPendingFbxImport.ImportUniformScale = 1.0f;
+	ImGui::SameLine();
+	if (ImGui::SmallButton("0.01 (m / Vehicle)")) GPendingFbxImport.ImportUniformScale = 0.01f;
+	ImGui::SameLine();
+	if (ImGui::SmallButton("0.1")) GPendingFbxImport.ImportUniformScale = 0.1f;
+
+	ImGui::Checkbox("Force Reimport (overwrite existing)", &GPendingFbxImport.bForceReimport);
+	ImGui::Separator();
+
+	if (ImGui::Button("Import", ImVec2(120, 0)))
+	{
+		FFbxImportOptions Options;
+		Options.ImportUniformScale = GPendingFbxImport.ImportUniformScale;
+		Options.bForceReimport = GPendingFbxImport.bForceReimport;
+
+		FFbxImportResult Result;
+		FString Error;
+		if (!FFbxImporter::ImportToAssets(GPendingFbxImport.FilePath, GPendingFbxImport.Mode, Result, Error, Options))
+		{
+			HTR_LOG(Error, "FBX Import failed: {}", Error);
+			MessageBoxW(GetActiveWindow(), L"FBX를 가져오지 못했습니다. Output Log에서 오류를 확인하세요.", L"FBX Import", MB_OK | MB_ICONERROR);
+		}
+		ImGui::CloseCurrentPopup();
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Cancel", ImVec2(120, 0)))
+	{
+		ImGui::CloseCurrentPopup();
+	}
+
+	ImGui::EndPopup();
 }
 
 bool FEditorFileUtils::NewScene(UWorld* World)

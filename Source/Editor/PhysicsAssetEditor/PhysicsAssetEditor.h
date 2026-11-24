@@ -22,6 +22,8 @@ class FPhysicsAssetEditor : public FSkeletalPreviewEditor
 public:
 	// 뷰포트에서 선택한 대상. 인덱스는 SkeletalBodySetups / ConstraintSetup의 인덱스
 	enum class EPhysicsSelection : uint8 { None, Body, Constraint };
+	// 바디 안의 도형 종류. 바디를 고르면 그 안의 도형 하나(기즈모 · 강조 대상)도 같이 고른다
+	enum class EPrimitiveType : uint8 { Capsule, Sphere, Box };
 
 	FPhysicsAssetEditor(UEditorEngine& InEditorEngine, FEditorManager& InEditorManager,
 		const FString& InAssetPath, USkeletalMesh& InMesh)
@@ -47,6 +49,10 @@ public:
 	void SetSelection(EPhysicsSelection Type, int32 Index);
 	EPhysicsSelection GetSelectionType() const { return SelectionType; }
 	int32 GetSelectedIndex() const { return SelectedIndex; }
+	// 바디와 그 안의 도형 하나를 고른다 (뷰포트 클릭 · 디테일 패널 도형 헤더 클릭)
+	void SelectPrimitive(int32 BodyIndex, EPrimitiveType Type, int32 PrimitiveIndex);
+	EPrimitiveType GetSelectedPrimitiveType() const { return SelectedPrimitiveType; }
+	int32 GetSelectedPrimitiveIndex() const { return SelectedPrimitiveIndex; }   // 바디를 고르지 않았거나 도형이 없으면 -1
 
 	// 저장하지 않은 변경. 디테일 패널 · 기즈모가 에셋을 고치면 부른다 (탭 이름에 *)
 	void MarkDirty() { bDirty = true; }
@@ -62,7 +68,9 @@ public:
 	bool RegenerateAllBodies();
 
 	// 바디 편집 (스켈레톤 트리 우클릭 메뉴 · Delete 키)
-	bool AddCapsuleToBody(int32 BodyIndex);     // 바디에 캡슐 하나를 더한다 (지금 지원하는 프리미티브는 캡슐뿐)
+	bool AddPrimitiveToBody(int32 BodyIndex, EPrimitiveType Type);   // 바디에 도형 하나를 더하고 그 도형을 고른다
+	// 도형 하나를 지운다. 바디의 마지막 도형은 지우지 않는다 (도형 없는 바디는 PhysX 바디를 만들 수 없다)
+	bool DeletePrimitive(int32 BodyIndex, EPrimitiveType Type, int32 PrimitiveIndex);
 	bool DeleteBody(int32 BodyIndex);           // 바디와, 그 바디를 부모나 자식으로 잇던 관절을 모두 지운다
 	bool DeleteConstraint(int32 ConstraintIndex);   // 관절 하나만 지운다. 두 바디는 그대로 남는다
 	void DeleteSelection();                     // Delete 키. 선택한 바디(+ 이어진 관절) 또는 관절을 지운다
@@ -95,7 +103,10 @@ private:
 	// 피킹
 	void UpdatePhysicsPicking();
 	int32 PickConstraint(const FVector2& MousePosition) const;   // 관절 원점과 마우스의 화면 거리
-	int32 PickBody(const FRay& Ray) const;                        // 레이 ↔ 캡슐
+	// 레이 ↔ 캡슐 · 구 · 박스. 맞은 바디 인덱스(없으면 -1)와 그 바디에서 맞은 도형
+	int32 PickBody(const FRay& Ray, EPrimitiveType& OutType, int32& OutPrimitiveIndex) const;
+	// 선택한 도형이 지금도 있으면 그대로, 없으면 바디의 첫 도형 (캡슐 → 구 → 박스 순)으로 맞춘다
+	void ValidateSelectedPrimitive();
 
 	// 기즈모
 	bool GetSelectionWorldTransform(FTransform& OutTransform) const;
@@ -106,6 +117,8 @@ private:
 
 	EPhysicsSelection SelectionType = EPhysicsSelection::None;
 	int32 SelectedIndex = -1;
+	EPrimitiveType SelectedPrimitiveType = EPrimitiveType::Capsule;
+	int32 SelectedPrimitiveIndex = -1;
 	bool bDirty = false;
 	FPhysAssetCreateParams CreateParams;
 	FString SaveMessage;                     // 마지막 저장 결과 ("Saved." / 실패 이유)
@@ -116,6 +129,8 @@ private:
 
 	// 드래그 시작 값. 매 프레임 "시작 값 + 변화"로 다시 계산한다
 	FKSphylElem DragStartCapsule;
+	FKSphereElem DragStartSphere;
+	FKBoxElem DragStartBox;
 	FQuat DragStartWorldRotation = FQuat::Identity();
 	FQuat DragStartChildWorldRotation = FQuat::Identity();
 	FVector DragStartWorldLocation = FVector::ZeroVector;

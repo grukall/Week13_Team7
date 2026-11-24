@@ -83,9 +83,9 @@ namespace
         return Box.Min.X <= Box.Max.X && Box.Min.Y <= Box.Max.Y && Box.Min.Z <= Box.Max.Z;
     }
 
-    FKSphylElem MakeCapsule(const FBox& BoundsCS, const FMatrix& InverseBindPose, int32& OutAxis)
+    // 컴포넌트 공간 AABB의 8개 꼭짓점 → 본 공간 → AABB
+    void ToBoneSpaceBounds(const FBox& BoundsCS, const FMatrix& InverseBindPose, FVector& OutMin, FVector& OutMax)
     {
-        //8개 꼭짓점 → 본 공간 → AABB
         FVector Min(FLT_MAX, FLT_MAX, FLT_MAX);
         FVector Max(-FLT_MAX, -FLT_MAX, -FLT_MAX);
         for (int32 c = 0; c < 8; ++c)
@@ -103,6 +103,14 @@ namespace
                 Max[a] = std::max(Max[a], P[a]);
             }
         }
+        OutMin = Min;
+        OutMax = Max;
+    }
+
+    FKSphylElem MakeCapsule(const FBox& BoundsCS, const FMatrix& InverseBindPose, int32& OutAxis)
+    {
+        FVector Min, Max;
+        ToBoneSpaceBounds(BoundsCS, InverseBindPose, Min, Max);
         const FVector Size = Max - Min;
 
         //가장 긴 축
@@ -124,6 +132,40 @@ namespace
 
         OutAxis = Axis;
         return Capsule;
+    }
+
+    // GeomType 도형 하나를 Geom에 넣는다. 캡슐이 아닌 도형도 관절 프레임 축은 캡슐과 같은 "가장 긴 축"을 쓴다 (OutAxis)
+    void AddFitGeom(FKAggregateGeom& Geom, EPhysAssetFitGeomType GeomType, const FBox& BoundsCS, const FMatrix& InverseBindPose, int32& OutAxis)
+    {
+        const FKSphylElem Capsule = MakeCapsule(BoundsCS, InverseBindPose, OutAxis);
+        if (GeomType == EPhysAssetFitGeomType::Capsule)
+        {
+            Geom.SphylElems.Add(Capsule);
+            return;
+        }
+
+        FVector Min, Max;
+        ToBoneSpaceBounds(BoundsCS, InverseBindPose, Min, Max);
+        const FVector Size = Max - Min;
+        const FVector Center = (Min + Max) * 0.5f;
+        if (GeomType == EPhysAssetFitGeomType::Box)
+        {
+            // 예: 본 공간 AABB (-0.05,-0.04,0)~(0.05,0.04,0.3) → X 0.1 · Y 0.08 · Z 0.3, 중심 (0,0,0.15)
+            FKBoxElem Box;
+            Box.X = Size.X;
+            Box.Y = Size.Y;
+            Box.Z = Size.Z;
+            Box.Center = Center;
+            Geom.BoxElems.Add(Box);
+        }
+        else
+        {
+            // 위 예라면 반지름 0.15 (가장 긴 변 0.3의 절반). 본을 다 덮는 대신 옆으로는 넉넉하다
+            FKSphereElem Sphere;
+            Sphere.Radius = std::max(Size.X, std::max(Size.Y, Size.Z)) * 0.5f;
+            Sphere.Center = Center;
+            Geom.SphereElems.Add(Sphere);
+        }
     }
 }
 
@@ -208,7 +250,8 @@ bool UPhysicsAsset::CalcDefaultConstraintFrames(const USkeletalMesh* Mesh, const
     return true;
 }
 
-bool UPhysicsAsset::CalcBoneCapsule(const USkeletalMesh* Mesh, const FString& BoneName, EPhysAssetFitVertWeight VertWeight, FKSphylElem& OutCapsule)
+bool UPhysicsAsset::CalcBoneGeom(const USkeletalMesh* Mesh, const FString& BoneName, EPhysAssetFitVertWeight VertWeight,
+    EPhysAssetFitGeomType GeomType, FKAggregateGeom& OutGeom)
 {
     if (!Mesh || Mesh->GetRenderData().LODRenderData.Num() == 0) return false;
     const TArray<FBoneInfo>& Bones = Mesh->GetRefSkeleton();
@@ -217,7 +260,8 @@ bool UPhysicsAsset::CalcBoneCapsule(const USkeletalMesh* Mesh, const FString& Bo
     if (Bone == -1 || !Bounds.IsValidIndex(Bone) || !HasVertices(Bounds[Bone])) return false;
 
     int32 BoneAxis = 0;
-    OutCapsule = MakeCapsule(Bounds[Bone], Bones[Bone].InverseBindPose, BoneAxis);
+    OutGeom = FKAggregateGeom();
+    AddFitGeom(OutGeom, GeomType, Bounds[Bone], Bones[Bone].InverseBindPose, BoneAxis);
     return true;
 }
 
@@ -241,6 +285,7 @@ UPhysicsAsset* UPhysicsAsset::CreateFromSkeletalMesh(const USkeletalMesh* Mesh, 
         if (!HasVertices(Bounds[i])) continue;
 
         int32 BoneAxis = 0;
+        // 크기 기준은 도형 종류와 상관없이 캡슐 크기로 본다 (Box · Sphere를 골라도 같은 본에 바디가 생긴다)
         const FKSphylElem Capsule = MakeCapsule(Bounds[i], Bones[i].InverseBindPose, BoneAxis);   // 본 AABB로 크기 결정
 
         if (!Params.bBodyForAll)
@@ -254,7 +299,7 @@ UPhysicsAsset* UPhysicsAsset::CreateFromSkeletalMesh(const USkeletalMesh* Mesh, 
 
         auto* Body = NewObject<USkeletalBodySetup>(PhysicsAsset);
         Body->BoneName = Bones[i].Name;
-        Body->AggGeom.SphylElems.Add(Capsule);   // GeomType은 지금 Capsule뿐
+        AddFitGeom(Body->AggGeom, Params.GeomType, Bounds[i], Bones[i].InverseBindPose, BoneAxis);
         PhysicsAsset->SkeletalBodySetups.Add(Body);
         PhysicsAsset->UpdateBodySetupIndexMap();
 

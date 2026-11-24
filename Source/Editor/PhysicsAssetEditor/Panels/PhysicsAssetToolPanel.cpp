@@ -55,7 +55,7 @@ void FPhysicsAssetToolPanel::DrawContent()
 			ImGui::SetTooltip("Bones thinner than this (e.g. fingers) get no body.");
 		ImGui::EndDisabled();
 
-		static const char* GeomNames[] = { "Capsule" };   // Box · Sphere는 다른 프리미티브 지원 때 추가
+		static const char* GeomNames[] = { "Capsule", "Box", "Sphere" };   // EPhysAssetFitGeomType 순서
 		BeginRow("Primitive Type");
 		EnumCombo("##GeomType", Params.GeomType, GeomNames, IM_ARRAYSIZE(GeomNames));
 

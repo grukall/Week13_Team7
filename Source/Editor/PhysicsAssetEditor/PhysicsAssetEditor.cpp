@@ -139,6 +139,19 @@ namespace
 		bool bSelected = false;
 	};
 
+	// 관절 표시 크기의 기준 (본 로컬 단위). 첫 캡슐 반지름 → 첫 구 반지름 → 첫 박스의 가장 짧은 변 절반
+	float BodyDisplayRadius(const FKAggregateGeom& Geom)
+	{
+		if (!Geom.SphylElems.IsEmpty())  return Geom.SphylElems[0].Radius;
+		if (!Geom.SphereElems.IsEmpty()) return Geom.SphereElems[0].Radius;
+		if (!Geom.BoxElems.IsEmpty())
+		{
+			const FKBoxElem& Box = Geom.BoxElems[0];
+			return std::min(Box.X, std::min(Box.Y, Box.Z)) * 0.5f;
+		}
+		return 0.05f;
+	}
+
 	bool GetConstraintFrames(const FConstraintInstance& CI, const USkeletalMesh& Mesh, USkeletalMeshComponent& Component,
 		const UPhysicsAsset& Asset, bool bSelected, FConstraintFrames& Out)
 	{
@@ -150,11 +163,11 @@ namespace
 		Out.Child = CI.Frame1.GetLocalMatrix() * Component.GetBoneWorldMatrix(ChildBone);
 		Out.Parent = CI.Frame2.GetLocalMatrix() * Component.GetBoneWorldMatrix(ParentBone);
 
-		// 크기는 자식 바디 캡슐 반지름에 비례 (손목 관절은 작게, 골반은 크게)
+		// 크기는 자식 바디 도형 크기에 비례 (손목 관절은 작게, 골반은 크게)
 		float Radius = 0.05f;
 		const int32 BodyIndex = Asset.FindBodyIndex(CI.ConstraintBone1);
-		if (BodyIndex != -1 && Asset.SkeletalBodySetups[BodyIndex] && !Asset.SkeletalBodySetups[BodyIndex]->AggGeom.SphylElems.IsEmpty())
-			Radius = Asset.SkeletalBodySetups[BodyIndex]->AggGeom.SphylElems[0].Radius;
+		if (BodyIndex != -1 && Asset.SkeletalBodySetups[BodyIndex])
+			Radius = BodyDisplayRadius(Asset.SkeletalBodySetups[BodyIndex]->AggGeom);
 		Out.Length = Radius * ConstraintSizeScale * (bSelected ? SelectedConstraintSizeScale : 1.0f);
 		Out.bSelected = bSelected;
 		return true;
@@ -236,6 +249,59 @@ namespace
 	{
 		return (Frame.TransformPosition(LocalAxis) - Frame.TransformPosition(FVector::ZeroVector)).GetSafeNormal();
 	}
+
+	// 레이와 박스(M 공간 원점 중심, 반 크기 Half)가 만나면 레이 위치 t, 아니면 FLT_MAX (슬랩 검사).
+	// 캡슐과 같이 레이를 박스 로컬로 옮기고 방향을 정규화하지 않아 t가 월드 레이의 t와 같다.
+	// 예: X축 슬랩 [-1, 1], O.X = -5, D.X = 2 → t ∈ [2, 3]. 세 축 구간이 겹치는 첫 t가 맞은 위치
+	float RayBoxHitT(const FRay& Ray, const FMatrix& M, const FVector& Half)
+	{
+		const FMatrix Inv = M.Inverse();
+		const FVector O = Inv.TransformPosition(Ray.Origin);
+		const FVector D = Inv.TransformPosition(Ray.Origin + Ray.Direction) - O;
+
+		float TMin = 0.0f, TMax = FLT_MAX;
+		for (int32 Axis = 0; Axis < 3; ++Axis)
+		{
+			if (std::abs(D[Axis]) < 1e-8f)
+			{
+				if (O[Axis] < -Half[Axis] || O[Axis] > Half[Axis])
+					return FLT_MAX;   // 이 축과 나란한데 슬랩 밖
+				continue;
+			}
+			float T1 = (-Half[Axis] - O[Axis]) / D[Axis];
+			float T2 = (Half[Axis] - O[Axis]) / D[Axis];
+			if (T1 > T2) std::swap(T1, T2);
+			TMin = std::max(TMin, T1);
+			TMax = std::min(TMax, T2);
+			if (TMin > TMax)
+				return FLT_MAX;
+		}
+		return TMin;
+	}
+
+	using EPrimitiveType = FPhysicsAssetEditor::EPrimitiveType;
+	const FVector4 SelectedPrimitiveColor(1.0f, 0.75f, 0.2f, 1.0f);   // 기즈모가 붙은 도형 윤곽선 (주황)
+
+	int32 NumPrimitives(const FKAggregateGeom& Geom, EPrimitiveType Type)
+	{
+		switch (Type)
+		{
+		case EPrimitiveType::Capsule: return Geom.SphylElems.Num();
+		case EPrimitiveType::Sphere:  return Geom.SphereElems.Num();
+		default:                      return Geom.BoxElems.Num();
+		}
+	}
+
+	// 도형 로컬 → 본 공간. 구는 회전이 없어 Identity
+	FTransform PrimitiveLocalTransform(const FKAggregateGeom& Geom, EPrimitiveType Type, int32 Index)
+	{
+		switch (Type)
+		{
+		case EPrimitiveType::Capsule: return FTransform(Geom.SphylElems[Index].Rotation, Geom.SphylElems[Index].Center);
+		case EPrimitiveType::Sphere:  return FTransform(FQuat::Identity(), Geom.SphereElems[Index].Center);
+		default:                      return FTransform(Geom.BoxElems[Index].Rotation, Geom.BoxElems[Index].Center);
+		}
+	}
 }
 
 void FPhysicsAssetEditor::OnRenderLine(FLineBatcher& LineBatcher)
@@ -255,9 +321,14 @@ void FPhysicsAssetEditor::OnRenderLine(FLineBatcher& LineBatcher)
 		{
 			const FMatrix BoneWorld = MeshComponent->GetBoneWorldMatrix(BoneIndex);
 			const FKAggregateGeom& Geom = Setup->AggGeom;
-			for (const FKSphylElem& Capsule : Geom.SphylElems) DrawCapsule(LineBatcher, Capsule, BoneWorld, SelectedBodyColor);
-			for (const FKSphereElem& Sphere : Geom.SphereElems) DrawSphere(LineBatcher, Sphere, BoneWorld, SelectedBodyColor);
-			for (const FKBoxElem& Box : Geom.BoxElems)          DrawBox(LineBatcher, Box, BoneWorld, SelectedBodyColor);
+			// 기즈모가 붙은 도형만 주황, 같은 바디의 나머지 도형은 파랑 (도형이 여러 개일 때 무엇을 고치는지 보이게)
+			const auto ColorOf = [&](EPrimitiveType Type, int32 Index)
+			{
+				return SelectedPrimitiveType == Type && SelectedPrimitiveIndex == Index ? SelectedPrimitiveColor : SelectedBodyColor;
+			};
+			for (int32 i = 0; i < Geom.SphylElems.Num(); ++i)  DrawCapsule(LineBatcher, Geom.SphylElems[i], BoneWorld, ColorOf(EPrimitiveType::Capsule, i));
+			for (int32 i = 0; i < Geom.SphereElems.Num(); ++i) DrawSphere(LineBatcher, Geom.SphereElems[i], BoneWorld, ColorOf(EPrimitiveType::Sphere, i));
+			for (int32 i = 0; i < Geom.BoxElems.Num(); ++i)    DrawBox(LineBatcher, Geom.BoxElems[i], BoneWorld, ColorOf(EPrimitiveType::Box, i));
 		}
 	}
 
@@ -405,15 +476,56 @@ void FPhysicsAssetEditor::SetGizmoMode(UE::Widget::EWidgetMode Mode)
 void FPhysicsAssetEditor::SetSelection(EPhysicsSelection Type, int32 Index)
 {
 	Gizmo.EndDrag();
+	const bool bSameBody = SelectionType == EPhysicsSelection::Body && Type == EPhysicsSelection::Body && SelectedIndex == Index;
 	SelectionType = Index >= 0 ? Type : EPhysicsSelection::None;
 	SelectedIndex = SelectionType == EPhysicsSelection::None ? -1 : Index;
+	if (!bSameBody)
+	{
+		SelectedPrimitiveIndex = -1;   // 다른 바디를 고르면 그 바디의 첫 도형부터 (아래 ValidateSelectedPrimitive)
+	}
 
 	// 관절은 스케일이 없으므로 스케일 모드에서 관절을 고르면 이동 모드로 바꿔 준다
 	if (SelectionType == EPhysicsSelection::Constraint && ModeTools.GetWidgetMode() == UE::Widget::WM_Scale)
 	{
 		ModeTools.SetWidgetMode(UE::Widget::WM_Translate);
 	}
+	ValidateSelectedPrimitive();
 	SyncPhysicsGizmo();
+}
+
+void FPhysicsAssetEditor::SelectPrimitive(int32 BodyIndex, EPrimitiveType Type, int32 PrimitiveIndex)
+{
+	SetSelection(EPhysicsSelection::Body, BodyIndex);
+	SelectedPrimitiveType = Type;
+	SelectedPrimitiveIndex = PrimitiveIndex;
+	ValidateSelectedPrimitive();   // 없는 도형이면 바디의 첫 도형으로
+	SyncPhysicsGizmo();
+}
+
+void FPhysicsAssetEditor::ValidateSelectedPrimitive()
+{
+	const UPhysicsAsset* PhysicsAsset = GetPhysicsAsset();
+	if (SelectionType != EPhysicsSelection::Body || !PhysicsAsset || !PhysicsAsset->SkeletalBodySetups.IsValidIndex(SelectedIndex)
+		|| !PhysicsAsset->SkeletalBodySetups[SelectedIndex])
+	{
+		SelectedPrimitiveIndex = -1;
+		return;
+	}
+	const FKAggregateGeom& Geom = PhysicsAsset->SkeletalBodySetups[SelectedIndex]->AggGeom;
+	if (SelectedPrimitiveIndex >= 0 && SelectedPrimitiveIndex < NumPrimitives(Geom, SelectedPrimitiveType))
+	{
+		return;
+	}
+	for (EPrimitiveType Type : { EPrimitiveType::Capsule, EPrimitiveType::Sphere, EPrimitiveType::Box })
+	{
+		if (NumPrimitives(Geom, Type) > 0)
+		{
+			SelectedPrimitiveType = Type;
+			SelectedPrimitiveIndex = 0;
+			return;
+		}
+	}
+	SelectedPrimitiveIndex = -1;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -443,8 +555,16 @@ void FPhysicsAssetEditor::UpdatePhysicsPicking()
 		return;
 	}
 
-	// 아무것도 안 맞으면 -1 → 선택 해제
-	SetSelection(EPhysicsSelection::Body, PickBody(ViewportClient->DeprojectScreenToWorld(MousePosition)));
+	// 아무것도 안 맞으면 선택 해제
+	EPrimitiveType HitType = EPrimitiveType::Capsule;
+	int32 HitPrimitive = -1;
+	const int32 Body = PickBody(ViewportClient->DeprojectScreenToWorld(MousePosition), HitType, HitPrimitive);
+	if (Body == -1)
+	{
+		SetSelection(EPhysicsSelection::None, -1);
+		return;
+	}
+	SelectPrimitive(Body, HitType, HitPrimitive);
 }
 
 int32 FPhysicsAssetEditor::PickConstraint(const FVector2& MousePosition) const
@@ -490,7 +610,7 @@ int32 FPhysicsAssetEditor::PickConstraint(const FVector2& MousePosition) const
 	return Best;
 }
 
-int32 FPhysicsAssetEditor::PickBody(const FRay& Ray) const
+int32 FPhysicsAssetEditor::PickBody(const FRay& Ray, EPrimitiveType& OutType, int32& OutPrimitiveIndex) const
 {
 	const UPhysicsAsset* PhysicsAsset = GetPhysicsAsset();
 	int32 Best = -1;
@@ -506,23 +626,35 @@ int32 FPhysicsAssetEditor::PickBody(const FRay& Ray) const
 		}
 		const FMatrix BoneWorld = MeshComponent->GetBoneWorldMatrix(BoneIndex);
 
-		float T = FLT_MAX;
-		for (const FKSphylElem& Capsule : Setup->AggGeom.SphylElems)
+		// 모든 바디의 모든 도형 중 레이에서 가장 앞쪽 (카메라에 가까운) 도형
+		const FKAggregateGeom& Geom = Setup->AggGeom;
+		const auto Consider = [&](float T, EPrimitiveType Type, int32 PrimitiveIndex)
 		{
+			if (T < BestT)
+			{
+				BestT = T;
+				Best = i;
+				OutType = Type;
+				OutPrimitiveIndex = PrimitiveIndex;
+			}
+		};
+		for (int32 p = 0; p < Geom.SphylElems.Num(); ++p)
+		{
+			const FKSphylElem& Capsule = Geom.SphylElems[p];
 			const FMatrix M = FTransform(Capsule.Rotation, Capsule.Center).GetLocalMatrix() * BoneWorld;
-			T = std::min(T, RayCapsuleHitT(Ray, M, Capsule.Radius, Capsule.Length * 0.5f));
+			Consider(RayCapsuleHitT(Ray, M, Capsule.Radius, Capsule.Length * 0.5f), EPrimitiveType::Capsule, p);
 		}
-		for (const FKSphereElem& Sphere : Setup->AggGeom.SphereElems)
+		for (int32 p = 0; p < Geom.SphereElems.Num(); ++p)
 		{
+			const FKSphereElem& Sphere = Geom.SphereElems[p];
 			const FMatrix M = FTransform(FQuat::Identity(), Sphere.Center).GetLocalMatrix() * BoneWorld;
-			T = std::min(T, RayCapsuleHitT(Ray, M, Sphere.Radius, 0.0f));   // 길이 0 캡슐 = 구
+			Consider(RayCapsuleHitT(Ray, M, Sphere.Radius, 0.0f), EPrimitiveType::Sphere, p);   // 길이 0 캡슐 = 구
 		}
-
-		// 여러 바디가 맞으면 레이에서 가장 앞쪽 (카메라에 가까운) 바디
-		if (T < BestT)
+		for (int32 p = 0; p < Geom.BoxElems.Num(); ++p)
 		{
-			BestT = T;
-			Best = i;
+			const FKBoxElem& Box = Geom.BoxElems[p];
+			const FMatrix M = FTransform(Box.Rotation, Box.Center).GetLocalMatrix() * BoneWorld;
+			Consider(RayBoxHitT(Ray, M, FVector(Box.X * 0.5f, Box.Y * 0.5f, Box.Z * 0.5f)), EPrimitiveType::Box, p);
 		}
 	}
 	return Best;
@@ -544,12 +676,13 @@ bool FPhysicsAssetEditor::GetSelectionWorldTransform(FTransform& OutTransform) c
 	{
 		const USkeletalBodySetup* Setup = PhysicsAsset->SkeletalBodySetups[SelectedIndex];
 		const int32 BoneIndex = Setup ? Mesh->FindBoneIndex(Setup->BoneName) : -1;
-		if (BoneIndex == -1 || Setup->AggGeom.SphylElems.IsEmpty())
+		if (BoneIndex == -1 || SelectedPrimitiveIndex < 0 || SelectedPrimitiveIndex >= NumPrimitives(Setup->AggGeom, SelectedPrimitiveType))
 		{
-			return false;   // 지금은 캡슐만 편집한다 (자동 생성이 캡슐만 만든다)
+			return false;
 		}
-		const FKSphylElem& Capsule = Setup->AggGeom.SphylElems[0];
-		OutTransform = FTransform(FTransform(Capsule.Rotation, Capsule.Center).GetLocalMatrix() * MeshComponent->GetBoneWorldMatrix(BoneIndex));
+		// 기즈모는 고른 도형 하나에 붙는다 (도형 로컬 × 본 월드)
+		const FTransform Local = PrimitiveLocalTransform(Setup->AggGeom, SelectedPrimitiveType, SelectedPrimitiveIndex);
+		OutTransform = FTransform(Local.GetLocalMatrix() * MeshComponent->GetBoneWorldMatrix(BoneIndex));
 	}
 	else if (SelectionType == EPhysicsSelection::Constraint && PhysicsAsset->ConstraintSetup.IsValidIndex(SelectedIndex)
 		&& PhysicsAsset->ConstraintSetup[SelectedIndex])
@@ -583,9 +716,13 @@ void FPhysicsAssetEditor::SyncPhysicsGizmo()
 		return;
 	}
 
-	// 관절은 이동 · 회전만 지원한다. 스케일 모드에서는 기즈모를 숨긴다
-	const bool bModeSupported = SelectionType != EPhysicsSelection::Constraint
-		|| ModeTools.GetWidgetMode() != UE::Widget::WM_Scale;
+	// 관절은 이동 · 회전만, 구는 이동 · 스케일만 지원한다 (구는 회전값이 없다). 지원하지 않는 모드에서는 기즈모를 숨긴다
+	const UE::Widget::EWidgetMode Mode = ModeTools.GetWidgetMode();
+	bool bModeSupported = true;
+	if (SelectionType == EPhysicsSelection::Constraint && Mode == UE::Widget::WM_Scale)
+		bModeSupported = false;
+	if (SelectionType == EPhysicsSelection::Body && SelectedPrimitiveType == EPrimitiveType::Sphere && Mode == UE::Widget::WM_Rotate)
+		bModeSupported = false;
 
 	FTransform World;
 	if (!bModeSupported || !GetSelectionWorldTransform(World))
@@ -651,7 +788,13 @@ void FPhysicsAssetEditor::BeginPhysicsGizmoDrag()
 
 	if (SelectionType == EPhysicsSelection::Body)
 	{
-		DragStartCapsule = PhysicsAsset->SkeletalBodySetups[SelectedIndex]->AggGeom.SphylElems[0];
+		const FKAggregateGeom& Geom = PhysicsAsset->SkeletalBodySetups[SelectedIndex]->AggGeom;
+		switch (SelectedPrimitiveType)
+		{
+		case EPrimitiveType::Capsule: DragStartCapsule = Geom.SphylElems[SelectedPrimitiveIndex]; break;
+		case EPrimitiveType::Sphere:  DragStartSphere = Geom.SphereElems[SelectedPrimitiveIndex]; break;
+		case EPrimitiveType::Box:     DragStartBox = Geom.BoxElems[SelectedPrimitiveIndex]; break;
+		}
 	}
 	else if (SelectionType == EPhysicsSelection::Constraint)
 	{
@@ -684,30 +827,65 @@ void FPhysicsAssetEditor::ApplyPhysicsGizmoTransform()
 	if (SelectionType == EPhysicsSelection::Body)
 	{
 		USkeletalBodySetup* Setup = PhysicsAsset->SkeletalBodySetups[SelectedIndex];
+		if (SelectedPrimitiveIndex < 0 || SelectedPrimitiveIndex >= NumPrimitives(Setup->AggGeom, SelectedPrimitiveType))
+		{
+			return;
+		}
 		const FMatrix BoneWorld = MeshComponent->GetBoneWorldMatrix(Mesh->FindBoneIndex(Setup->BoneName));
-		FKSphylElem Capsule = DragStartCapsule;   // 조작한 성분만 바꾸고 나머지는 시작 값 유지
+		const UE::Widget::EWidgetMode Mode = ModeTools.GetWidgetMode();
+		const FVector BoneCenter = BoneWorld.Inverse().TransformPosition(TargetLocation);
+		// 기즈모 로컬 축 = 도형 로컬 축. 스케일은 1에서 시작한 배율이다
+		const FVector S = GizmoTarget->GetRelativeScale3D();
 
-		switch (ModeTools.GetWidgetMode())
+		// 조작한 성분만 바꾸고 나머지는 드래그 시작 값을 유지한다
+		switch (SelectedPrimitiveType)
 		{
-		case UE::Widget::WM_Translate:
-			Capsule.Center = BoneWorld.Inverse().TransformPosition(TargetLocation);
-			break;
-		case UE::Widget::WM_Rotate:
-			Capsule.Rotation = ToBoneRotation(TargetRotation, BoneWorld);
-			break;
-		case UE::Widget::WM_Scale:
+		case EPrimitiveType::Capsule:
 		{
-			// 기즈모 로컬 Z = 캡슐 길이 방향, X · Y = 반지름 방향
-			const FVector S = GizmoTarget->GetRelativeScale3D();
-			const float RadiusScale = std::abs(S.X - 1.0f) > std::abs(S.Y - 1.0f) ? S.X : S.Y;
-			Capsule.Radius = std::max(DragStartCapsule.Radius * RadiusScale, MinCapsuleSize);
-			Capsule.Length = std::max(DragStartCapsule.Length * S.Z, 0.0f);
+			FKSphylElem Capsule = DragStartCapsule;
+			if (Mode == UE::Widget::WM_Translate) Capsule.Center = BoneCenter;
+			if (Mode == UE::Widget::WM_Rotate)    Capsule.Rotation = ToBoneRotation(TargetRotation, BoneWorld);
+			if (Mode == UE::Widget::WM_Scale)
+			{
+				// 로컬 Z = 캡슐 길이 방향, X · Y = 반지름 방향
+				const float RadiusScale = std::abs(S.X - 1.0f) > std::abs(S.Y - 1.0f) ? S.X : S.Y;
+				Capsule.Radius = std::max(DragStartCapsule.Radius * RadiusScale, MinCapsuleSize);
+				Capsule.Length = std::max(DragStartCapsule.Length * S.Z, 0.0f);
+			}
+			Setup->AggGeom.SphylElems[SelectedPrimitiveIndex] = Capsule;
 			break;
 		}
-		default:
+		case EPrimitiveType::Sphere:
+		{
+			FKSphereElem Sphere = DragStartSphere;
+			if (Mode == UE::Widget::WM_Translate) Sphere.Center = BoneCenter;
+			if (Mode == UE::Widget::WM_Scale)
+			{
+				// 어느 축을 끌어도 반지름 하나. 가장 많이 바뀐 축의 배율을 쓴다 (예: X 1.5 · Y 1 · Z 1 → 반지름 × 1.5)
+				float RadiusScale = S.X;
+				if (std::abs(S.Y - 1.0f) > std::abs(RadiusScale - 1.0f)) RadiusScale = S.Y;
+				if (std::abs(S.Z - 1.0f) > std::abs(RadiusScale - 1.0f)) RadiusScale = S.Z;
+				Sphere.Radius = std::max(DragStartSphere.Radius * RadiusScale, MinCapsuleSize);
+			}
+			Setup->AggGeom.SphereElems[SelectedPrimitiveIndex] = Sphere;
 			break;
 		}
-		Setup->AggGeom.SphylElems[0] = Capsule;
+		case EPrimitiveType::Box:
+		{
+			FKBoxElem Box = DragStartBox;
+			if (Mode == UE::Widget::WM_Translate) Box.Center = BoneCenter;
+			if (Mode == UE::Widget::WM_Rotate)    Box.Rotation = ToBoneRotation(TargetRotation, BoneWorld);
+			if (Mode == UE::Widget::WM_Scale)
+			{
+				// 축마다 따로: 로컬 X를 끌면 Box.X만 바뀐다
+				Box.X = std::max(DragStartBox.X * S.X, MinCapsuleSize);
+				Box.Y = std::max(DragStartBox.Y * S.Y, MinCapsuleSize);
+				Box.Z = std::max(DragStartBox.Z * S.Z, MinCapsuleSize);
+			}
+			Setup->AggGeom.BoxElems[SelectedPrimitiveIndex] = Box;
+			break;
+		}
+		}
 	}
 	else if (SelectionType == EPhysicsSelection::Constraint)
 	{
@@ -817,32 +995,109 @@ bool FPhysicsAssetEditor::IsConstraintFrameAtDefault(int32 ConstraintIndex, ECon
 // 바디 추가 · 삭제
 // ─────────────────────────────────────────────────────────────
 
-bool FPhysicsAssetEditor::AddCapsuleToBody(int32 BodyIndex)
+bool FPhysicsAssetEditor::AddPrimitiveToBody(int32 BodyIndex, EPrimitiveType Type)
 {
 	UPhysicsAsset* PhysicsAsset = GetPhysicsAsset();
 	if (!PhysicsAsset || !PhysicsAsset->SkeletalBodySetups.IsValidIndex(BodyIndex) || !PhysicsAsset->SkeletalBodySetups[BodyIndex])
 	{
 		return false;
 	}
-	TArray<FKSphylElem>& Capsules = PhysicsAsset->SkeletalBodySetups[BodyIndex]->AggGeom.SphylElems;
+	FKAggregateGeom& Geom = PhysicsAsset->SkeletalBodySetups[BodyIndex]->AggGeom;
 
-	// 마지막 캡슐과 같은 크기 · 방향으로 만들고, 겹치지 않게 그 캡슐의 옆(로컬 X)으로 지름만큼 띄운다.
-	// 본 공간 값이라 본 스케일이 큰 메시(Armature 100배 등)에서도 기존 캡슐과 비슷한 크기가 된다
-	FKSphylElem NewCapsule;
-	if (!Capsules.IsEmpty())
+	// 크기 기준 = 바디의 기존 도형 크기 (BodyDisplayRadius). 본 공간 값이라 본 스케일이 큰 메시(Armature 100배 등)에서도
+	// 기존 도형과 비슷한 크기가 된다. 위치는 기존 도형과 겹치지 않게 첫 도형 옆(본 로컬 X)으로 지름만큼 띄운다.
+	// 도형이 하나도 없으면 본 원점에 반지름 0.05 크기 (UE AddNewPrimitive의 기본 크기 자리)
+	const bool bHadPrimitive = !Geom.IsEmpty();
+	const float Radius = bHadPrimitive ? BodyDisplayRadius(Geom) : 0.05f;
+	FVector Center = FVector::ZeroVector;
+	if (bHadPrimitive)
 	{
-		NewCapsule = Capsules.Last();
-		NewCapsule.Center = NewCapsule.Center + NewCapsule.Rotation.RotateVector(FVector(NewCapsule.Radius * 2.0f, 0.0f, 0.0f));
+		for (EPrimitiveType Existing : { EPrimitiveType::Capsule, EPrimitiveType::Sphere, EPrimitiveType::Box })
+		{
+			const int32 Count = NumPrimitives(Geom, Existing);
+			if (Count > 0)
+			{
+				Center = PrimitiveLocalTransform(Geom, Existing, Count - 1).Location + FVector(Radius * 2.0f, 0.0f, 0.0f);
+				break;
+			}
+		}
 	}
-	else
-	{
-		// 캡슐이 하나도 없으면 본 원점에 작은 캡슐 (UE AddNewPrimitive의 기본 크기 자리)
-		NewCapsule.Radius = 0.05f;
-		NewCapsule.Length = 0.1f;
-	}
-	Capsules.Add(NewCapsule);
 
-	SetSelection(EPhysicsSelection::Body, BodyIndex);
+	int32 NewIndex = -1;
+	switch (Type)
+	{
+	case EPrimitiveType::Capsule:
+	{
+		FKSphylElem Capsule;
+		if (!Geom.SphylElems.IsEmpty())
+		{
+			Capsule = Geom.SphylElems.Last();   // 마지막 캡슐과 같은 크기 · 방향
+		}
+		else
+		{
+			Capsule.Radius = Radius;
+			Capsule.Length = Radius * 2.0f;
+		}
+		Capsule.Center = Center;
+		Geom.SphylElems.Add(Capsule);
+		NewIndex = Geom.SphylElems.Num() - 1;
+		break;
+	}
+	case EPrimitiveType::Sphere:
+	{
+		FKSphereElem Sphere;
+		Sphere.Radius = Radius;
+		Sphere.Center = Center;
+		Geom.SphereElems.Add(Sphere);
+		NewIndex = Geom.SphereElems.Num() - 1;
+		break;
+	}
+	case EPrimitiveType::Box:
+	{
+		// 지름 크기의 정육면체 (예: 반지름 0.05 → 0.1 × 0.1 × 0.1)
+		FKBoxElem Box;
+		Box.X = Box.Y = Box.Z = Radius * 2.0f;
+		Box.Center = Center;
+		Geom.BoxElems.Add(Box);
+		NewIndex = Geom.BoxElems.Num() - 1;
+		break;
+	}
+	}
+
+	SelectPrimitive(BodyIndex, Type, NewIndex);
+	MarkDirty();
+	return true;
+}
+
+bool FPhysicsAssetEditor::DeletePrimitive(int32 BodyIndex, EPrimitiveType Type, int32 PrimitiveIndex)
+{
+	UPhysicsAsset* PhysicsAsset = GetPhysicsAsset();
+	if (!PhysicsAsset || !PhysicsAsset->SkeletalBodySetups.IsValidIndex(BodyIndex) || !PhysicsAsset->SkeletalBodySetups[BodyIndex])
+	{
+		return false;
+	}
+	FKAggregateGeom& Geom = PhysicsAsset->SkeletalBodySetups[BodyIndex]->AggGeom;
+	const int32 Total = Geom.SphylElems.Num() + Geom.SphereElems.Num() + Geom.BoxElems.Num();
+	if (PrimitiveIndex < 0 || PrimitiveIndex >= NumPrimitives(Geom, Type) || Total <= 1)
+	{
+		return false;   // 마지막 도형은 남긴다. 바디째 지우려면 Delete (DeleteBody)
+	}
+	Gizmo.EndDrag();
+
+	switch (Type)
+	{
+	case EPrimitiveType::Capsule: Geom.SphylElems.RemoveAt(PrimitiveIndex); break;
+	case EPrimitiveType::Sphere:  Geom.SphereElems.RemoveAt(PrimitiveIndex); break;
+	case EPrimitiveType::Box:     Geom.BoxElems.RemoveAt(PrimitiveIndex); break;
+	}
+
+	// 인덱스가 밀렸으니 이 바디의 첫 도형을 고른다
+	if (SelectionType == EPhysicsSelection::Body && SelectedIndex == BodyIndex)
+	{
+		SelectedPrimitiveIndex = -1;
+		ValidateSelectedPrimitive();
+		SyncPhysicsGizmo();
+	}
 	MarkDirty();
 	return true;
 }
@@ -1036,8 +1291,8 @@ bool FPhysicsAssetEditor::RegenerateBody(int32 BodyIndex)
 		return false;
 	}
 	USkeletalBodySetup* Setup = PhysicsAsset->SkeletalBodySetups[BodyIndex];
-	FKSphylElem Capsule;
-	if (!UPhysicsAsset::CalcBoneCapsule(Mesh, Setup->BoneName, CreateParams.VertWeight, Capsule))
+	FKAggregateGeom Geom;
+	if (!UPhysicsAsset::CalcBoneGeom(Mesh, Setup->BoneName, CreateParams.VertWeight, CreateParams.GeomType, Geom))
 	{
 		SaveMessage = "Regenerate body failed: bone has no skinned vertices";
 		return false;
@@ -1045,9 +1300,9 @@ bool FPhysicsAssetEditor::RegenerateBody(int32 BodyIndex)
 	Gizmo.EndDrag();
 
 	// 도형만 새로 만든다 (UE "바디 재생성"과 같다). 피직스 타입 · 질량 같은 바디 설정과 관절은 그대로다
-	Setup->AggGeom = FKAggregateGeom();
-	Setup->AggGeom.SphylElems.Add(Capsule);   // GeomType은 지금 Capsule뿐
+	Setup->AggGeom = Geom;   // Tool 패널 Primitive Type 도형 하나로 바꾼다
 
+	SetSelection(EPhysicsSelection::None, -1);   // 도형 인덱스가 바뀌었으니 고른 도형을 첫 도형으로 다시 잡는다
 	SetSelection(EPhysicsSelection::Body, BodyIndex);
 	MarkDirty();
 	return true;

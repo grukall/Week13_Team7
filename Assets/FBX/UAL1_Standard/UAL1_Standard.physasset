@@ -661,11 +661,11 @@
             "Capsules": [
                 {
                     "Center": {
-                        "X": 0.12322133779525757,
-                        "Y": 0.009807460010051727,
-                        "Z": 0.015431571751832962
+                        "X": 0.06580167263746262,
+                        "Y": 0.009807480499148369,
+                        "Z": 0.015431568026542664
                     },
-                    "Length": 0.05858345702290535,
+                    "Length": 0.0385296493768692,
                     "Radius": 0.10404178500175476,
                     "Rotation": {
                         "W": 0.70710688829422,
@@ -679,6 +679,47 @@
             "Properties": {
                 "AngularDamping": 0.10000000149011612,
                 "BoneName": "foot_l",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": 0.047378525137901306,
+                        "Y": -0.01047278381884098,
+                        "Z": 0.009597236290574074
+                    },
+                    "Length": 0.02193470299243927,
+                    "Radius": 0.044866204261779785,
+                    "Rotation": {
+                        "W": 0.70710688829422,
+                        "X": -0.7071066498756409,
+                        "Y": -0.0,
+                        "Z": -0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "AngularDamping": 0.10000000149011612,
+                "BoneName": "ball_l",
                 "COMNudge": {
                     "X": 0.0,
                     "Y": 0.0,
@@ -784,11 +825,11 @@
             "Capsules": [
                 {
                     "Center": {
-                        "X": 0.11773420870304108,
-                        "Y": -0.009776964783668518,
-                        "Z": 0.01545204222202301
+                        "X": 0.06580151617527008,
+                        "Y": -0.009776949882507324,
+                        "Z": 0.015452034771442413
                     },
-                    "Length": 0.06794220954179764,
+                    "Length": 0.038529664278030396,
                     "Radius": 0.10404178500175476,
                     "Rotation": {
                         "W": 0.70710688829422,
@@ -802,6 +843,47 @@
             "Properties": {
                 "AngularDamping": 0.10000000149011612,
                 "BoneName": "foot_r",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": 0.047378309071063995,
+                        "Y": 0.010474417358636856,
+                        "Z": 0.009597249329090118
+                    },
+                    "Length": 0.021934710443019867,
+                    "Radius": 0.044866204261779785,
+                    "Rotation": {
+                        "W": 0.70710688829422,
+                        "X": -0.7071066498756409,
+                        "Y": -0.0,
+                        "Z": -0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "AngularDamping": 0.10000000149011612,
+                "BoneName": "ball_r",
                 "COMNudge": {
                     "X": 0.0,
                     "Y": 0.0,
@@ -1591,6 +1673,54 @@
             "bSoftTwistLimit": false
         },
         {
+            "Bone1": "ball_l",
+            "Bone2": "foot_l",
+            "Frame1": {
+                "Location": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "Rotation": {
+                    "W": 0.70710688829422,
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.7071066498756409
+                }
+            },
+            "Frame2": {
+                "Location": {
+                    "X": 0.1733010709285736,
+                    "Y": 5.21540641784668e-08,
+                    "Z": -5.587935447692871e-08
+                },
+                "Rotation": {
+                    "W": -0.18758611381053925,
+                    "X": -0.6817710399627686,
+                    "Y": 0.6819645762443542,
+                    "Z": 0.18687932193279266
+                }
+            },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
+            "Properties": {},
+            "Swing1LimitDeg": 35.0,
+            "Swing1Motion": "Limited",
+            "Swing2LimitDeg": 35.0,
+            "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
+            "TwistLimitDeg": 20.0,
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
+        },
+        {
             "Bone1": "thigh_r",
             "Bone2": "pelvis",
             "Frame1": {
@@ -1713,6 +1843,54 @@
                     "X": 0.0003280930395703763,
                     "Y": 0.5290713906288147,
                     "Z": -0.00034345287713222206
+                }
+            },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
+            "Properties": {},
+            "Swing1LimitDeg": 35.0,
+            "Swing1Motion": "Limited",
+            "Swing2LimitDeg": 35.0,
+            "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
+            "TwistLimitDeg": 20.0,
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
+        },
+        {
+            "Bone1": "ball_r",
+            "Bone2": "foot_r",
+            "Frame1": {
+                "Location": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "Rotation": {
+                    "W": 0.70710688829422,
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.7071066498756409
+                }
+            },
+            "Frame2": {
+                "Location": {
+                    "X": 0.1733010858297348,
+                    "Y": 0.0,
+                    "Z": 1.4901161193847656e-08
+                },
+                "Rotation": {
+                    "W": -0.18758611381053925,
+                    "X": -0.6817710399627686,
+                    "Y": 0.6819645762443542,
+                    "Z": 0.18687932193279266
                 }
             },
             "ProjectionAngularToleranceDeg": 180.0,

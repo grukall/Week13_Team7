@@ -12,6 +12,7 @@ namespace
 {
 	using ESelection = FPhysicsAssetEditor::EPhysicsSelection;
 	using EFrameComponent = FPhysicsAssetEditor::EConstraintFrameComponent;
+	using EPrimitiveType = FPhysicsAssetEditor::EPrimitiveType;
 
 	constexpr float LabelColumnRatio = 0.45f;      // 라벨 | 값 비율 (DetailsPanel과 같다)
 	constexpr float MinCapsuleSize = 0.005f;       // 뷰포트 스케일 기즈모와 같은 최솟값
@@ -227,18 +228,32 @@ void FPhysicsAssetDetailsPanel::DrawBodyDetails(USkeletalBodySetup& Setup)
 
 	if (Category("Primitives"))
 	{
-		TArray<FKSphylElem>& Capsules = Setup.AggGeom.SphylElems;
-		if (Capsules.IsEmpty())
+		FKAggregateGeom& Geom = Setup.AggGeom;
+		const int32 Total = Geom.SphylElems.Num() + Geom.SphereElems.Num() + Geom.BoxElems.Num();
+		const bool bCanDelete = Total > 1;   // 마지막 도형은 지우지 않는다 (바디째 지우려면 Delete)
+		if (Total == 0)
 		{
-			ImGui::TextDisabled("No capsules");
+			ImGui::TextDisabled("No primitives");
 		}
-		if (CapsuleRotations.Num() < Capsules.Num())
+		if (CapsuleRotations.Num() < Geom.SphylElems.Num())
 		{
-			CapsuleRotations.SetNum(Capsules.Num());
+			CapsuleRotations.SetNum(Geom.SphylElems.Num());
 		}
-		for (int32 i = 0; i < Capsules.Num(); ++i)
+		if (BoxRotations.Num() < Geom.BoxElems.Num())
 		{
-			bChanged |= DrawCapsule(Capsules[i], i);
+			BoxRotations.SetNum(Geom.BoxElems.Num());
+		}
+		for (int32 i = 0; i < Geom.SphylElems.Num(); ++i)
+		{
+			bChanged |= DrawCapsule(Geom.SphylElems[i], i, bCanDelete);
+		}
+		for (int32 i = 0; i < Geom.SphereElems.Num(); ++i)
+		{
+			bChanged |= DrawSphere(Geom.SphereElems[i], i, bCanDelete);
+		}
+		for (int32 i = 0; i < Geom.BoxElems.Num(); ++i)
+		{
+			bChanged |= DrawBox(Geom.BoxElems[i], i, bCanDelete);
 		}
 	}
 
@@ -247,15 +262,56 @@ void FPhysicsAssetDetailsPanel::DrawBodyDetails(USkeletalBodySetup& Setup)
 	{
 		Editor.MarkDirty();
 	}
+
+	// 도형 목록을 다 그린 뒤에 지운다 (그리는 중에 배열을 바꾸지 않게)
+	if (PendingDeleteIndex >= 0)
+	{
+		Editor.DeletePrimitive(Editor.GetSelectedIndex(), static_cast<EPrimitiveType>(PendingDeleteType), PendingDeleteIndex);
+		PendingDeleteIndex = -1;
+	}
 }
 
-bool FPhysicsAssetDetailsPanel::DrawCapsule(FKSphylElem& Capsule, int32 CapsuleIndex)
+bool FPhysicsAssetDetailsPanel::BeginPrimitive(const char* TypeName, uint8 Type, int32 PrimitiveIndex, bool bCanDelete)
 {
-	char Header[32];
-	std::snprintf(Header, sizeof(Header), "Capsule %d", CapsuleIndex);
+	const EPrimitiveType PrimitiveType = static_cast<EPrimitiveType>(Type);
+	const bool bSelected = Editor.GetSelectedPrimitiveType() == PrimitiveType && Editor.GetSelectedPrimitiveIndex() == PrimitiveIndex;
+
+	char Header[48];
+	std::snprintf(Header, sizeof(Header), "%s %d", TypeName, PrimitiveIndex);
+	ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
+	if (bSelected)
+	{
+		Flags |= ImGuiTreeNodeFlags_Selected;   // 기즈모가 붙은 도형 (뷰포트에서 주황 윤곽선)
+	}
+	const bool bOpen = ImGui::TreeNodeEx(Header, Flags);
+
+	// 헤더를 누르면 (화살표 말고) 그 도형을 고른다
+	if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen())
+	{
+		Editor.SelectPrimitive(Editor.GetSelectedIndex(), PrimitiveType, PrimitiveIndex);
+	}
+	if (ImGui::BeginPopupContextItem("PrimitiveContextMenu"))
+	{
+		if (ImGui::MenuItem("Delete Primitive", nullptr, false, bCanDelete))
+		{
+			PendingDeleteType = Type;
+			PendingDeleteIndex = PrimitiveIndex;
+		}
+		if (!bCanDelete && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+		{
+			ImGui::SetTooltip("A body needs at least one primitive. Delete the body instead.");
+		}
+		ImGui::EndPopup();
+	}
+	return bOpen;
+}
+
+bool FPhysicsAssetDetailsPanel::DrawCapsule(FKSphylElem& Capsule, int32 CapsuleIndex, bool bCanDelete)
+{
+	ImGui::PushID("Capsule");
 	ImGui::PushID(CapsuleIndex);
 	bool bChanged = false;
-	if (ImGui::TreeNodeEx(Header, ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth))
+	if (BeginPrimitive("Capsule", static_cast<uint8>(EPrimitiveType::Capsule), CapsuleIndex, bCanDelete))
 	{
 		// 본 공간 값. 길이 축은 캡슐 로컬 Z
 		BeginRow("Center");
@@ -278,6 +334,60 @@ bool FPhysicsAssetDetailsPanel::DrawCapsule(FKSphylElem& Capsule, int32 CapsuleI
 		}
 		ImGui::TreePop();
 	}
+	ImGui::PopID();
+	ImGui::PopID();
+	return bChanged;
+}
+
+bool FPhysicsAssetDetailsPanel::DrawSphere(FKSphereElem& Sphere, int32 SphereIndex, bool bCanDelete)
+{
+	ImGui::PushID("Sphere");
+	ImGui::PushID(SphereIndex);
+	bool bChanged = false;
+	if (BeginPrimitive("Sphere", static_cast<uint8>(EPrimitiveType::Sphere), SphereIndex, bCanDelete))
+	{
+		// 구는 회전이 없다 (어느 방향이든 같은 모양)
+		BeginRow("Center");
+		bChanged |= DrawXYZ("Center", Sphere.Center.V, 0.001f, "%.3f");
+
+		BeginRow("Radius");
+		if (ImGui::DragFloat("##Radius", &Sphere.Radius, 0.001f, MinCapsuleSize, FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp))
+		{
+			bChanged = true;
+		}
+		ImGui::TreePop();
+	}
+	ImGui::PopID();
+	ImGui::PopID();
+	return bChanged;
+}
+
+bool FPhysicsAssetDetailsPanel::DrawBox(FKBoxElem& Box, int32 BoxIndex, bool bCanDelete)
+{
+	ImGui::PushID("Box");
+	ImGui::PushID(BoxIndex);
+	bool bChanged = false;
+	if (BeginPrimitive("Box", static_cast<uint8>(EPrimitiveType::Box), BoxIndex, bCanDelete))
+	{
+		BeginRow("Center");
+		bChanged |= DrawXYZ("Center", Box.Center.V, 0.001f, "%.3f");
+
+		BeginRow("Rotation");
+		bChanged |= DrawRotation("Rotation", Box.Rotation, BoxRotations[BoxIndex]);
+
+		// 전체 길이 (반 크기가 아니다). 박스 로컬 X · Y · Z 방향
+		float Extent[3] = { Box.X, Box.Y, Box.Z };
+		BeginRow("Size");
+		if (DrawXYZ("Size", Extent, 0.001f, "%.3f"))
+		{
+			Box.X = std::max(Extent[0], MinCapsuleSize);
+			Box.Y = std::max(Extent[1], MinCapsuleSize);
+			Box.Z = std::max(Extent[2], MinCapsuleSize);
+			bChanged = true;
+		}
+		ImGui::TreePop();
+	}
+	ImGui::PopID();
 	ImGui::PopID();
 	return bChanged;
 }

@@ -10,10 +10,15 @@
 
 class USkeletalMesh;
 
-// 자동 생성에 쓰는 도형 (UE EPhysAssetFitGeomType). Box · Sphere는 다른 프리미티브 지원 작업 때 추가한다
+// 자동 생성에 쓰는 도형 (UE EPhysAssetFitGeomType). 크기는 모두 본 공간 정점 AABB로 정한다
+//   Capsule: 가장 긴 축이 길이, 나머지 두 축 중 큰 값이 지름
+//   Box    : AABB 그대로 (회전 없음, 본 축에 맞춘 상자)
+//   Sphere : AABB 중심, 가장 긴 변의 절반이 반지름
 enum class EPhysAssetFitGeomType : uint8
 {
-	Capsule
+	Capsule,
+	Box,
+	Sphere
 };
 
 // 정점을 어느 본의 바디 크기에 넣을지 (UE EPhysAssetFitVertWeight)
@@ -55,9 +60,10 @@ public:
 	static bool CalcDefaultConstraintFrames(const USkeletalMesh* Mesh, const FString& ChildBone, const FString& ParentBone,
 		FTransform& OutFrame1, FTransform& OutFrame2,
 		EPhysAssetFitVertWeight VertWeight = EPhysAssetFitVertWeight::DominantWeight);
-	// 본 하나의 캡슐을 자동 생성과 같은 계산으로 만든다 (크기 기준은 보지 않는다). 에디터의 "바디 재생성"이 쓴다.
-	// 정점이 하나도 없는 본이면 false
-	static bool CalcBoneCapsule(const USkeletalMesh* Mesh, const FString& BoneName, EPhysAssetFitVertWeight VertWeight, FKSphylElem& OutCapsule);
+	// 본 하나의 도형을 자동 생성과 같은 계산으로 만든다 (크기 기준은 보지 않는다). 에디터의 "바디 재생성"이 쓴다.
+	// OutGeom은 비우고 GeomType 도형 하나만 넣는다. 정점이 하나도 없는 본이면 false
+	static bool CalcBoneGeom(const USkeletalMesh* Mesh, const FString& BoneName, EPhysAssetFitVertWeight VertWeight,
+		EPhysAssetFitGeomType GeomType, FKAggregateGeom& OutGeom);
 
 	TArray<USkeletalBodySetup*> SkeletalBodySetups;
 	TArray<UPhysicsConstraintTemplate*> ConstraintSetup;

@@ -85,10 +85,10 @@ void FPhysicsAssetSkeletonTreePanel::DrawContent()
 
 	// 메뉴에서 고른 작업은 트리를 다 그린 뒤에 한다. 그리는 도중에 바디 배열이 바뀌면
 	// 남은 행들이 밀린 인덱스로 선택 · 클릭을 처리한다
-	if (PendingAddCapsuleBody != -1)
+	if (PendingAddPrimitiveBody != -1)
 	{
-		Editor.AddCapsuleToBody(PendingAddCapsuleBody);
-		PendingAddCapsuleBody = -1;
+		Editor.AddPrimitiveToBody(PendingAddPrimitiveBody, static_cast<FPhysicsAssetEditor::EPrimitiveType>(PendingAddPrimitiveType));
+		PendingAddPrimitiveBody = -1;
 	}
 	if (PendingDeleteBody != -1)
 	{
@@ -124,12 +124,20 @@ void FPhysicsAssetSkeletonTreePanel::DrawBodyContextMenu(int32 BodyIndex)
 
 	if (ImGui::BeginMenu("Add Primitive"))
 	{
-		// 지금은 캡슐만 지원한다 (자동 생성 · 기즈모 · 피킹이 캡슐 기준)
+		// UE와 같은 순서 (Box · Sphere · Capsule). 새 도형을 고르므로 바로 기즈모로 옮길 수 있다
+		using EPrimitiveType = FPhysicsAssetEditor::EPrimitiveType;
 		EditorIcons::MenuSection("Primitive Type");
-		if (ImGui::MenuItem("Add Capsule"))
+		const auto AddItem = [&](const char* Label, EPrimitiveType Type)
 		{
-			PendingAddCapsuleBody = BodyIndex;
-		}
+			if (ImGui::MenuItem(Label))
+			{
+				PendingAddPrimitiveBody = BodyIndex;
+				PendingAddPrimitiveType = static_cast<uint8>(Type);
+			}
+		};
+		AddItem("Add Box", EPrimitiveType::Box);
+		AddItem("Add Sphere", EPrimitiveType::Sphere);
+		AddItem("Add Capsule", EPrimitiveType::Capsule);
 		ImGui::EndMenu();
 	}
 

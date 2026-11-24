@@ -106,6 +106,13 @@ bool FBodyInstance::UpdateMassProperties() const
 	const float Density = std::max(0.09f, Material->Density * 1000.f);
 	if (!physx::PxRigidBodyExt::updateMassAndInertia(*Dynamic, Density, nullptr, true))
 		return false;
+	// 도형으로 구한 무게중심을 옮긴다. 관성 축 방향은 그대로 두고 위치만 바꾼다
+	if (COMNudge.X != 0.f || COMNudge.Y != 0.f || COMNudge.Z != 0.f)
+	{
+		physx::PxTransform MassPose = Dynamic->getCMassLocalPose();
+		MassPose.p += physx::PxVec3(COMNudge.X, COMNudge.Y, COMNudge.Z);
+		Dynamic->setCMassLocalPose(MassPose);
+	}
 	const float BaseMass = Dynamic->getMass();
 	// 질량 지정이면 관성 텐서도 같은 비율로 늘려 모양에 맞는 회전 특성을 유지한다
 	const float Mass = (bOverrideMass && MassInKg > 0.f)

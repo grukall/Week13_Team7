@@ -212,11 +212,17 @@ void FPhysicsAssetDetailsPanel::DrawBodyDetails(USkeletalBodySetup& Setup)
 		bChanged |= DrawObjectProperty(Setup, "AngularDamping", "Angular Damping");
 		bChanged |= DrawObjectProperty(Setup, "bEnableGravity", "Enable Gravity");
 		bChanged |= DrawObjectProperty(Setup, "PhysMaterial", "Phys Material");
+		bChanged |= DrawObjectProperty(Setup, "COMNudge", "Center of Mass Offset");
+		bChanged |= DrawObjectProperty(Setup, "bOverrideMaxAngularVelocity", "Override Max Angular Velocity");
+		ImGui::BeginDisabled(!Setup.bOverrideMaxAngularVelocity);
+		bChanged |= DrawObjectProperty(Setup, "MaxAngularVelocity", "Max Angular Velocity (deg/s)");
+		ImGui::EndDisabled();
 	}
 
 	if (Category("Collision"))
 	{
 		bChanged |= DrawObjectProperty(Setup, "CollisionEnabled", "Collision Enabled");
+		bChanged |= DrawObjectProperty(Setup, "bUseCCD", "Use CCD");
 	}
 
 	if (Category("Primitives"))
@@ -324,6 +330,40 @@ void FPhysicsAssetDetailsPanel::DrawConstraintDetails(UPhysicsConstraintTemplate
 		DrawLimit("Swing1LimitDeg", "Swing 1 Limit", CI.Swing1Motion);
 		DrawLimit("Swing2LimitDeg", "Swing 2 Limit", CI.Swing2Motion);
 		DrawLimit("TwistLimitDeg", "Twist Limit", CI.TwistMotion);
+
+		// Soft Limit은 Limited 축에만 의미가 있다. 켜야 Stiffness · Damping 칸이 열린다
+		const auto DrawSoft = [&](const char* Toggle, const char* ToggleLabel, bool bSoft, bool bAnyLimited,
+			const char* Stiffness, const char* StiffnessLabel, const char* Damping, const char* DampingLabel)
+		{
+			ImGui::BeginDisabled(!bAnyLimited);
+			bChanged |= DrawStructProperty(Template, "DefaultInstance", &CI, InstanceStruct, Toggle, ToggleLabel);
+			ImGui::BeginDisabled(!bSoft);
+			bChanged |= DrawStructProperty(Template, "DefaultInstance", &CI, InstanceStruct, Stiffness, StiffnessLabel);
+			bChanged |= DrawStructProperty(Template, "DefaultInstance", &CI, InstanceStruct, Damping, DampingLabel);
+			ImGui::EndDisabled();
+			ImGui::EndDisabled();
+		};
+		DrawSoft("bSoftSwingLimit", "Soft Swing Limit", CI.bSoftSwingLimit,
+			CI.Swing1Motion == EAngularMotion::Limited || CI.Swing2Motion == EAngularMotion::Limited,
+			"SwingStiffness", "Swing Stiffness", "SwingDamping", "Swing Damping");
+		DrawSoft("bSoftTwistLimit", "Soft Twist Limit", CI.bSoftTwistLimit,
+			CI.TwistMotion == EAngularMotion::Limited,
+			"TwistStiffness", "Twist Stiffness", "TwistDamping", "Twist Damping");
+	}
+
+	if (Category("Constraint Behavior"))
+	{
+		bChanged |= DrawStructProperty(Template, "DefaultInstance", &CI, InstanceStruct, "bDisableCollision", "Disable Collision");
+		bChanged |= DrawStructProperty(Template, "DefaultInstance", &CI, InstanceStruct, "bParentDominates", "Parent Dominates");
+	}
+
+	if (Category("Projection"))
+	{
+		bChanged |= DrawStructProperty(Template, "DefaultInstance", &CI, InstanceStruct, "bEnableProjection", "Enable Projection");
+		ImGui::BeginDisabled(!CI.bEnableProjection);
+		bChanged |= DrawStructProperty(Template, "DefaultInstance", &CI, InstanceStruct, "ProjectionLinearTolerance", "Linear Tolerance (m)");
+		bChanged |= DrawStructProperty(Template, "DefaultInstance", &CI, InstanceStruct, "ProjectionAngularToleranceDeg", "Angular Tolerance (deg)");
+		ImGui::EndDisabled();
 	}
 
 	ImGui::PopID();

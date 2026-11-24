@@ -59,4 +59,5 @@ public:
 	static void SetDamping(const FPhysicsActorHandle& Handle, float Linear, float Angular);
 	// 질량으로 나눈 운동에너지가 Sleep 기준 아래로 유지되면 잠든다. Stabilization 기준 아래면 미세 떨림을 감쇠시킨다
 	static void SetSleepThresholds(const FPhysicsActorHandle& Handle, float Sleep, float Stabilization);
+	static void SetMaxAngularVelocity(const FPhysicsActorHandle& Handle, float RadiansPerSecond);
 };

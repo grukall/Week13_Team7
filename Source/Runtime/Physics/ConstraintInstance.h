@@ -44,6 +44,35 @@ struct FConstraintInstance
     UPROPERTY(EditAnywhere, meta=(ClampMin=0.1, ClampMax=179, Delta=0.5))
     float TwistLimitDeg = 20;
 
+    // Soft Limit: 제한각에 딱 막히지 않고 스프링처럼 밀려났다 돌아온다 (Stiffness = 밀어내는 힘, Damping = 튕김을 줄이는 힘)
+    UPROPERTY(EditAnywhere)
+    bool bSoftSwingLimit = false;
+    UPROPERTY(EditAnywhere, meta=(ClampMin=0, Delta=1))
+    float SwingStiffness = 50;
+    UPROPERTY(EditAnywhere, meta=(ClampMin=0, Delta=0.1))
+    float SwingDamping = 5;
+    UPROPERTY(EditAnywhere)
+    bool bSoftTwistLimit = false;
+    UPROPERTY(EditAnywhere, meta=(ClampMin=0, Delta=1))
+    float TwistStiffness = 50;
+    UPROPERTY(EditAnywhere, meta=(ClampMin=0, Delta=0.1))
+    float TwistDamping = 5;
+
+    // 켜면 관절로 이어진 두 바디끼리는 충돌하지 않는다 (겹쳐 있는 이웃 캡슐이 서로 밀어내 튀는 걸 막는다)
+    UPROPERTY(EditAnywhere)
+    bool bDisableCollision = true;
+    // 켜면 자식이 부모를 끌고 가지 못한다 (관절 계산에서 부모를 무한 질량으로 본다)
+    UPROPERTY(EditAnywhere)
+    bool bParentDominates = false;
+
+    // Projection: 솔버가 못 지킨 오차가 허용치를 넘으면 자식 바디를 관절 위치로 강제로 되돌린다
+    UPROPERTY(EditAnywhere)
+    bool bEnableProjection = true;
+    UPROPERTY(EditAnywhere, meta=(ClampMin=0, Delta=0.001))
+    float ProjectionLinearTolerance = 0.05f;     // 미터 (5cm 이상 벌어지면 붙인다)
+    UPROPERTY(EditAnywhere, meta=(ClampMin=0, ClampMax=180, Delta=0.5))
+    float ProjectionAngularToleranceDeg = 180;   // 180 = 회전은 사실상 되돌리지 않음
+
     // 런타임
     physx::PxD6Joint* ConstraintHandle = nullptr;
     FPhysScene* PhysicsScene = nullptr;

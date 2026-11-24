@@ -10,9 +10,6 @@
 
 namespace
 {
-    constexpr float ProjectionLinearTolerance = 0.05f;      // 5cm 이상 벌어지면 붙인다
-    constexpr float ProjectionAngularTolerance = 3.14159265f; // 회전은 사실상 프로젝션하지 않음 (180°)
-
     physx::PxD6Motion::Enum MotionToPx(EAngularMotion M)
     {
         switch (M)
@@ -46,17 +43,33 @@ void FConstraintInstance::InitConstraint(FBodyInstance* Child, FBodyInstance* Pa
     Joint->setMotion(PxD6Axis::eSWING1, MotionToPx(Swing1Motion));
     Joint->setMotion(PxD6Axis::eSWING2, MotionToPx(Swing2Motion));
 
+    // Soft면 PxSpring을 넣은 생성자를 쓴다. 제한각을 넘으면 Stiffness로 밀어내고 Damping으로 튕김을 줄인다
     const float Twist = FMath::DegreesToRadians(TwistLimitDeg);
-    Joint->setTwistLimit(PxJointAngularLimitPair(-Twist, Twist));
-    Joint->setSwingLimit(PxJointLimitCone(FMath::DegreesToRadians(Swing1LimitDeg),
-                                          FMath::DegreesToRadians(Swing2LimitDeg)));
+    const float Swing1 = FMath::DegreesToRadians(Swing1LimitDeg);
+    const float Swing2 = FMath::DegreesToRadians(Swing2LimitDeg);
+    Joint->setTwistLimit(bSoftTwistLimit
+        ? PxJointAngularLimitPair(-Twist, Twist, PxSpring(TwistStiffness, TwistDamping))
+        : PxJointAngularLimitPair(-Twist, Twist));
+    Joint->setSwingLimit(bSoftSwingLimit
+        ? PxJointLimitCone(Swing1, Swing2, PxSpring(SwingStiffness, SwingDamping))
+        : PxJointLimitCone(Swing1, Swing2));
+
+    // PhysX 관절은 기본으로 두 바디 충돌을 끈다. Disable Collision을 끄면 다시 켠다
+    Joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, !bDisableCollision);
+
+    // actor0 = 부모. 부모의 역질량·역관성 비율을 0으로 두면 관절 계산에서 부모는 움직이지 않는 것처럼 보인다
+    if (bParentDominates)
+    {
+        Joint->setInvMassScale0(0.0f);
+        Joint->setInvInertiaScale0(0.0f);
+    }
 
     Joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
 
     // 프로젝션: 솔버가 못 지킨 오차가 허용치를 넘으면 자식 바디를 관절 위치로 강제로 되돌린다 (UE 래그돌 기본값과 같은 방식)
-    Joint->setConstraintFlag(PxConstraintFlag::ePROJECTION, true);
+    Joint->setConstraintFlag(PxConstraintFlag::ePROJECTION, bEnableProjection);
     Joint->setProjectionLinearTolerance(ProjectionLinearTolerance);
-    Joint->setProjectionAngularTolerance(ProjectionAngularTolerance);
+    Joint->setProjectionAngularTolerance(FMath::DegreesToRadians(ProjectionAngularToleranceDeg));
 
     ConstraintHandle = Joint;
     PhysicsScene = Scene;

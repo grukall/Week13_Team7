@@ -25,6 +25,16 @@ namespace
 		HTR_LOG(Warning, "PhysicsAsset: unknown angular motion '{}', keeping default", Value);
 	}
 
+	// 쓸 때는 항상 쓰고, 읽을 때는 키가 있을 때만 읽는다
+	template <typename T>
+	void SerializeOptional(FStructuredArchive::FRecord& Record, FArchiveFieldName Name, T& Value)
+	{
+		if (auto Slot = Record.TryEnterField(Name, true))
+		{
+			*Slot << Value;
+		}
+	}
+
 	// 위치 + 쿼터니언. 조인트 프레임에 스케일은 의미가 없으므로 저장하지 않는다
 	void SerializeFrame(FStructuredArchive::FRecord Record, FTransform& Frame)
 	{
@@ -50,4 +60,17 @@ void UPhysicsConstraintTemplate::Serialize(FStructuredArchive::FRecord Record)
 	Record << SA_VALUE("TwistLimitDeg", CI.TwistLimitDeg)
 	       << SA_VALUE("Swing1LimitDeg", CI.Swing1LimitDeg)
 	       << SA_VALUE("Swing2LimitDeg", CI.Swing2LimitDeg);
+
+	// 나중에 추가한 값들. 예전 파일에는 키가 없으니 있을 때만 읽고, 없으면 FConstraintInstance 기본값을 그대로 둔다
+	SerializeOptional(Record, "bSoftSwingLimit", CI.bSoftSwingLimit);
+	SerializeOptional(Record, "SwingStiffness", CI.SwingStiffness);
+	SerializeOptional(Record, "SwingDamping", CI.SwingDamping);
+	SerializeOptional(Record, "bSoftTwistLimit", CI.bSoftTwistLimit);
+	SerializeOptional(Record, "TwistStiffness", CI.TwistStiffness);
+	SerializeOptional(Record, "TwistDamping", CI.TwistDamping);
+	SerializeOptional(Record, "bDisableCollision", CI.bDisableCollision);
+	SerializeOptional(Record, "bParentDominates", CI.bParentDominates);
+	SerializeOptional(Record, "bEnableProjection", CI.bEnableProjection);
+	SerializeOptional(Record, "ProjectionLinearTolerance", CI.ProjectionLinearTolerance);
+	SerializeOptional(Record, "ProjectionAngularToleranceDeg", CI.ProjectionAngularToleranceDeg);
 }

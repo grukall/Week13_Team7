@@ -23,13 +23,21 @@
             "Properties": {
                 "AngularDamping": 0.10000000149011612,
                 "BoneName": "pelvis",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
                 "CollisionEnabled": "QueryAndPhysics",
                 "LinearDamping": 0.05000000074505806,
                 "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
                 "PhysMaterial": null,
                 "PhysicsType": "Default",
                 "bEnableGravity": true,
-                "bOverrideMass": false
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
             },
             "Spheres": []
         },
@@ -56,13 +64,21 @@
             "Properties": {
                 "AngularDamping": 0.10000000149011612,
                 "BoneName": "spine_01",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
                 "CollisionEnabled": "QueryAndPhysics",
                 "LinearDamping": 0.05000000074505806,
                 "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
                 "PhysMaterial": null,
                 "PhysicsType": "Default",
                 "bEnableGravity": true,
-                "bOverrideMass": false
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
             },
             "Spheres": []
         },
@@ -89,13 +105,21 @@
             "Properties": {
                 "AngularDamping": 0.10000000149011612,
                 "BoneName": "spine_02",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
                 "CollisionEnabled": "QueryAndPhysics",
                 "LinearDamping": 0.05000000074505806,
                 "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
                 "PhysMaterial": null,
                 "PhysicsType": "Default",
                 "bEnableGravity": true,
-                "bOverrideMass": false
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
             },
             "Spheres": []
         },
@@ -122,13 +146,21 @@
             "Properties": {
                 "AngularDamping": 0.10000000149011612,
                 "BoneName": "spine_03",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
                 "CollisionEnabled": "QueryAndPhysics",
                 "LinearDamping": 0.05000000074505806,
                 "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
                 "PhysMaterial": null,
                 "PhysicsType": "Default",
                 "bEnableGravity": true,
-                "bOverrideMass": false
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
             },
             "Spheres": []
         },
@@ -155,13 +187,21 @@
             "Properties": {
                 "AngularDamping": 0.10000000149011612,
                 "BoneName": "neck_01",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
                 "CollisionEnabled": "QueryAndPhysics",
                 "LinearDamping": 0.05000000074505806,
                 "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
                 "PhysMaterial": null,
                 "PhysicsType": "Default",
                 "bEnableGravity": true,
-                "bOverrideMass": false
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
             },
             "Spheres": []
         },
@@ -188,13 +228,21 @@
             "Properties": {
                 "AngularDamping": 0.10000000149011612,
                 "BoneName": "Head",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
                 "CollisionEnabled": "QueryAndPhysics",
                 "LinearDamping": 0.05000000074505806,
                 "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
                 "PhysMaterial": null,
                 "PhysicsType": "Default",
                 "bEnableGravity": true,
-                "bOverrideMass": false
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
             },
             "Spheres": []
         },
@@ -221,13 +269,21 @@
             "Properties": {
                 "AngularDamping": 0.10000000149011612,
                 "BoneName": "clavicle_l",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
                 "CollisionEnabled": "QueryAndPhysics",
                 "LinearDamping": 0.05000000074505806,
                 "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
                 "PhysMaterial": null,
                 "PhysicsType": "Default",
                 "bEnableGravity": true,
-                "bOverrideMass": false
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
             },
             "Spheres": []
         },
@@ -254,13 +310,21 @@
             "Properties": {
                 "AngularDamping": 0.10000000149011612,
                 "BoneName": "upperarm_l",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
                 "CollisionEnabled": "QueryAndPhysics",
                 "LinearDamping": 0.05000000074505806,
                 "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
                 "PhysMaterial": null,
                 "PhysicsType": "Default",
                 "bEnableGravity": true,
-                "bOverrideMass": false
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
             },
             "Spheres": []
         },
@@ -287,13 +351,21 @@
             "Properties": {
                 "AngularDamping": 0.10000000149011612,
                 "BoneName": "lowerarm_l",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
                 "CollisionEnabled": "QueryAndPhysics",
                 "LinearDamping": 0.05000000074505806,
                 "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
                 "PhysMaterial": null,
                 "PhysicsType": "Default",
                 "bEnableGravity": true,
-                "bOverrideMass": false
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
             },
             "Spheres": []
         },
@@ -320,13 +392,21 @@
             "Properties": {
                 "AngularDamping": 0.10000000149011612,
                 "BoneName": "hand_l",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
                 "CollisionEnabled": "QueryAndPhysics",
                 "LinearDamping": 0.05000000074505806,
                 "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
                 "PhysMaterial": null,
                 "PhysicsType": "Default",
                 "bEnableGravity": true,
-                "bOverrideMass": false
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
             },
             "Spheres": []
         },
@@ -353,13 +433,21 @@
             "Properties": {
                 "AngularDamping": 0.10000000149011612,
                 "BoneName": "clavicle_r",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
                 "CollisionEnabled": "QueryAndPhysics",
                 "LinearDamping": 0.05000000074505806,
                 "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
                 "PhysMaterial": null,
                 "PhysicsType": "Default",
                 "bEnableGravity": true,
-                "bOverrideMass": false
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
             },
             "Spheres": []
         },
@@ -386,13 +474,21 @@
             "Properties": {
                 "AngularDamping": 0.10000000149011612,
                 "BoneName": "upperarm_r",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
                 "CollisionEnabled": "QueryAndPhysics",
                 "LinearDamping": 0.05000000074505806,
                 "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
                 "PhysMaterial": null,
                 "PhysicsType": "Default",
                 "bEnableGravity": true,
-                "bOverrideMass": false
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
             },
             "Spheres": []
         },
@@ -419,13 +515,21 @@
             "Properties": {
                 "AngularDamping": 0.10000000149011612,
                 "BoneName": "lowerarm_r",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
                 "CollisionEnabled": "QueryAndPhysics",
                 "LinearDamping": 0.05000000074505806,
                 "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
                 "PhysMaterial": null,
                 "PhysicsType": "Default",
                 "bEnableGravity": true,
-                "bOverrideMass": false
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
             },
             "Spheres": []
         },
@@ -452,13 +556,21 @@
             "Properties": {
                 "AngularDamping": 0.10000000149011612,
                 "BoneName": "hand_r",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
                 "CollisionEnabled": "QueryAndPhysics",
                 "LinearDamping": 0.05000000074505806,
                 "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
                 "PhysMaterial": null,
                 "PhysicsType": "Default",
                 "bEnableGravity": true,
-                "bOverrideMass": false
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
             },
             "Spheres": []
         },
@@ -485,13 +597,21 @@
             "Properties": {
                 "AngularDamping": 0.10000000149011612,
                 "BoneName": "thigh_l",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
                 "CollisionEnabled": "QueryAndPhysics",
                 "LinearDamping": 0.05000000074505806,
                 "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
                 "PhysMaterial": null,
                 "PhysicsType": "Default",
                 "bEnableGravity": true,
-                "bOverrideMass": false
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
             },
             "Spheres": []
         },
@@ -518,13 +638,21 @@
             "Properties": {
                 "AngularDamping": 0.10000000149011612,
                 "BoneName": "calf_l",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
                 "CollisionEnabled": "QueryAndPhysics",
                 "LinearDamping": 0.05000000074505806,
                 "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
                 "PhysMaterial": null,
                 "PhysicsType": "Default",
                 "bEnableGravity": true,
-                "bOverrideMass": false
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
             },
             "Spheres": []
         },
@@ -551,13 +679,21 @@
             "Properties": {
                 "AngularDamping": 0.10000000149011612,
                 "BoneName": "foot_l",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
                 "CollisionEnabled": "QueryAndPhysics",
                 "LinearDamping": 0.05000000074505806,
                 "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
                 "PhysMaterial": null,
                 "PhysicsType": "Default",
                 "bEnableGravity": true,
-                "bOverrideMass": false
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
             },
             "Spheres": []
         },
@@ -584,13 +720,21 @@
             "Properties": {
                 "AngularDamping": 0.10000000149011612,
                 "BoneName": "thigh_r",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
                 "CollisionEnabled": "QueryAndPhysics",
                 "LinearDamping": 0.05000000074505806,
                 "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
                 "PhysMaterial": null,
                 "PhysicsType": "Default",
                 "bEnableGravity": true,
-                "bOverrideMass": false
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
             },
             "Spheres": []
         },
@@ -617,13 +761,21 @@
             "Properties": {
                 "AngularDamping": 0.10000000149011612,
                 "BoneName": "calf_r",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
                 "CollisionEnabled": "QueryAndPhysics",
                 "LinearDamping": 0.05000000074505806,
                 "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
                 "PhysMaterial": null,
                 "PhysicsType": "Default",
                 "bEnableGravity": true,
-                "bOverrideMass": false
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
             },
             "Spheres": []
         },
@@ -650,13 +802,21 @@
             "Properties": {
                 "AngularDamping": 0.10000000149011612,
                 "BoneName": "foot_r",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
                 "CollisionEnabled": "QueryAndPhysics",
                 "LinearDamping": 0.05000000074505806,
                 "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
                 "PhysMaterial": null,
                 "PhysicsType": "Default",
                 "bEnableGravity": true,
-                "bOverrideMass": false
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
             },
             "Spheres": []
         }
@@ -691,13 +851,24 @@
                     "Z": 0.7056249380111694
                 }
             },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
             "Properties": {},
             "Swing1LimitDeg": 35.0,
             "Swing1Motion": "Limited",
             "Swing2LimitDeg": 35.0,
             "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
             "TwistLimitDeg": 20.0,
-            "TwistMotion": "Limited"
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
         },
         {
             "Bone1": "spine_02",
@@ -728,13 +899,24 @@
                     "Z": 0.7049919366836548
                 }
             },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
             "Properties": {},
             "Swing1LimitDeg": 35.0,
             "Swing1Motion": "Limited",
             "Swing2LimitDeg": 35.0,
             "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
             "TwistLimitDeg": 20.0,
-            "TwistMotion": "Limited"
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
         },
         {
             "Bone1": "spine_03",
@@ -765,13 +947,24 @@
                     "Z": 0.7071065306663513
                 }
             },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
             "Properties": {},
             "Swing1LimitDeg": 35.0,
             "Swing1Motion": "Limited",
             "Swing2LimitDeg": 35.0,
             "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
             "TwistLimitDeg": 20.0,
-            "TwistMotion": "Limited"
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
         },
         {
             "Bone1": "neck_01",
@@ -802,13 +995,24 @@
                     "Z": 0.7027380466461182
                 }
             },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
             "Properties": {},
             "Swing1LimitDeg": 35.0,
             "Swing1Motion": "Limited",
             "Swing2LimitDeg": 35.0,
             "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
             "TwistLimitDeg": 20.0,
-            "TwistMotion": "Limited"
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
         },
         {
             "Bone1": "Head",
@@ -839,13 +1043,24 @@
                     "Z": -7.127517129832447e-15
                 }
             },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
             "Properties": {},
             "Swing1LimitDeg": 35.0,
             "Swing1Motion": "Limited",
             "Swing2LimitDeg": 35.0,
             "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
             "TwistLimitDeg": 20.0,
-            "TwistMotion": "Limited"
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
         },
         {
             "Bone1": "clavicle_l",
@@ -876,13 +1091,24 @@
                     "Z": 0.6931543350219727
                 }
             },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
             "Properties": {},
             "Swing1LimitDeg": 35.0,
             "Swing1Motion": "Limited",
             "Swing2LimitDeg": 35.0,
             "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
             "TwistLimitDeg": 20.0,
-            "TwistMotion": "Limited"
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
         },
         {
             "Bone1": "upperarm_l",
@@ -913,13 +1139,24 @@
                     "Z": 0.17983636260032654
                 }
             },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
             "Properties": {},
             "Swing1LimitDeg": 35.0,
             "Swing1Motion": "Limited",
             "Swing2LimitDeg": 35.0,
             "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
             "TwistLimitDeg": 20.0,
-            "TwistMotion": "Limited"
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
         },
         {
             "Bone1": "lowerarm_l",
@@ -950,13 +1187,24 @@
                     "Z": -3.67118758504148e-07
                 }
             },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
             "Properties": {},
             "Swing1LimitDeg": 35.0,
             "Swing1Motion": "Limited",
             "Swing2LimitDeg": 35.0,
             "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
             "TwistLimitDeg": 20.0,
-            "TwistMotion": "Limited"
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
         },
         {
             "Bone1": "hand_l",
@@ -987,13 +1235,24 @@
                     "Z": -2.1918067361070825e-09
                 }
             },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
             "Properties": {},
             "Swing1LimitDeg": 35.0,
             "Swing1Motion": "Limited",
             "Swing2LimitDeg": 35.0,
             "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
             "TwistLimitDeg": 20.0,
-            "TwistMotion": "Limited"
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
         },
         {
             "Bone1": "clavicle_r",
@@ -1024,13 +1283,24 @@
                     "Z": 0.18867942690849304
                 }
             },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
             "Properties": {},
             "Swing1LimitDeg": 35.0,
             "Swing1Motion": "Limited",
             "Swing2LimitDeg": 35.0,
             "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
             "TwistLimitDeg": 20.0,
-            "TwistMotion": "Limited"
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
         },
         {
             "Bone1": "upperarm_r",
@@ -1061,13 +1331,24 @@
                     "Z": -0.17983640730381012
                 }
             },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
             "Properties": {},
             "Swing1LimitDeg": 35.0,
             "Swing1Motion": "Limited",
             "Swing2LimitDeg": 35.0,
             "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
             "TwistLimitDeg": 20.0,
-            "TwistMotion": "Limited"
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
         },
         {
             "Bone1": "lowerarm_r",
@@ -1098,13 +1379,24 @@
                     "Z": 3.6922369872627314e-07
                 }
             },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
             "Properties": {},
             "Swing1LimitDeg": 35.0,
             "Swing1Motion": "Limited",
             "Swing2LimitDeg": 35.0,
             "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
             "TwistLimitDeg": 20.0,
-            "TwistMotion": "Limited"
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
         },
         {
             "Bone1": "hand_r",
@@ -1135,13 +1427,24 @@
                     "Z": 2.191965053910394e-09
                 }
             },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
             "Properties": {},
             "Swing1LimitDeg": 35.0,
             "Swing1Motion": "Limited",
             "Swing2LimitDeg": 35.0,
             "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
             "TwistLimitDeg": 20.0,
-            "TwistMotion": "Limited"
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
         },
         {
             "Bone1": "thigh_l",
@@ -1172,13 +1475,24 @@
                     "Z": 3.499713159271778e-07
                 }
             },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
             "Properties": {},
             "Swing1LimitDeg": 35.0,
             "Swing1Motion": "Limited",
             "Swing2LimitDeg": 35.0,
             "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
             "TwistLimitDeg": 20.0,
-            "TwistMotion": "Limited"
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
         },
         {
             "Bone1": "calf_l",
@@ -1209,13 +1523,24 @@
                     "Z": 4.8023066483438015e-06
                 }
             },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
             "Properties": {},
             "Swing1LimitDeg": 35.0,
             "Swing1Motion": "Limited",
             "Swing2LimitDeg": 35.0,
             "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
             "TwistLimitDeg": 20.0,
-            "TwistMotion": "Limited"
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
         },
         {
             "Bone1": "foot_l",
@@ -1246,13 +1571,24 @@
                     "Z": -0.00034345287713222206
                 }
             },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
             "Properties": {},
             "Swing1LimitDeg": 35.0,
             "Swing1Motion": "Limited",
             "Swing2LimitDeg": 35.0,
             "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
             "TwistLimitDeg": 20.0,
-            "TwistMotion": "Limited"
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
         },
         {
             "Bone1": "thigh_r",
@@ -1283,13 +1619,24 @@
                     "Z": 3.499713159271778e-07
                 }
             },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
             "Properties": {},
             "Swing1LimitDeg": 35.0,
             "Swing1Motion": "Limited",
             "Swing2LimitDeg": 35.0,
             "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
             "TwistLimitDeg": 20.0,
-            "TwistMotion": "Limited"
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
         },
         {
             "Bone1": "calf_r",
@@ -1320,13 +1667,24 @@
                     "Z": 4.8023066483438015e-06
                 }
             },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
             "Properties": {},
             "Swing1LimitDeg": 35.0,
             "Swing1Motion": "Limited",
             "Swing2LimitDeg": 35.0,
             "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
             "TwistLimitDeg": 20.0,
-            "TwistMotion": "Limited"
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
         },
         {
             "Bone1": "foot_r",
@@ -1357,13 +1715,24 @@
                     "Z": -0.00034345287713222206
                 }
             },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
             "Properties": {},
             "Swing1LimitDeg": 35.0,
             "Swing1Motion": "Limited",
             "Swing2LimitDeg": 35.0,
             "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
             "TwistLimitDeg": 20.0,
-            "TwistMotion": "Limited"
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
         }
     ],
     "Properties": {},

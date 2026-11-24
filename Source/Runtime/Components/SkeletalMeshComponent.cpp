@@ -546,6 +546,9 @@ void USkeletalMeshComponent::InitArticulated(FPhysScene* Scene)
 		Body->bOverrideMass = Setup->bOverrideMass;
 		Body->MassInKg = Setup->MassInKg;
 		Body->bEnableGravity = Setup->bEnableGravity;
+		Body->bUseCCD = Setup->bUseCCD;
+		// 무게중심 이동은 본 공간 값이라 캡슐 크기처럼 본 월드 스케일을 곱해 PhysX(미터) 단위로 바꾼다
+		Body->COMNudge = FVector(Setup->COMNudge.X * TM.Scale.X, Setup->COMNudge.Y * TM.Scale.Y, Setup->COMNudge.Z * TM.Scale.Z);
 		// Character 캡슐(Pawn) 안에서 시작하므로 Pawn과 충돌하면 켜는 순간 밀려 튕겨 나간다
 		Body->CollisionResponses.SetResponse(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
 		Body->InstanceBodyIndex = i;
@@ -559,6 +562,8 @@ void USkeletalMeshComponent::InitArticulated(FPhysScene* Scene)
 			FPhysicsInterface::SetSolverIterationCounts(Body->ActorHandle, RagdollPositionIterations, RagdollVelocityIterations);
 			FPhysicsInterface::SetDamping(Body->ActorHandle, Setup->LinearDamping, Setup->AngularDamping);
 			FPhysicsInterface::SetSleepThresholds(Body->ActorHandle, RagdollSleepThreshold, RagdollStabilizationThreshold);
+			if (Setup->bOverrideMaxAngularVelocity)
+				FPhysicsInterface::SetMaxAngularVelocity(Body->ActorHandle, FMath::DegreesToRadians(Setup->MaxAngularVelocity));
 		}
 		Bodies.Add(Body);
 	}

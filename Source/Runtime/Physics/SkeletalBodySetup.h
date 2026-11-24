@@ -43,7 +43,22 @@ public:
 	UPROPERTY(EditAnywhere)
 	bool bEnableGravity = true;
 
+	// 도형으로 구한 무게중심을 바디(본) 공간에서 이만큼 옮긴다. 단위는 캡슐 Center와 같다
+	// (예: 머리 바디를 앞으로 옮기면 쓰러질 때 고개가 앞으로 떨어진다)
+	UPROPERTY(EditAnywhere)
+	FVector COMNudge = FVector::ZeroVector;
+
+	// 켜면 회전 속도를 MaxAngularVelocity(°/s)로 제한한다. 끄면 PhysX 기본값(100 rad/s ≈ 5730°/s)
+	UPROPERTY(EditAnywhere)
+	bool bOverrideMaxAngularVelocity = false;
+	UPROPERTY(EditAnywhere, meta=(ClampMin=1, Delta=10))
+	float MaxAngularVelocity = 3600.0f;
+
 	// NoCollision이면 다른 바디·월드와 부딪히지 않는다 (관절로는 계속 이어진다)
 	UPROPERTY(EditAnywhere)
 	ECollisionEnabled CollisionEnabled = ECollisionEnabled::QueryAndPhysics;
+
+	// 연속 충돌 검사. 한 프레임에 크게 움직이는 작은 바디가 얇은 벽·바닥을 뚫고 지나가지 않게 한다
+	UPROPERTY(EditAnywhere)
+	bool bUseCCD = false;
 };

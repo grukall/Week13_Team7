@@ -99,6 +99,7 @@ struct FBodyInstance
 	bool bOverrideMass = false;     // true면 밀도로 구한 질량 대신 MassInKg
 	float MassInKg = 0.0f;
 	bool bEnableGravity = true;     // InitBody에서 PxActorFlag::eDISABLE_GRAVITY로 반영
+	FVector COMNudge = FVector::ZeroVector;   // 바디 로컬(미터, 스케일 적용 후) 무게중심 이동. UpdateMassProperties에서 반영
 
 	UPhysicalMaterial* GetSimplePhysicalMaterial() const;
 	void SetPhysMaterialOverride(UPhysicalMaterial* Material);

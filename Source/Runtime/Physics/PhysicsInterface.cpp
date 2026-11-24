@@ -192,6 +192,12 @@ void FPhysicsInterface::SetSleepThresholds(const FPhysicsActorHandle& Handle, fl
 	}
 }
 
+void FPhysicsInterface::SetMaxAngularVelocity(const FPhysicsActorHandle& Handle, float RadiansPerSecond)
+{
+	if (auto* Dynamic = Handle.IsValid() ? Handle.SyncActor->is<physx::PxRigidDynamic>() : nullptr)
+		Dynamic->setMaxAngularVelocity(RadiansPerSecond);
+}
+
 void FPhysicsInterface::ReleaseActor(FPhysicsActorHandle& Handle)
 {
 	if (Handle.SyncActor)

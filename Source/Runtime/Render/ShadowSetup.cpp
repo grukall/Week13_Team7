@@ -249,7 +249,9 @@ void FSceneRenderer::AddInteractingPrimitives(FScene& Scene, FProjectedShadowInf
 		{
 			if (!Proxy->bCastsShadow || !Proxy->IsShown(View.bGameView)) return;
 			if (Proxy->IsSkinned() && !CachedViewContext.bShowSkeletalMesh) return;
-			if ((!Proxy->GetMesh() && !Proxy->HasDynamicMeshElements()) || !Proxy->GetRenderState()) return;
+			// 메시 캐시(RenderState)가 있거나, 없어도 그림자 깊이에 그릴 수 있다고 밝힌 동적 Proxy(천)만 Caster로 받는다
+			if (!Proxy->GetMesh() && !Proxy->HasDynamicMeshElements()) return;
+			if (!Proxy->GetRenderState() && !Proxy->SupportsDynamicShadowDepth()) return;
 
 			// 카메라에서 너무 작게 보이는 Caster는 그림자도 눈에 띄지 않는다 (r.Shadow.RadiusThreshold).
 			const FAABB& Bounds = Proxy->GetBounds();

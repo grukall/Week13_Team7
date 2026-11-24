@@ -1,6 +1,7 @@
 #include "EnginePCH.h"
 #include "Editor/Details/DetailsPanel.h"
 #include "Editor/Details/PropertyEditor.h"
+#include "Editor/Details/ClothDetails.h"
 #include "Core/Misc/Paths.h"
 
 #include <filesystem>
@@ -1561,6 +1562,8 @@ bool FDetailsPanel::Init()
 
 	CustomFont = io.Fonts->AddFontFromFileTTF(fontPath.c_str(), fontSize, nullptr, koreanRanges);
 	assert(CustomFont != nullptr);
+
+	ClothDetails::RegisterStructMemberRules();	// 천 설정 구조체: 꺼진 기능의 세부 값 숨김
 
 	return true;
 }

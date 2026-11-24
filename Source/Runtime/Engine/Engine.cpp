@@ -6,6 +6,7 @@
 #include "Engine/Level.h"
 #include "Camera/CameraActor.h"
 #include "Audio/AudioDevice.h"
+#include "Physics/NvClothManager.h"
 
 #include "Serialization/JsonArchive.h"
 
@@ -27,6 +28,7 @@ bool UEngine::Init()
 	DefaultPhysMaterial->RaiseMassToPower = 1.f;
 	UAssetManager::Get().RegisterAsset("DefaultPhysicalMaterial", DefaultPhysMaterial);
 	InitializeAudioDevice();          // 실패해도 엔진은 계속 (UE도 장치가 없으면 Null 디바이스로 돈다)
+	InitializeClothManager();
 	return true;
 }
 
@@ -47,6 +49,16 @@ void UEngine::ShutdownAudioDevice()
 	MainAudioDevice->Teardown();      // 오디오 스레드 종료. 이후 USoundWave를 지워도 안전
 	delete MainAudioDevice;
 	MainAudioDevice = nullptr;
+}
+
+void UEngine::InitializeClothManager()
+{
+	FNvClothManager::Get().Initialize();
+}
+
+void UEngine::ShutdownClothManager()
+{
+	FNvClothManager::Get().Shutdown();
 }
 
 FWorldContext& UEngine::CreateNewWorldContext(EWorldType WorldType)

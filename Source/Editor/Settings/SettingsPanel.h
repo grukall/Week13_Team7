@@ -81,6 +81,9 @@ struct FEditorSettings
 	bool bShowCameraOverlay = true;
 	bool bShowSkeletalMesh = true;
 
+	// Physics: 천 솔버를 CUDA(GPU)로. CUDA가 없으면 CPU로 대체된다 (FNvClothManager::SetUseCUDA)
+	bool bClothUseCUDA = false;
+
 	inline uint32 GetDirectionalShadowMapSize() const { return DirectionalShadowMapSizePerLevels[DirectionalShadowMapSizeLevel]; }
 	inline uint32 GetPointShadowMapSize() const { return PointShadowMapSizePerLevels[PointShadowMapSizeLevel]; }
 	inline uint32 GetSpotShadowMapSize() const { return SpotShadowMapSizePerLevels[SpotShadowMapSizeLevel]; }
@@ -122,6 +125,7 @@ private:
 	void ApplySceneDepthRange();
 	void DrawDefaultPawnSettings();
 	void DrawShadowMapSettings();
+	void DrawPhysicsSettings();
 
 	UWorld* World = nullptr;
 	FViewportsPanel* ViewportsPanel = nullptr;

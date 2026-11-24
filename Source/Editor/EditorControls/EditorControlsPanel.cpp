@@ -22,6 +22,7 @@
 #include "GameFramework/Actor/DecalActor.h"
 #include "GameFramework/Actor/TextRenderActor.h"
 #include "GameFramework/Actor/ExponentialHeightFogActor.h"
+#include "GameFramework/Actor/ClothActor.h"
 #include "GameFramework/Character.h"
 
 #include "Input/InputSystem.h"
@@ -50,6 +51,7 @@ namespace
 		{ "Text", &ATextRenderActor::StaticClass },
 		{ "HeightFog", &AExponentialHeightFogActor::StaticClass },
 		{ "Character", &ACharacter::StaticClass },
+		{ "Cloth", &AClothActor::StaticClass },
 	};
 
 	// 버튼 하나로 바로 생성하는 액터

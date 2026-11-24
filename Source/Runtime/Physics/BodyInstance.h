@@ -24,7 +24,8 @@ enum class ECollisionChannel : uint8
 	ECC_Camera,
 	ECC_PhysicsBody,
 	ECC_Vehicle,
-	ECC_Destructible
+	ECC_Destructible,
+	ECC_Cloth
 };
 
 UENUM()
@@ -65,6 +66,9 @@ struct FCollisionResponseContainer
 	ECollisionResponse Vehicle = ECollisionResponse::ECR_Block;
 	UPROPERTY(EditAnywhere)
 	ECollisionResponse Destructible = ECollisionResponse::ECR_Block;
+	UPROPERTY(EditAnywhere)
+	ECollisionResponse Cloth = ECollisionResponse::ECR_Ignore;	
+
 	ECollisionResponse GetResponse(ECollisionChannel Channel) const;
 	void SetResponse(ECollisionChannel Channel, ECollisionResponse Response);
 };

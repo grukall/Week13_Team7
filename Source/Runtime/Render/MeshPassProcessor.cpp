@@ -326,7 +326,8 @@ bool FMeshPassProcessor::Build(const TArray<FPrimitiveSceneProxy*>& ShadowMeshes
 	FRenderQueue DynamicPackets;
 	for (FPrimitiveSceneProxy* Proxy : ShadowMeshes)
 	{
-		if (!Proxy || !Proxy->GetRenderState())
+		// RenderState가 없으면 건너뛴다. 단, RenderState 없이 그려도 된다고 밝힌 동적 Proxy(천)는 통과 (ShadowSetup과 같은 조건)
+		if (!Proxy || (!Proxy->GetRenderState() && !Proxy->SupportsDynamicShadowDepth()))
 			continue;
 
 		if (!Proxy->GetMesh() && Proxy->HasDynamicMeshElements())
@@ -353,7 +354,7 @@ bool FMeshPassProcessor::Build(const TArray<FPrimitiveSceneProxy*>& ShadowMeshes
 		}
 
 		UStaticMesh* Mesh = Proxy->GetMesh();
-		if (!Mesh || Proxy->GetLODCount() == 0)
+		if (!Mesh || !Proxy->GetRenderState() || Proxy->GetLODCount() == 0)	// 스태틱 메시 경로는 섹션 캐시(RenderState)가 있어야 한다
 			continue;
 
 		constexpr uint8 LOD = 0;

@@ -1,0 +1,286 @@
+{
+    "Bodies": [
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": -0.16884922981262207,
+                        "Y": 0.00048828125,
+                        "Z": 1.6820887327194214
+                    },
+                    "Length": 3.579231023788452,
+                    "Radius": 1.2433403730392456,
+                    "Rotation": {
+                        "W": 0.70710688829422,
+                        "X": 0.0,
+                        "Y": 0.7071066498756409,
+                        "Z": 0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "BoneName": "Monster Truck_15",
+                "PhysMaterial": null
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": 1.9669532775878906e-06,
+                        "Y": 0.01860859990119934,
+                        "Z": -2.9802322387695313e-08
+                    },
+                    "Length": 0.03311312198638916,
+                    "Radius": 0.6438030004501343,
+                    "Rotation": {
+                        "W": 0.70710688829422,
+                        "X": 0.0,
+                        "Y": 0.7071066498756409,
+                        "Z": 0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "BoneName": "Monster Truck_15 FL Tire",
+                "PhysMaterial": null
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": 1.9669532775878906e-06,
+                        "Y": -0.018608540296554565,
+                        "Z": 0.0
+                    },
+                    "Length": 0.03311312198638916,
+                    "Radius": 0.6438030004501343,
+                    "Rotation": {
+                        "W": 0.70710688829422,
+                        "X": 0.0,
+                        "Y": 0.7071066498756409,
+                        "Z": 0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "BoneName": "Monster Truck_15 FR Tire",
+                "PhysMaterial": null
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": -2.0265579223632813e-06,
+                        "Y": 0.01860859990119934,
+                        "Z": -2.9802322387695313e-08
+                    },
+                    "Length": 0.03311300277709961,
+                    "Radius": 0.6438030004501343,
+                    "Rotation": {
+                        "W": 0.70710688829422,
+                        "X": 0.0,
+                        "Y": 0.7071066498756409,
+                        "Z": 0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "BoneName": "Monster Truck_15 BL Tire",
+                "PhysMaterial": null
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": -2.0265579223632813e-06,
+                        "Y": -0.018608540296554565,
+                        "Z": 0.0
+                    },
+                    "Length": 0.03311300277709961,
+                    "Radius": 0.6438030004501343,
+                    "Rotation": {
+                        "W": 0.70710688829422,
+                        "X": 0.0,
+                        "Y": 0.7071066498756409,
+                        "Z": 0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "BoneName": "Monster Truck_15 BR Tire",
+                "PhysMaterial": null
+            },
+            "Spheres": []
+        }
+    ],
+    "Constraints": [
+        {
+            "Bone1": "Monster Truck_15 FL Tire",
+            "Bone2": "Monster Truck_15",
+            "Frame1": {
+                "Location": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "Rotation": {
+                    "W": 1.0,
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                }
+            },
+            "Frame2": {
+                "Location": {
+                    "X": 1.8164291381835938,
+                    "Y": -1.159393310546875,
+                    "Z": 0.6438040733337402
+                },
+                "Rotation": {
+                    "W": 0.9999999403953552,
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                }
+            },
+            "Properties": {},
+            "Swing1LimitDeg": 45.0,
+            "Swing1Motion": "Free",
+            "Swing2LimitDeg": 45.0,
+            "Swing2Motion": "Free",
+            "TwistLimitDeg": 30.0,
+            "TwistMotion": "Free"
+        },
+        {
+            "Bone1": "Monster Truck_15 FR Tire",
+            "Bone2": "Monster Truck_15",
+            "Frame1": {
+                "Location": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "Rotation": {
+                    "W": 1.0,
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                }
+            },
+            "Frame2": {
+                "Location": {
+                    "X": 1.8164291381835938,
+                    "Y": 1.159393310546875,
+                    "Z": 0.6438040733337402
+                },
+                "Rotation": {
+                    "W": 0.9999999403953552,
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                }
+            },
+            "Properties": {},
+            "Swing1LimitDeg": 45.0,
+            "Swing1Motion": "Free",
+            "Swing2LimitDeg": 45.0,
+            "Swing2Motion": "Free",
+            "TwistLimitDeg": 30.0,
+            "TwistMotion": "Free"
+        },
+        {
+            "Bone1": "Monster Truck_15 BL Tire",
+            "Bone2": "Monster Truck_15",
+            "Frame1": {
+                "Location": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "Rotation": {
+                    "W": 1.0,
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                }
+            },
+            "Frame2": {
+                "Location": {
+                    "X": -1.8163986206054688,
+                    "Y": -1.159393310546875,
+                    "Z": 0.6438040733337402
+                },
+                "Rotation": {
+                    "W": 0.9999999403953552,
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                }
+            },
+            "Properties": {},
+            "Swing1LimitDeg": 45.0,
+            "Swing1Motion": "Free",
+            "Swing2LimitDeg": 45.0,
+            "Swing2Motion": "Free",
+            "TwistLimitDeg": 30.0,
+            "TwistMotion": "Free"
+        },
+        {
+            "Bone1": "Monster Truck_15 BR Tire",
+            "Bone2": "Monster Truck_15",
+            "Frame1": {
+                "Location": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "Rotation": {
+                    "W": 1.0,
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                }
+            },
+            "Frame2": {
+                "Location": {
+                    "X": -1.8163986206054688,
+                    "Y": 1.159393310546875,
+                    "Z": 0.6438040733337402
+                },
+                "Rotation": {
+                    "W": 0.9999999403953552,
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                }
+            },
+            "Properties": {},
+            "Swing1LimitDeg": 45.0,
+            "Swing1Motion": "Free",
+            "Swing2LimitDeg": 45.0,
+            "Swing2Motion": "Free",
+            "TwistLimitDeg": 30.0,
+            "TwistMotion": "Free"
+        }
+    ],
+    "Properties": {},
+    "Version": 1
+}

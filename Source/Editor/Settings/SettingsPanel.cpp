@@ -89,6 +89,7 @@ void FSettingsPanel::OnRender()
 	ImGui::SeparatorText("Debug Draw (PIE)");
 	ImGui::Checkbox("Show Collision", &Settings.bShowCollision);
 	ImGui::Checkbox("Show Root", &Settings.bShowRootDebug);
+	ImGui::Checkbox("Show Vehicle", &Settings.bShowVehicleDebug);
 	ImGui::TextDisabled("PIE only.");
 	// 저장하지 않는 디버그 토글. root 고정을 끄면 루트 모션 이동량이 캡슐 + 메시에 두 번 들어간다
 	ImGui::Checkbox("Skip Root Lock (2x move)", &GDebugSkipRootLock);
@@ -216,6 +217,7 @@ bool FSettingsPanel::SaveSettings() const
 	File << "ShowUUID=" << Settings.bShowUUID << "\n";
 	File << "ShowCollision=" << Settings.bShowCollision << "\n";
 	File << "ShowRootDebug=" << Settings.bShowRootDebug << "\n";
+	File << "ShowVehicleDebug=" << Settings.bShowVehicleDebug << "\n";
 	File << "DrawDecals=" << Settings.bDrawDecals << "\n";
 	File << "DecalCulling=" << Settings.bDecalCulling << "\n";
 	File << "DecalNarrowCulling=" << Settings.bDecalNarrowCulling << "\n";
@@ -377,6 +379,7 @@ bool FSettingsPanel::LoadSettings()
 				else if (Key == "ShowUUID") Settings.bShowUUID = std::stoi(ValueStr);
 				else if (Key == "ShowCollision") Settings.bShowCollision = std::stoi(ValueStr);
 				else if (Key == "ShowRootDebug") Settings.bShowRootDebug = std::stoi(ValueStr);
+				else if (Key == "ShowVehicleDebug") Settings.bShowVehicleDebug = std::stoi(ValueStr);
 				else if (Key == "DrawDecals") Settings.bDrawDecals = std::stoi(ValueStr);
 				else if (Key == "DecalCulling") Settings.bDecalCulling = std::stoi(ValueStr);
 				else if (Key == "DecalNarrowCulling") Settings.bDecalNarrowCulling = std::stoi(ValueStr);

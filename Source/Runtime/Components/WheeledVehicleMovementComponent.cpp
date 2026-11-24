@@ -6,11 +6,14 @@
 #include "GameFramework/Actor.h"
 #include "Physics/PhysScene.h"
 #include "Physics/PhysXVehicleManager.h"
+#include "Render/LineBatcher.h"
+#include "UObject/UObjectIterator.h"
 #include "Serialization/StructuredArchive.h"
 #include "Serialization/StructuredArchiveSlots.h"
 #include "Serialization/MathSerialization.h"
 #include <PxPhysicsAPI.h>
 #include <cctype>
+#include <cmath>
 
 namespace
 {
@@ -209,6 +212,11 @@ bool UWheeledVehicleMovementComponent::AutoDetectWheelBones(USkeletalMeshCompone
 		const int32 BoneIdx = Detected[i].BoneIndex;
 		Setup.BoneName = Bones[BoneIdx].Name;
 		Setup.AdditionalOffset = FVector::ZeroVector;
+		Setup.Mass = DefaultWheelMass;
+		Setup.SpringStrength = DefaultSpringStrength;
+		Setup.SpringDamperRate = DefaultSpringDamperRate;
+		Setup.SuspensionMaxRaise = DefaultSuspensionMaxRaise;
+		Setup.SuspensionMaxDrop = DefaultSuspensionMaxDrop;
 
 		// 본 바운드(BoneBounds) 또는 지면(BindAABB.Min.Z)과의 거리로 실제 바퀴 반지름/폭 자동 산출
 		if (LOD0 && LOD0->BoneBounds.IsValidIndex(BoneIdx))
@@ -238,7 +246,7 @@ bool UWheeledVehicleMovementComponent::AutoDetectWheelBones(USkeletalMeshCompone
 		}
 
 		const bool bIsFront = (Detected[i].CompPosition.X >= AvgX);
-		Setup.MaxSteerAngle = bIsFront ? 40.0f : 0.0f;
+		Setup.MaxSteerAngle = bIsFront ? DefaultMaxSteerAngle : 0.0f;
 		Setup.bAffectedByHandbrake = !bIsFront;
 		Setup.bDriven = true;
 	}
@@ -370,6 +378,7 @@ void UWheeledVehicleMovementComponent::CreateVehicle()
 			}
 		}
 
+		WheelStates[Idx].WheelLocalPos = WheelPos;
 		WheelCentreCMOffsets[Idx] = physx::PxVec3(
 			WheelPos.X - COMOffset.X,
 			WheelPos.Y - COMOffset.Y,
@@ -414,8 +423,8 @@ void UWheeledVehicleMovementComponent::CreateVehicle()
 		WheelData.mRadius = Setup.Radius;
 		WheelData.mWidth = Setup.Width;
 		WheelData.mMOI = 0.5f * Setup.Mass * Setup.Radius * Setup.Radius; // 원기둥 관성 모멘트: 0.5 * m * r^2
-		WheelData.mMaxBrakeTorque = 1500.0f;                              // 풋브레이크 기본 토크 (N·m)
-		WheelData.mMaxHandBrakeTorque = Setup.bAffectedByHandbrake ? 4000.0f : 0.0f; // 휠 잠금용 핸드브레이크 토크 (N·m)
+		WheelData.mMaxBrakeTorque = MaxBrakeTorque;                              // 풋브레이크 토크 (N·m)
+		WheelData.mMaxHandBrakeTorque = Setup.bAffectedByHandbrake ? MaxHandBrakeTorque : 0.0f; // 휠 잠금용 핸드브레이크 토크 (N·m)
 		WheelData.mMaxSteer = FMath::DegreesToRadians(Setup.MaxSteerAngle);
 
 		physx::PxVehicleSuspensionData SuspData;
@@ -427,6 +436,11 @@ void UWheeledVehicleMovementComponent::CreateVehicle()
 
 		physx::PxVehicleTireData TireData;
 		TireData.mType = 0; // UpdateTireFrictionTable()에 등록한 0번 타이어 타입과 매칭
+		TireData.mLatStiffX = TireLateralStiffnessX;
+		TireData.mLatStiffY = TireLateralStiffnessY;
+		TireData.mLongitudinalStiffnessPerUnitGravity = TireLongitudinalStiffness;
+		TireData.mFrictionVsSlipGraph[1][1] = TireFrictionPeak;
+		TireData.mFrictionVsSlipGraph[2][1] = TireFrictionSlip;
 
 		// 힘 작용점 Z 오프셋: 바퀴 허브 높이 근처(무게중심 아래 -0.35m ~ -0.05m)로 제한해 전복 억제
 		const float ForceAppZ = std::clamp(WheelCMOffset.z, -0.35f, -0.05f);
@@ -464,16 +478,16 @@ void UWheeledVehicleMovementComponent::CreateVehicle()
 	DriveSimData.setDiffData(Diff);
 
 	physx::PxVehicleEngineData EngineData;
-	EngineData.mPeakTorque = 500.0f;
-	EngineData.mMaxOmega = 600.0f;
+	EngineData.mPeakTorque = PeakTorque;
+	EngineData.mMaxOmega = MaxEngineOmega;
 	DriveSimData.setEngineData(EngineData);
 
 	physx::PxVehicleGearsData GearsData;
-	GearsData.mSwitchTime = 0.5f;
+	GearsData.mSwitchTime = GearSwitchTime;
 	DriveSimData.setGearsData(GearsData);
 
 	physx::PxVehicleClutchData ClutchData;
-	ClutchData.mStrength = 10.0f;
+	ClutchData.mStrength = ClutchStrength;
 	DriveSimData.setClutchData(ClutchData);
 
 	// PxVehicleDriveNW
@@ -539,6 +553,42 @@ void UWheeledVehicleMovementComponent::SetHandbrakeInput(bool bNewHandbrake)
 float UWheeledVehicleMovementComponent::GetForwardSpeed() const
 {
 	return PVehicle ? PVehicle->computeForwardSpeed() : 0.0f;
+}
+
+float UWheeledVehicleMovementComponent::GetSpeedKmh() const
+{
+	return GetForwardSpeed() * 3.6f;
+}
+
+float UWheeledVehicleMovementComponent::GetEngineRPM() const
+{
+	if (!PVehicle)
+	{
+		return 0.0f;
+	}
+	constexpr float RadPerSecToRPM = 60.0f / (2.0f * physx::PxPi);
+	return PVehicle->mDriveDynData.getEngineRotationSpeed() * RadPerSecToRPM;
+}
+
+float UWheeledVehicleMovementComponent::GetMaxEngineRPM() const
+{
+	constexpr float RadPerSecToRPM = 60.0f / (2.0f * physx::PxPi);
+	return MaxEngineOmega * RadPerSecToRPM;
+}
+
+int32 UWheeledVehicleMovementComponent::GetCurrentGear() const
+{
+	if (!PVehicle)
+	{
+		return 0;
+	}
+	return static_cast<int32>(PVehicle->mDriveDynData.getCurrentGear())
+		- static_cast<int32>(physx::PxVehicleGearsData::eNEUTRAL);
+}
+
+const TArray<FWheelRuntimeState>& UWheeledVehicleMovementComponent::GetWheelStates() const
+{
+	return WheelStates;
 }
 
 void UWheeledVehicleMovementComponent::PreTick(float SubstepDeltaTime)
@@ -676,6 +726,12 @@ void UWheeledVehicleMovementComponent::UpdateWheelBones()
 		State.SteerAngle = WheelResult.steerAngle;
 		State.RotationAngle = PVehicle->mWheelsDynData.getWheelRotationAngle(static_cast<physx::PxU32>(i));
 		State.bIsInAir = WheelResult.isInAir;
+		State.LongitudinalSlip = WheelResult.longitudinalSlip;
+		State.LateralSlip = WheelResult.lateralSlip;
+		State.ContactPoint = FVector(
+			WheelResult.tireContactPoint.x,
+			WheelResult.tireContactPoint.y,
+			WheelResult.tireContactPoint.z);
 
 		if (State.BoneIndex != -1)
 		{
@@ -696,5 +752,111 @@ void UWheeledVehicleMovementComponent::UpdateWheelBones()
 	if (bAnyBoneUpdated)
 	{
 		SkelComp->RefreshBoneTransformsNow();
+	}
+}
+
+bool GShowVehicleDebug = false;
+
+void UWheeledVehicleMovementComponent::DrawDebug(FLineBatcher* LineBatcher) const
+{
+	if (!LineBatcher || !UpdatedComponent)
+	{
+		return;
+	}
+
+	const FMatrix WorldMat = UpdatedComponent->GetWorldMatrix();
+	const FQuat WorldRot = WorldMat.GetRotation().Normalized();
+
+	// 무게중심(COM) 마젠타 십자 + 구체
+	const FVector COMWorld = WorldMat.TransformPosition(COMOffset);
+	const FVector4 COMColor(1.0f, 0.2f, 1.0f, 1.0f);
+	const FVector ChassisForward = WorldRot.GetForwardVector();
+	const FVector ChassisRight = WorldRot.GetRightVector();
+	const FVector ChassisUp = WorldRot.GetUpVector();
+	constexpr float COMCrossSize = 0.25f;
+	LineBatcher->AddLine(COMWorld - ChassisForward * COMCrossSize, COMWorld + ChassisForward * COMCrossSize, COMColor);
+	LineBatcher->AddLine(COMWorld - ChassisRight * COMCrossSize, COMWorld + ChassisRight * COMCrossSize, COMColor);
+	LineBatcher->AddLine(COMWorld - ChassisUp * COMCrossSize, COMWorld + ChassisUp * COMCrossSize, COMColor);
+	LineBatcher->AddSphere(COMWorld, 0.06f, COMColor, 12);
+
+	const int32 Count = std::min(WheelStates.Num(), WheelSetups.Num());
+	const FVector4 SuspRangeColor(0.55f, 0.45f, 0.05f, 1.0f);
+	const FVector4 SuspActiveColor(1.0f, 0.95f, 0.1f, 1.0f);
+	const FVector4 GroundedWheelColor(0.15f, 1.0f, 0.25f, 1.0f);
+	const FVector4 AirWheelColor(1.0f, 0.2f, 0.2f, 1.0f);
+	const FVector4 ContactColor(0.0f, 1.0f, 1.0f, 1.0f);
+
+	for (int32 i = 0; i < Count; ++i)
+	{
+		const FWheelSetup& Setup = WheelSetups[i];
+		const FWheelRuntimeState& State = WheelStates[i];
+
+		const FVector WheelDisplacedLocal = State.WheelLocalPos + UpVector * State.SuspOffset;
+		const FVector WheelCenterWorld = WorldMat.TransformPosition(WheelDisplacedLocal);
+		const FVector SuspTopWorld = WorldMat.TransformPosition(State.WheelLocalPos + UpVector * Setup.SuspensionMaxRaise);
+		const FVector SuspBottomWorld = WorldMat.TransformPosition(State.WheelLocalPos - UpVector * Setup.SuspensionMaxDrop);
+
+		// 서스펜션 전체 가동 범위(어두운 노랑) 및 현재 압축 스트로크(밝은 노랑)
+		LineBatcher->AddLine(SuspTopWorld, SuspBottomWorld, SuspRangeColor);
+		LineBatcher->AddLine(SuspTopWorld, WheelCenterWorld, SuspActiveColor);
+
+		// 조향/회전 반영된 휠 원 및 스포크 (접지: 초록, 공중: 빨강)
+		const FQuat SteerLocal = FQuat::MakeFromAxisAngle(UpVector, State.SteerAngle);
+		const FQuat WheelWorldRot = (WorldRot * SteerLocal).Normalized();
+		const FVector WheelForward = WheelWorldRot.GetForwardVector();
+		const FVector WheelRight = WheelWorldRot.GetRightVector();
+		const FVector WheelUp = WheelWorldRot.GetUpVector();
+		const FVector4 WheelColor = State.bIsInAir ? AirWheelColor : GroundedWheelColor;
+
+		constexpr int32 CircleSegments = 24;
+		constexpr float TwoPi = 2.0f * physx::PxPi;
+		FVector PrevPt = WheelCenterWorld + WheelForward * Setup.Radius;
+		for (int32 s = 1; s <= CircleSegments; ++s)
+		{
+			const float Angle = (static_cast<float>(s) / static_cast<float>(CircleSegments)) * TwoPi;
+			const FVector NextPt = WheelCenterWorld
+				+ (WheelForward * std::cos(Angle) + WheelUp * std::sin(Angle)) * Setup.Radius;
+			LineBatcher->AddLine(PrevPt, NextPt, WheelColor);
+			PrevPt = NextPt;
+		}
+
+		// 휠 회전각 확인용 직교 스포크 + 타이어 폭 축선
+		const FQuat SpinLocal = FQuat::MakeFromAxisAngle(RightVector, State.RotationAngle);
+		const FQuat WheelSpinWorldRot = (WheelWorldRot * SpinLocal).Normalized();
+		const FVector SpokeA = WheelSpinWorldRot.GetForwardVector() * Setup.Radius;
+		const FVector SpokeB = WheelSpinWorldRot.GetUpVector() * Setup.Radius;
+		LineBatcher->AddLine(WheelCenterWorld - SpokeA, WheelCenterWorld + SpokeA, WheelColor);
+		LineBatcher->AddLine(WheelCenterWorld - SpokeB, WheelCenterWorld + SpokeB, WheelColor);
+
+		const float HalfWidth = Setup.Width * 0.5f;
+		LineBatcher->AddLine(WheelCenterWorld - WheelRight * HalfWidth, WheelCenterWorld + WheelRight * HalfWidth, WheelColor);
+
+		// 노면 접지점 (시안 십자 + 허브->접지점 선)
+		if (!State.bIsInAir)
+		{
+			constexpr float ContactCrossSize = 0.12f;
+			LineBatcher->AddLine(WheelCenterWorld, State.ContactPoint, ContactColor);
+			LineBatcher->AddLine(State.ContactPoint - ForwardVector * ContactCrossSize, State.ContactPoint + ForwardVector * ContactCrossSize, ContactColor);
+			LineBatcher->AddLine(State.ContactPoint - RightVector * ContactCrossSize, State.ContactPoint + RightVector * ContactCrossSize, ContactColor);
+			LineBatcher->AddLine(State.ContactPoint - UpVector * ContactCrossSize, State.ContactPoint + UpVector * ContactCrossSize, ContactColor);
+			LineBatcher->AddSphere(State.ContactPoint, 0.035f, ContactColor, 8);
+		}
+	}
+}
+
+void DrawVehicleDebug(UWorld* World, FLineBatcher* LineBatcher)
+{
+	if (!World || !LineBatcher)
+	{
+		return;
+	}
+	for (TObjectIterator<UWheeledVehicleMovementComponent> It; It; ++It)
+	{
+		const UWheeledVehicleMovementComponent* Comp = *It;
+		if (!Comp || Comp->GetWorld() != World || !Comp->IsRegistered())
+		{
+			continue;
+		}
+		Comp->DrawDebug(LineBatcher);
 	}
 }

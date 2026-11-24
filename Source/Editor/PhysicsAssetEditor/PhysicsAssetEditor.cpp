@@ -915,7 +915,7 @@ bool FPhysicsAssetEditor::DeleteBody(int32 BodyIndex)
 
 	// 이 바디를 자식(Bone1)이나 부모(Bone2)로 쓰는 관절을 모두 지운다. 뒤에서부터 지워야 인덱스가 안 밀린다.
 	// 예) spine_03을 지우면 spine_02–spine_03, spine_03–Head, spine_03–upperarm_l/r 관절이 함께 사라지고
-	//     Head · upperarm은 관절 없이 남는다 (UE와 같음. 새 관절은 그래프 패널에서 잇는다)
+	//     Head · upperarm은 관절 없이 남는다 (UE와 같음. 새 관절은 바디 우클릭 Add Constraint로 잇는다)
 	TArray<UPhysicsConstraintTemplate*>& Constraints = PhysicsAsset->ConstraintSetup;
 	for (int32 i = Constraints.Num() - 1; i >= 0; --i)
 	{
@@ -937,11 +937,40 @@ bool FPhysicsAssetEditor::DeleteBody(int32 BodyIndex)
 	return true;
 }
 
+bool FPhysicsAssetEditor::DeleteConstraint(int32 ConstraintIndex)
+{
+	UPhysicsAsset* PhysicsAsset = GetPhysicsAsset();
+	if (!PhysicsAsset || !PhysicsAsset->ConstraintSetup.IsValidIndex(ConstraintIndex))
+	{
+		return false;
+	}
+	Gizmo.EndDrag();
+
+	// 바디와 같은 이유로 객체는 delete하지 않고 배열에서만 뺀다
+	PhysicsAsset->ConstraintSetup.RemoveAt(ConstraintIndex);
+
+	// 관절 인덱스가 밀렸으니 관절 선택은 해제한다 (바디 선택은 인덱스가 그대로라 유지)
+	if (SelectionType == EPhysicsSelection::Constraint)
+	{
+		SetSelection(EPhysicsSelection::None, -1);
+	}
+	MarkDirty();
+	return true;
+}
+
 void FPhysicsAssetEditor::DeleteSelection()
 {
-	if (SelectionType == EPhysicsSelection::Body && !Gizmo.IsUsing())
+	if (Gizmo.IsUsing())
+	{
+		return;
+	}
+	if (SelectionType == EPhysicsSelection::Body)
 	{
 		DeleteBody(SelectedIndex);
+	}
+	else if (SelectionType == EPhysicsSelection::Constraint)
+	{
+		DeleteConstraint(SelectedIndex);
 	}
 }
 

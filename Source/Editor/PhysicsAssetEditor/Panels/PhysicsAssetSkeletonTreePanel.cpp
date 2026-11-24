@@ -248,7 +248,7 @@ void FPhysicsAssetSkeletonTreePanel::UpdateSelectionTracking(const UPhysicsAsset
 	LastSelectionType = Type;
 	LastSelectedIndex = Index;
 
-	// 바디 선택만 따라간다 (관절은 그래프 패널에서 보여 준다)
+	// 바디 선택만 따라간다 (관절은 Constraints 패널에서 보여 준다)
 	if (Editor.GetSelectionType() != ESelection::Body || !Asset.SkeletalBodySetups.IsValidIndex(Index) || !Asset.SkeletalBodySetups[Index])
 	{
 		return;

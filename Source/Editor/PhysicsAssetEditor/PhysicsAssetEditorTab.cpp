@@ -6,6 +6,7 @@
 #include "Panels/PhysicsAssetDetailsPanel.h"
 #include "Panels/PhysicsAssetSettingsPanel.h"
 #include "Panels/PhysicsAssetToolPanel.h"
+#include "Panels/PhysicsAssetConstraintsPanel.h"
 #include "Editor/EditorUI/EditorIcons.h"
 
 #include <imgui_internal.h>
@@ -25,6 +26,7 @@ FPhysicsAssetEditorTab::FPhysicsAssetEditorTab(FPhysicsAssetEditor& InEditor)
 	Panels.Add(MakeUnique<FPhysicsAssetDetailsPanel>(InEditor));
 	Panels.Add(MakeUnique<FPhysicsAssetSettingsPanel>(InEditor));
 	Panels.Add(MakeUnique<FPhysicsAssetToolPanel>(InEditor));
+	Panels.Add(MakeUnique<FPhysicsAssetConstraintsPanel>(InEditor));
 	for (auto& Panel : Panels)
 	{
 		Panel->SetDockClass(PanelClassId);
@@ -116,7 +118,9 @@ void FPhysicsAssetEditorTab::BuildDefaultLayout(ImGuiID InDockSpaceId, const ImV
 	ImGui::DockBuilderAddNode(InDockSpaceId, ImGuiDockNodeFlags_DockSpace);
 	ImGui::DockBuilderSetNodeSize(InDockSpaceId, Size);
 	ImGuiID ViewportId = InDockSpaceId;
-	const ImGuiID TreeId = ImGui::DockBuilderSplitNode(ViewportId, ImGuiDir_Left, 0.22f, nullptr, &ViewportId);
+	ImGuiID TreeId = ImGui::DockBuilderSplitNode(ViewportId, ImGuiDir_Left, 0.22f, nullptr, &ViewportId);
+	// 트리 아래 35%: 선택한 바디의 관절 목록
+	const ImGuiID ConstraintsId = ImGui::DockBuilderSplitNode(TreeId, ImGuiDir_Down, 0.35f, nullptr, &TreeId);
 	ImGuiID DetailsId = ImGui::DockBuilderSplitNode(ViewportId, ImGuiDir_Right, 0.36f, nullptr, &ViewportId);
 	const ImGuiID SettingsId = ImGui::DockBuilderSplitNode(DetailsId, ImGuiDir_Down, 0.4f, nullptr, &DetailsId);
 	ImGui::DockBuilderDockWindow(Panels[0]->GetWindowName(), ViewportId);
@@ -124,6 +128,7 @@ void FPhysicsAssetEditorTab::BuildDefaultLayout(ImGuiID InDockSpaceId, const ImV
 	ImGui::DockBuilderDockWindow(Panels[2]->GetWindowName(), DetailsId);
 	ImGui::DockBuilderDockWindow(Panels[4]->GetWindowName(), SettingsId);
 	ImGui::DockBuilderDockWindow(Panels[3]->GetWindowName(), SettingsId);
+	ImGui::DockBuilderDockWindow(Panels[5]->GetWindowName(), ConstraintsId);
 	ImGui::DockBuilderFinish(InDockSpaceId);
 }
 

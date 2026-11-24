@@ -64,7 +64,8 @@ public:
 	// 바디 편집 (스켈레톤 트리 우클릭 메뉴 · Delete 키)
 	bool AddCapsuleToBody(int32 BodyIndex);     // 바디에 캡슐 하나를 더한다 (지금 지원하는 프리미티브는 캡슐뿐)
 	bool DeleteBody(int32 BodyIndex);           // 바디와, 그 바디를 부모나 자식으로 잇던 관절을 모두 지운다
-	void DeleteSelection();                     // Delete 키. 바디만 지운다 (관절 삭제는 그래프 패널에서)
+	bool DeleteConstraint(int32 ConstraintIndex);   // 관절 하나만 지운다. 두 바디는 그대로 남는다
+	void DeleteSelection();                     // Delete 키. 선택한 바디(+ 이어진 관절) 또는 관절을 지운다
 
 	// 바디 하나의 도형을 Tool 패널 옵션(VertWeight)으로 다시 만든다. 크기 기준은 보지 않고, 바디 설정 · 관절은 그대로 둔다
 	bool RegenerateBody(int32 BodyIndex);

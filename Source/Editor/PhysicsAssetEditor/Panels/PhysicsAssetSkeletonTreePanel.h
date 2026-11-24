@@ -11,7 +11,7 @@ class UPhysicsAsset;
 //   │  └ ⊘ spine_03 ...
 //   └ ⊘ thigh_l ...
 // UE처럼 펼침 화살표 대신 바디 아이콘과 연결선을 그린다. 접기/펼치기는 더블클릭.
-// 관절은 여기 넣지 않고 그래프 패널에서 보여 준다.
+// 관절은 여기 넣지 않고 Constraints 패널에서 보여 준다.
 // 행을 클릭하면 뷰포트와 같은 선택(SetSelection)이 되고, 뷰포트에서 바디를 고르면 조상이 펼쳐지며 그 행으로 스크롤된다
 class FPhysicsAssetSkeletonTreePanel : public FPhysicsAssetEditorPanel
 {

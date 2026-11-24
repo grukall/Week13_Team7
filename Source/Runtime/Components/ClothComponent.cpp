@@ -312,13 +312,13 @@ FMatrix UClothComponent::GetSimToWorldMatrix() const
 bool UClothComponent::BuildDefaultCloth()
 {
 	// 에셋 등록 전에는 기본 격자 천 하나를 추가한다. 에셋이 생기면 그 입력으로 CreateCloth를 호출한다.
-	if (!CreateCloth(MakeDefaultGridInput(DefaultGridRows, DefaultGridCols, DefaultGridSpacing, PinSettings)))	// 고정 설정으로 점마다 반경(MaxDistances)을 채운다
+	if (!CreateCloth(MakeDefaultGridInput(GridSettings.Rows, GridSettings.Cols, GridSettings.Spacing, PinSettings)))	// 고정 설정으로 점마다 반경(MaxDistances)을 채운다
 	{
 		return false;
 	}
 	// 실행 중 고정 설정 변경(RefreshPinsFromSettings)에서 같은 점 번호로 다시 계산하기 위해 기억
-	BuiltGridRows = DefaultGridRows;
-	BuiltGridCols = DefaultGridCols;
+	BuiltGridRows = GridSettings.Rows;
+	BuiltGridCols = GridSettings.Cols;
 	DefaultGridClothIndex = ClothInstances.Num() - 1;	// 방금 Add된 천
 	return true;
 }
@@ -336,17 +336,30 @@ void UClothComponent::DestroyAllCloths()
 	DefaultGridClothIndex = -1;
 }
 
-void UClothComponent::RebuildCloth(bool bRecreateSolver)
+void UClothComponent::RebuildCloth(bool bRecreateSolver, bool bRegenerateGrid)
 {
 	// 스케일은 Fabric(스프링 원래 길이)에 구워지므로, 바뀌면 천을 새로 만들어야 한다. 천은 처음 모양으로 리셋된다
 	// CPU/CUDA를 바꿀 때는 Factory가 바뀌므로 Solver까지 새 Factory로 만든다 (다른 Factory의 Cloth를 Solver에 넣을 수 없다)
 	// 기본 격자뿐 아니라 컴포넌트가 가진 모든 천을 각자의 원본 입력으로 다시 만든다
 
+	const int32 OldGridIndex = DefaultGridClothIndex;
+	int32 GridRows = BuiltGridRows;
+	int32 GridCols = BuiltGridCols;
+
 	// 1. 지우기 전에 천마다 원본 입력을 모은다. 실행 중 바뀐 고정 반경(RefreshPinsFromSettings)은 Instance 쪽이 최신이므로 덮어쓴다
 	TArray<FClothBuildInput> Inputs;
 	Inputs.Reserve(ClothInstances.Num());
-	for (const FClothInstance& Instance : ClothInstances)
+	for (int32 i = 0; i < ClothInstances.Num(); ++i)
 	{
+		const FClothInstance& Instance = ClothInstances[i];
+		if (bRegenerateGrid && i == OldGridIndex)
+		{
+			// 기본 격자 천은 현재 GridSettings·PinSettings로 새 입력을 만든다 (점 개수가 바뀌므로 이전 반경은 쓰지 않는다)
+			Inputs.Add(MakeDefaultGridInput(GridSettings.Rows, GridSettings.Cols, GridSettings.Spacing, PinSettings));
+			GridRows = GridSettings.Rows;
+			GridCols = GridSettings.Cols;
+			continue;
+		}
 		FClothBuildInput Input = Instance.SourceInput;
 		if (Instance.MaxDistances.Num() == Input.Positions.Num())
 		{
@@ -354,9 +367,6 @@ void UClothComponent::RebuildCloth(bool bRecreateSolver)
 		}
 		Inputs.Add(std::move(Input));
 	}
-	const int32 OldGridIndex = DefaultGridClothIndex;
-	const int32 OldGridRows = BuiltGridRows;
-	const int32 OldGridCols = BuiltGridCols;
 
 	// 2. 전부 지운다. 이전 Factory의 Cloth·Fabric을 먼저 해제한 뒤 Solver를 바꾼다
 	DestroyAllCloths();
@@ -381,8 +391,8 @@ void UClothComponent::RebuildCloth(bool bRecreateSolver)
 		if (i == OldGridIndex)	// 기본 격자 천이면 번호·격자 정보를 다시 기록 (실패한 천이 있으면 번호가 당겨질 수 있으므로 새 번호로)
 		{
 			DefaultGridClothIndex = ClothInstances.Num() - 1;
-			BuiltGridRows = OldGridRows;
-			BuiltGridCols = OldGridCols;
+			BuiltGridRows = GridRows;
+			BuiltGridCols = GridCols;
 		}
 	}
 	OnTransformDirty();		// 새 정점으로 바운드 갱신
@@ -541,6 +551,18 @@ void UClothComponent::TickComponent(float DeltaTime)
 	}
 
 	if (Solver == nullptr) return;
+
+	// 격자 설정 변경도 같은 이유로 simulate 밖에서 다시 만든다
+	if (bGridDirty)
+	{
+		bGridDirty = false;
+		RebuildCloth(false, true);
+		if (DefaultGridClothIndex < 0 && BuildDefaultCloth())	// 격자 천이 없었거나 만들기에 실패했던 경우
+		{
+			OnTransformDirty();
+		}
+	}
+
 	if (!(DeltaTime > 0.0f) || !std::isfinite(DeltaTime)) return;
 	float dt = std::min(DeltaTime, 1.0f / 30.0f);
 
@@ -558,14 +580,15 @@ void UClothComponent::TickComponent(float DeltaTime)
 	}
 
 	physx::PxVec3 Wind(0.0f);
-	if (bEnableWind)
+	if (SimSettings.bEnableWind)
 	{
+		const float WindStrength = SimSettings.WindStrength;
 		WindTime += DeltaTime;
 		const float Gust = 1.0f + 0.5f * std::sin(WindTime * 2.0f) + 0.25f * std::sin(WindTime * 5.3f);
 		Wind = physx::PxVec3(
-			0.3f * BaseWind * std::sin(WindTime * 1.3f),
-			BaseWind * Gust,
-			0.2f * BaseWind * std::sin(WindTime * 3.7f));
+			0.3f * WindStrength * std::sin(WindTime * 1.3f),
+			WindStrength * Gust,
+			0.2f * WindStrength * std::sin(WindTime * 3.7f));
 	}
 
 	// 월드 → 시뮬레이션 공간: 천의 R·T만 되돌리고 S⁻¹은 적용하지 않는다.
@@ -578,10 +601,10 @@ void UClothComponent::TickComponent(float DeltaTime)
 		if (Instance.Cloth != nullptr)
 		{
 			Instance.Cloth->setWindVelocity(Wind);	
-			Instance.Cloth->setGravity(bEnableGravity ? physx::PxVec3(0.0f, 0.0f, -9.81f) : physx::PxVec3(0.0f));
-			Instance.Cloth->setSelfCollisionDistance(bEnableSelfCollision ? std::max(SelfCollisionDistance, 0.0f) : 0.0f);
-			Instance.Cloth->setSelfCollisionStiffness(std::clamp(SelfCollisionStiffness, 0.0f, 1.0f));
-			Instance.Cloth->setFriction(Friction);
+			Instance.Cloth->setGravity(SimSettings.bEnableGravity ? physx::PxVec3(0.0f, 0.0f, -9.81f) : physx::PxVec3(0.0f));
+			Instance.Cloth->setSelfCollisionDistance(SelfCollision.bEnabled ? std::max(SelfCollision.Distance, 0.0f) : 0.0f);
+			Instance.Cloth->setSelfCollisionStiffness(std::clamp(SelfCollision.Stiffness, 0.0f, 1.0f));
+			Instance.Cloth->setFriction(std::max(SimSettings.Friction, 0.0f));
 			ApplyClothCollision(*Instance.Cloth, CollisionShapes);	// 수집한 전체 충돌체를 Cloth에 등록, 해당 Cloth와 충돌체가 상호작용하도록 함
 			ApplyMotionConstraints(Instance);	// 고정점·반경이 바뀌었으면(dirty) simulate 전에 NvCloth에 반영
 		}
@@ -796,9 +819,14 @@ void UClothComponent::PostEditChangeProperty(const FProperty& Property)
 {
 	Super::PostEditChangeProperty(Property);	// 부모(Primitive·Scene 등)의 처리를 먼저
 
+	// SimSettings·SelfCollision·RenderThickness는 매 Tick 읽으므로 따로 할 일이 없다
 	if (Property.Name == "PinSettings")
 	{
-		RefreshPinsFromSettings();
+		RefreshPinsFromSettings();	// 반경만 다시 계산 (천은 리셋되지 않음)
+	}
+	else if (Property.Name == "GridSettings")
+	{
+		bGridDirty = true;			// 점 개수가 바뀌므로 다음 Tick 시작에서 격자 천을 다시 만든다
 	}
 }
 

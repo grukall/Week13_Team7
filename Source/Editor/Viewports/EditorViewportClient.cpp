@@ -194,6 +194,7 @@ FSceneView FEditorViewportClient::CalcSceneView(const FRect &InViewRect) const {
     OutView.FrustumCorners = GenerateFrustumCorners(OutView.ViewProjectionMatrix.Inverse());
     OutView.ViewRect = InViewRect;
     OutView.FieldOfView = ViewFOV;
+    OutView.DepthOfField = DepthOfField;
     OutView.AspectRatio = AspectRatio;
     OutView.NearClip = NearClip;
     OutView.FarClip = FarClip;

@@ -178,6 +178,16 @@ FMatrix UCameraComponent::GetViewProjectionMatrix() const
 {
     return GetViewMatrix() * GetProjectionMatrix();
 }
+FDepthOfFieldSettings UCameraComponent::GetDepthOfFieldSettings() const
+{
+    const FDepthOfFieldSettings Defaults;
+    return {
+        std::isfinite(FocusDistanceMeters) && FocusDistanceMeters > 0 ? FocusDistanceMeters : Defaults.FocusDistanceMeters,
+        std::isfinite(FStop) && FStop > 0 ? FStop : Defaults.FStop,
+        std::isfinite(SensorWidthMM) && SensorWidthMM > 0 ? SensorWidthMM : Defaults.SensorWidthMM
+    };
+}
+
 void UCameraComponent::GetCameraView(float DeltaTime, FMinimalViewInfo& OutPOV) const
 {
     // 1. 위치·회전 (부모까지 반영된 월드 값)
@@ -193,6 +203,7 @@ void UCameraComponent::GetCameraView(float DeltaTime, FMinimalViewInfo& OutPOV) 
     }
     // 2. 렌즈 값
     OutPOV.FOV = FieldOfView;
+    OutPOV.DepthOfField = GetDepthOfFieldSettings();
     OutPOV.AspectRatio = AspectRatio;
     OutPOV.OrthoWidth = OrthoWidth;
     OutPOV.NearClip = NearClipPlane;

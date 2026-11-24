@@ -167,6 +167,7 @@ FAssetEditorViewportClient::FAssetEditorViewportClient(FAssetEditor& InAssetEdit
 	EngineShowFlags.AntiAliasing = true;
 	EngineShowFlags.Vignette = false;
 	EngineShowFlags.CameraOverlay = false;
+	EngineShowFlags.DepthOfField = false;
 	RenderOptions.RenderingPath = ERenderingPath::Forward;   // 웨이트 히트맵은 Forward 패스에만 있다
 
 	TriangleBatcher = MakeUnique<FTriangleBatcher>();

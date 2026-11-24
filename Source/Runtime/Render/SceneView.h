@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Types.h"
+#include "Camera/DepthOfFieldSettings.h"
 #include "Math/Vector.h"
 #include "Math/Rotator.h"
 #include "Math/Matrix.h"
@@ -26,6 +27,7 @@ struct FSceneView
 	FFrustumCorners FrustumCorners;
 	FRect ViewRect{};
 	float FieldOfView = 60.0f;
+	FDepthOfFieldSettings DepthOfField;
 	float AspectRatio = 16.0f / 9.0f;
 	float NearClip = 0.1f;
 	float FarClip = 10000.0f;
@@ -43,6 +45,17 @@ struct FSceneView
 	{
 		return (bOverlay && (OverlayColor.A > 0.0f || LetterboxAmount > 0.0f))
 			|| (bVignette && VignetteIntensity > 0.0f);
+	}
+
+	// Thin-lens CoC at infinity, expressed as a radius in full-resolution pixels.
+	float GetInfinityCoCRadiusPixels(uint32 Width) const
+	{
+		const float SensorWidth = DepthOfField.SensorWidthMM * 0.001f;
+		const float FocalLength = 0.5f * SensorWidth * ProjectionMatrix.M[1][0];
+		if (!bIsPerspective || SensorWidth <= 0 || DepthOfField.FocusDistanceMeters <= FocalLength || DepthOfField.FStop <= 0)
+			return 0.0f;
+		const float Diameter = FocalLength * FocalLength / (DepthOfField.FStop * (DepthOfField.FocusDistanceMeters - FocalLength));
+		return 0.5f * Diameter * Width / SensorWidth;
 	}
 
 	FViewContext ToViewContext() const

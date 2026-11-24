@@ -1,6 +1,7 @@
 #pragma once
 
 #include "UObject/Class.h"
+#include "Camera/DepthOfFieldSettings.h"
 #include "../Components/SceneComponent.h"
 #include "../Math/EngineMath.h"
 #include "../Math/Rotator.h"
@@ -26,6 +27,7 @@ public:
 	FMatrix GetProjectionMatrix() const;
 	FMatrix GetViewProjectionMatrix() const;
 	void GetCameraView(float DeltaTime, FMinimalViewInfo& OutPOV) const;
+	FDepthOfFieldSettings GetDepthOfFieldSettings() const;
 
 	// Picking
 	FRay DeProjection(FVector2 MousePos, float ScreenW, float ScreenH);
@@ -88,6 +90,13 @@ public:
 	// UE와 같이 소유 Pawn의 Controller ControlRotation을 뷰 회전으로 쓴다 (부모/스프링 암 회전보다 우선)
 	UPROPERTY(EditAnywhere)
 	bool bUsePawnControlRotation = false;
+
+	UPROPERTY(EditAnywhere)
+	float FocusDistanceMeters = 5.0f;
+	UPROPERTY(EditAnywhere)
+	float FStop = 2.8f;
+	UPROPERTY(EditAnywhere)
+	float SensorWidthMM = 36.0f;
 
 };
 

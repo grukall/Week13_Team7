@@ -56,6 +56,9 @@ void FMinimalViewInfo::BlendViewInfo(const FMinimalViewInfo& Other, float Alpha)
 	Location = FMath::Lerp(Location, Other.Location, Alpha);
 	Rotation = FMath::LerpRotator(Rotation, Other.Rotation, Alpha);
 	FOV = FMath::Lerp(FOV, Other.FOV, Alpha);
+	DepthOfField.FocusDistanceMeters = FMath::Lerp(DepthOfField.FocusDistanceMeters, Other.DepthOfField.FocusDistanceMeters, Alpha);
+	DepthOfField.FStop = FMath::Lerp(DepthOfField.FStop, Other.DepthOfField.FStop, Alpha);
+	DepthOfField.SensorWidthMM = FMath::Lerp(DepthOfField.SensorWidthMM, Other.DepthOfField.SensorWidthMM, Alpha);
 	OrthoWidth = FMath::Lerp(OrthoWidth, Other.OrthoWidth, Alpha);
 	NearClip = FMath::Lerp(NearClip, Other.NearClip, Alpha);
 	FarClip = FMath::Lerp(FarClip, Other.FarClip, Alpha);

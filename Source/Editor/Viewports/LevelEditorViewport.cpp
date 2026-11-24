@@ -54,6 +54,7 @@ void FLevelEditorViewportClient::Draw(FViewport* InViewport, FUIRenderer* Canvas
 		// 쇼 플래그는 뷰포트마다 따로 갖는다 (UE5 뷰포트 Show 메뉴).
 		// 설정 창은 "모든 뷰포트에 한꺼번에 적용"으로 쓰여서, 설정 값이 바뀐 플래그만 옮긴다.
 		FEngineShowFlags SettingsFlags = LastSettingsShowFlags;
+		SettingsFlags.DepthOfField = S.bEnableDepthOfField;
 		SettingsFlags.AntiAliasing = S.bEnableFXAA;
 		SettingsFlags.Vignette = S.bShowVignette;
 		SettingsFlags.CameraOverlay = S.bShowCameraOverlay;
@@ -65,6 +66,7 @@ void FLevelEditorViewportClient::Draw(FViewport* InViewport, FUIRenderer* Canvas
 			if (!bSettingsShowFlagsSynced || SettingsFlags.*Flag != LastSettingsShowFlags.*Flag)
 				EngineShowFlags.*Flag = SettingsFlags.*Flag;
 		};
+		SyncFlag(&FEngineShowFlags::DepthOfField);
 		SyncFlag(&FEngineShowFlags::AntiAliasing);
 		SyncFlag(&FEngineShowFlags::Vignette);
 		SyncFlag(&FEngineShowFlags::CameraOverlay);
@@ -92,6 +94,8 @@ void FLevelEditorViewportClient::Draw(FViewport* InViewport, FUIRenderer* Canvas
 
 		// 이 뷰포트의 뷰 모드에서 나오는 설정 (안개는 Lit일 때만 FEditorViewportClient::Draw가 켜 둔다)
 		RenderOptions.SceneDepthRange = MaxRange;
+		DepthOfField.FocusDistanceMeters = S.DOFFocusDistanceMeters;
+		DepthOfField.FStop = S.DOFFStop;
 	}
 
 	FEditorViewportClient::Draw(InViewport, Canvas);
@@ -114,9 +118,10 @@ void FLevelEditorViewportClient::Draw(const FSceneView* View, FScenePassCallback
 	// 뷰 모드가 Scene Depth, Cascade일 때 깊이를 색으로 바꿔 보여 준다.
 	FTexture2D* ColorTarget = Viewport->GetViewTargets().SceneColor.get();
 	FTexture2D* DepthTarget = Viewport->GetViewTargets().Depth.get();
-	Callbacks.DepthVisualization = [this, &SceneView, DepthTarget, ColorTarget]
+	Callbacks.DepthVisualization = [this, &SceneView, DepthTarget, ColorTarget, &Settings]
 		{
-			SceneDepthRenderer.OnRender(SceneView, DepthTarget, ColorTarget, MaxRange);
+			SceneDepthRenderer.OnRender(SceneView, DepthTarget, ColorTarget, MaxRange,
+				Settings.bVisualizeDOFRadius);
 		};
 	if (IsCascade())
 		Callbacks.CascadeVisualization = [this, &SceneView, DepthTarget, ColorTarget]

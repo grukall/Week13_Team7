@@ -20,13 +20,17 @@ void FSceneDepthRenderer::Init(FRenderer* InRenderer)
 }
 
 // Depth Buffer에 있는 값을 바탕으로 viewport 전체를 회색값으로 그린다.
-bool FSceneDepthRenderer::OnRender(const FSceneView& View, FTexture2D* DepthTarget, FTexture2D* ColorTarget, float MaxRange)
+bool FSceneDepthRenderer::OnRender(const FSceneView& View, FTexture2D* DepthTarget, FTexture2D* ColorTarget, float MaxRange,
+	bool bVisualizeDOFRadius)
 {
 	FSceneDepthData Data{};
 	Data.A = View.ProjectionMatrix.M[0][2];
 	Data.B = View.ProjectionMatrix.M[3][2];
 	Data.MaxRange = MaxRange;
 	Data.bIsPerspective = View.bIsPerspective;
+	Data.bVisualizeDOFRadius = bVisualizeDOFRadius && View.bIsPerspective;
+	Data.FocusDistanceMeters = View.DepthOfField.FocusDistanceMeters;
+	Data.InfinityRadiusPixels = View.GetInfinityCoCRadiusPixels(ColorTarget->GetWidth());
 
 	RenderCommand::BindPipelineState(SceneDepthPipelineState);
 	RenderCommand::UpdateBufferData(ConstantBuffer.get(), &Data, sizeof(Data));

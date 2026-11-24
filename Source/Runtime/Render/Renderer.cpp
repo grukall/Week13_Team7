@@ -11,6 +11,7 @@
 #include "Render/PostProcess/HeightFogRenderer.h"
 #include "Render/PostProcess/FXAARenderer.h"
 #include "Render/PostProcess/ToneMapData.h"
+#include "Render/PostProcess/DepthOfFieldData.h"
 #include "Render/DecalData.h"
 
 #include "Render/PostProcess/CameraOverlayRenderer.h"
@@ -213,6 +214,7 @@ void FRenderer::InitScenePasses(const FString& SkyPanoramaPath)
 	FXAA->Init(this);
 	CameraOverlay = MakeUnique<FCameraOverlayRenderer>();   // FXAA->Init(this); 아래
 	CameraOverlay->Init(this);
+	DepthOfFieldConstants = RenderCommand::CreateConstantBuffer(sizeof(FDepthOfFieldData));
 	ToneMapConstants = RenderCommand::CreateConstantBuffer(sizeof(FToneMapData));
 	DecalConstants = RenderCommand::CreateConstantBuffer(sizeof(FDecalData));
 	SceneText = MakeUnique<FTextRenderer>();

@@ -101,6 +101,15 @@ void FSettingsPanel::OnRender()
 		0.1f, 10000.0f, "%.1f", ImGuiSliderFlags_AlwaysClamp))
 		ApplySceneDepthRange();
 	ImGui::TextDisabled("White represents this distance from the camera.");
+	ImGui::SeparatorText("Depth of Field");
+	ImGui::Checkbox("Enable Depth of Field", &Settings.bEnableDepthOfField);
+	ImGui::DragFloat("Focus distance (m)", &Settings.DOFFocusDistanceMeters, 0.05f, 0.1f, 10000.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
+	ImGui::DragFloat("F-stop", &Settings.DOFFStop, 0.1f, 1.0f, 32.0f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
+	ImGui::Checkbox("Visualize DOF radius", &Settings.bVisualizeDOFRadius);
+	if (Settings.bVisualizeDOFRadius)
+	{
+		ImGui::TextDisabled("Perspective Scene Depth: blue = near, orange = far, black = in focus. Full intensity at 8 px.");
+	}
 
 	//////////////////////////////////////////////////////////
 
@@ -227,6 +236,9 @@ bool FSettingsPanel::SaveSettings() const
 	File << "DrawCascadeBounds=" << Settings.bDrawCascadeBounds << "\n";
 	File << "DrawPSGrid=" << Settings.bDrawPSGrid << "\n";
 	File << "SceneDepthMaxRange=" << Settings.SceneDepthMaxRange << "\n";
+	File << "DepthOfField=" << Settings.bEnableDepthOfField << "\n";
+	File << "DOFFocusDistanceMeters=" << Settings.DOFFocusDistanceMeters << "\n";
+	File << "DOFFStop=" << Settings.DOFFStop << "\n";
 	File << "EnableFXAA=" << Settings.bEnableFXAA << "\n";
 
 	File << "GammaCorrection=" << Settings.bGammaCorrection << "\n";
@@ -389,6 +401,9 @@ bool FSettingsPanel::LoadSettings()
 				else if (Key == "DrawCascadeBounds") Settings.bDrawCascadeBounds = std::stoi(ValueStr);
 				else if (Key == "DrawPSGrid") Settings.bDrawPSGrid = std::stoi(ValueStr);
 				else if (Key == "SceneDepthMaxRange") Settings.SceneDepthMaxRange = std::stof(ValueStr);
+				else if (Key == "DepthOfField") Settings.bEnableDepthOfField = std::stoi(ValueStr);
+				else if (Key == "DOFFocusDistanceMeters") Settings.DOFFocusDistanceMeters = std::clamp(std::stof(ValueStr), 0.1f, 10000.0f);
+				else if (Key == "DOFFStop") Settings.DOFFStop = std::clamp(std::stof(ValueStr), 1.0f, 32.0f);
 				else if (Key == "EnableFXAA") Settings.bEnableFXAA = std::stoi(ValueStr);
 
 				else if (Key == "GammaCorrection")   Settings.bGammaCorrection = std::stoi(ValueStr);

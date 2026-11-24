@@ -182,6 +182,7 @@ protected:
 	FVector ViewLocation = FVector(0.0f, 0.0f, 0.0f);
 	FRotator ViewRotation = FRotator(0.0f, 0.0f, 0.0f);
 	float ViewFOV = 60.0f;
+	FDepthOfFieldSettings DepthOfField;
 	float AspectRatio = 1.777778f;
 	float NearClip = 0.1f;
 	float FarClip = 10000.0f;

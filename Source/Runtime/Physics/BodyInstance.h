@@ -9,6 +9,11 @@ class UPrimitiveComponent;
 class UBodySetup;
 class FPhysScene;
 
+namespace physx
+{
+	class PxShape;
+}
+
 UENUM()
 enum class ECollisionChannel : uint8
 {
@@ -117,4 +122,9 @@ private:
 	FPhysScene* PhysicsScene = nullptr;
 	bool bSyncingComponent = false;
 
+	TArray<physx::PxShape*> IgnoredFilterShapes;
+
+public:
+	void AddIgnoredFilterShape(physx::PxShape* InfilterShape);
+	void RemoveIgnoredFilterShape(physx::PxShape* InFilterShape);
 };

@@ -319,8 +319,55 @@ void USkeletalMeshComponent::SetSkeletalMesh(USkeletalMesh* InMesh)
 	RecreatePhysicsState();
 }
 
+void USkeletalMeshComponent::SetUseArticulatedPhysics(bool bInUse)
+{
+	if (bUseArticulatedPhysics == bInUse)
+		return;
+	bUseArticulatedPhysics = bInUse;
+	RecreatePhysicsState();
+}
+
+void USkeletalMeshComponent::SetSingleBodySetupOverride(UBodySetup* InBodySetup)
+{
+	if (SingleBodySetupOverride == InBodySetup)
+		return;
+	SingleBodySetupOverride = InBodySetup;
+	if (!bUseArticulatedPhysics)
+		RecreatePhysicsState();
+}
+
+UBodySetup* USkeletalMeshComponent::GetBodySetup()
+{
+	if (SingleBodySetupOverride)
+		return SingleBodySetupOverride;
+
+	USkeletalMesh* SkeletalMesh = GetSkeletalMesh();
+	UPhysicsAsset* PhysicsAsset = SkeletalMesh ? SkeletalMesh->GetPhysicsAsset() : nullptr;
+	if (IsValid(PhysicsAsset))
+	{
+		for (USkeletalBodySetup* Setup : PhysicsAsset->SkeletalBodySetups)
+		{
+			if (Setup && !Setup->AggGeom.IsEmpty())
+				return Setup;
+		}
+	}
+	return nullptr;
+}
+
+void USkeletalMeshComponent::PostEditChangeProperty(const FProperty& Property)
+{
+	Super::PostEditChangeProperty(Property);
+	if (Property.Name == "bUseArticulatedPhysics")
+		RecreatePhysicsState();
+	else if (Property.Name == "bSimulateRagdoll")
+		SetSimulatePhysics(bSimulateRagdoll);
+}
+
 bool USkeletalMeshComponent::ShouldCreatePhysicsState()
 {
+	if (!bUseArticulatedPhysics)
+		return UPrimitiveComponent::ShouldCreatePhysicsState();
+
 	USkeletalMesh* SkeletalMesh = GetSkeletalMesh();
 	if (!SkeletalMesh) return false;
 
@@ -332,6 +379,12 @@ void USkeletalMeshComponent::OnCreatePhysicsState()
 {
 	//강체와 조인트를 생성하기 전에 본 포즈부터 확정
 	RefreshBoneTransformsNow();
+
+	if (!bUseArticulatedPhysics)
+	{
+		UPrimitiveComponent::OnCreatePhysicsState();
+		return;
+	}
 
 	FPhysScene* PhysScene = GetWorld() ? GetWorld()->GetPhysicsScene() : nullptr;
 	InitArticulated(PhysScene);
@@ -351,10 +404,14 @@ void USkeletalMeshComponent::OnCreatePhysicsState()
 
 void USkeletalMeshComponent::OnDestroyPhysicsState()
 {
+	// Articulated(Ragdoll) 모드와 단일 바디 모드(bUseArticulatedPhysics = false) 중 만들어진 쪽만 정리한다
 	PostPhysicsTick.UnRegisterTickFunction();
 	bRagdollActive = false;
 	bAnyBodySimulating = false;
-	TermArticulated();
+	if (!Bodies.IsEmpty() || !Constraints.IsEmpty())
+		TermArticulated();
+	if (BodyInstance.IsValidBodyInstance())
+		BodyInstance.TermBody();
 	UActorComponent::OnDestroyPhysicsState();
 }
 
@@ -366,6 +423,13 @@ void FSkeletalMeshPostPhysicsTickFunction::ExecuteTick(float DeltaTime)
 
 void USkeletalMeshComponent::SetSimulatePhysics(bool bSimulate)
 {
+	// 단일 바디 모드(차량 등)에서는 본 바디가 없으므로 컴포넌트 BodyInstance 하나만 켜고 끈다
+	if (!bUseArticulatedPhysics)
+	{
+		UPrimitiveComponent::SetSimulatePhysics(bSimulate);
+		return;
+	}
+
 	bSimulateRagdoll = bSimulate;
 	if (Bodies.IsEmpty())
 	{
@@ -394,13 +458,6 @@ void USkeletalMeshComponent::SetSimulatePhysics(bool bSimulate)
 		bAnyBodySimulating |= bSimulateBody;
 	}
 	bRagdollActive = bSimulate;
-}
-
-void USkeletalMeshComponent::PostEditChangeProperty(const FProperty& Property)
-{
-	Super::PostEditChangeProperty(Property);
-	if (Property.Name == "bSimulateRagdoll")
-		SetSimulatePhysics(bSimulateRagdoll);
 }
 
 // 애니메이션 포즈의 본 월드 위치로 Kinematic 바디를 끌고 간다 (StartFrame이 서브스텝마다 보간)

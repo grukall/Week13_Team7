@@ -224,6 +224,14 @@ namespace
 		for (int Child = 0; Child < Node->GetChildCount(); ++Child) CollectBoneNodes(Node->GetChild(Child), Nodes);
 	}
 
+	void CollectRigidHierarchyNodes(FbxNode* Node, const TSet<FbxNode*>& IncludedNodes, TArray<FbxNode*>& Nodes)
+	{
+		if (!IncludedNodes.Contains(Node)) return;
+		Nodes.Add(Node);
+		for (int Child = 0; Child < Node->GetChildCount(); ++Child)
+			CollectRigidHierarchyNodes(Node->GetChild(Child), IncludedNodes, Nodes);
+	}
+
 	// 이 Bone의 Bind Global을 Bind Pose → Cluster Link → 현재 Global 순서로 찾는다.
 	// "Bone missing from Bind Pose"는 파일의 모든 Bind Pose에서 이 Node를 찾지 못했다는 뜻이다.
 	// 파일 전체에 Bind Pose가 없거나 Import에 실패했다는 뜻은 아니다. Weight 없는 IK/보조 Bone도
@@ -672,7 +680,7 @@ void FFbxImporter::Close()
 
 // 열린 Scene의 축/단위를 변환한 뒤, Mesh Node별 Geometry/Material과 Control Point 대응표를 만든다.
 // 모든 Node 추출이 성공했을 때만 Results를 MeshNodes에 보관한다.
-bool FFbxImporter::ReadMeshData(TArray<FString>& OutWarnings, FString& OutError)
+bool FFbxImporter::ReadMeshData(TArray<FString>& OutWarnings, FString& OutError, float ImportUniformScale)
 {
 	ClearSkeletonData();
 	MeshNodes.Empty();
@@ -691,8 +699,10 @@ bool FFbxImporter::ReadMeshData(TArray<FString>& OutWarnings, FString& OutError)
 	// 이후 값을 옮길 때 Y나 Quaternion을 다시 반전하지 않는다.
 	const FbxAxisSystem Target(FbxAxisSystem::eZAxis, FbxAxisSystem::eParityEven, FbxAxisSystem::eLeftHanded);
 	if (Scene->GetGlobalSettings().GetAxisSystem() != Target) Target.DeepConvertScene(Scene);
-	// 단위도 설정값만 바꾸는 것이 아니라 Scene 데이터를 cm 기준으로 실제 변환한다.
-	if (Scene->GetGlobalSettings().GetSystemUnit() != FbxSystemUnit::cm) FbxSystemUnit::cm.ConvertScene(Scene);
+	// 기본(1.0)은 cm 기준, ImportUniformScale(예: 0.01 = m)에 맞춰 Scene 데이터를 실제 변환한다.
+	const double SafeScale = (std::isfinite(ImportUniformScale) && ImportUniformScale > 0.0f) ? static_cast<double>(ImportUniformScale) : 1.0;
+	const FbxSystemUnit TargetUnit(1.0 / SafeScale);
+	if (Scene->GetGlobalSettings().GetSystemUnit() != TargetUnit) TargetUnit.ConvertScene(Scene);
 	// 축/단위 변환 전 자식 Node의 Global 캐시가 남지 않도록 비운다. UE ConvertScene 경로와 같은 처리다.
 	Scene->GetAnimationEvaluator()->Reset();
 	
@@ -828,9 +838,52 @@ bool FFbxImporter::ReadSkeletonData(TArray<FString>& OutWarnings, FString& OutEr
 			}
 		}
 	}
-	if (!Root) { OutError = "FBX: no skeleton bones"; return false; }
 	TArray<FbxNode*> Nodes;
-	CollectBoneNodes(Root, Nodes);
+	bool bRigidHierarchy = false;
+	bool bSyntheticRoot = false;
+	if (Root)
+	{
+		CollectBoneNodes(Root, Nodes);
+	}
+	else
+	{
+		// FbxSkin이 없는 계층형(Rigid) FBX(예: Fab 차량 에셋)를 UE Import Rigid Mesh와 같이 본 계층으로 변환한다.
+		bRigidHierarchy = true;
+		FbxNode* SceneRoot = Scene->GetRootNode();
+		TSet<FbxNode*> IncludedNodes;
+		TArray<FbxNode*> TopLevelRoots;
+
+		for (const FFbxMeshNodeData& Mesh : MeshNodes)
+		{
+			if (!Mesh.Node) continue;
+			FbxNode* Cur = Mesh.Node;
+			FbxNode* Top = nullptr;
+			while (Cur && Cur != SceneRoot)
+			{
+				IncludedNodes.Add(Cur);
+				Top = Cur;
+				Cur = Cur->GetParent();
+			}
+			if (Top)
+				TopLevelRoots.AddUnique(Top);
+		}
+
+		if (TopLevelRoots.Num() == 1)
+		{
+			CollectRigidHierarchyNodes(TopLevelRoots[0], IncludedNodes, Nodes);
+		}
+		else if (TopLevelRoots.Num() > 1)
+		{
+			bSyntheticRoot = true;
+			IncludedNodes.Add(SceneRoot);
+			CollectRigidHierarchyNodes(SceneRoot, IncludedNodes, Nodes);
+		}
+
+		if (!Nodes.IsEmpty())
+		{
+			Warn(OutWarnings, "FBX: imported rigid mesh hierarchy as Skeletal Mesh (no skin weights found)");
+		}
+	}
 	if (Nodes.IsEmpty()) { OutError = "FBX: no skeleton bones"; return false; }
 	// 기존 FSkinWeight::BoneIndex가 uint8이므로 최종 출력으로 표현할 수 있는 Bone 수에 맞춘다.
 	if (Nodes.Num() > 256) { OutError = "FBX: bone count exceeds 256"; return false; }
@@ -844,8 +897,21 @@ bool FFbxImporter::ReadSkeletonData(TArray<FString>& OutWarnings, FString& OutEr
 	{
 		FbxNode* Node = Nodes[I];
 		FBoneInfo Bone;
-		Bone.Name = Node->GetName();
-		if (Names.Contains(Bone.Name)) { OutError = "FBX: duplicate bone name: " + Bone.Name; return false; }
+		Bone.Name = (I == 0 && bSyntheticRoot) ? "Root" : FString(Node->GetName());
+		if (Bone.Name.empty()) Bone.Name = "Bone_" + std::to_string(I);
+		if (Names.Contains(Bone.Name))
+		{
+			if (!bRigidHierarchy)
+			{
+				OutError = "FBX: duplicate bone name: " + Bone.Name;
+				return false;
+			}
+			const FString BaseName = Bone.Name;
+			for (int32 Suffix = 1; Names.Contains(Bone.Name); ++Suffix)
+			{
+				Bone.Name = BaseName + "_" + std::to_string(Suffix);
+			}
+		}
 		Names.Add(Bone.Name);
 		if (I > 0)
 		{
@@ -854,7 +920,19 @@ bool FFbxImporter::ReadSkeletonData(TArray<FString>& OutWarnings, FString& OutEr
 			Bone.ParentIndex = *Parent;
 		}
 
-		const FbxAMatrix Global = ReadBindGlobal(Scene, Node, Clusters, OutWarnings);
+		FbxAMatrix Global;
+		if (I == 0 && bSyntheticRoot)
+		{
+			Global.SetIdentity();
+		}
+		else if (bRigidHierarchy)
+		{
+			Global = Node->EvaluateGlobalTransform();
+		}
+		else
+		{
+			Global = ReadBindGlobal(Scene, Node, Clusters, OutWarnings);
+		}
 		const double GlobalDeterminant = Global.Determinant();
 		if (!IsFiniteMatrix(Global) || !std::isfinite(GlobalDeterminant) || GlobalDeterminant == 0) { OutError = "FBX: invalid Bind Global: " + Bone.Name; return false; }
 		const FbxAMatrix Local = Bone.ParentIndex < 0 ? Global : BindGlobals[Bone.ParentIndex].Inverse() * Global;
@@ -1466,7 +1544,8 @@ namespace
 	}
 }
 
-bool FFbxImporter::ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbxImportResult& OutResult, FString& OutError)
+bool FFbxImporter::ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbxImportResult& OutResult, FString& OutError,
+	const FFbxImportOptions& Options)
 {
 	OutResult = {};
 	OutError.clear();
@@ -1511,7 +1590,7 @@ bool FFbxImporter::ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbx
 		const auto Primary = Mode == EFbxImportMode::Static ? StaticPath : SkeletalPath;
 		FFbxBakedMesh Previous;
 		FString ReadError;
-		if (!bTestAnimationImport && FFbxMeshBake::Read(Utf8Path(Primary), Previous, ReadError) && SameSource(Source, Previous.Source)
+		if (!Options.bForceReimport && !bTestAnimationImport && FFbxMeshBake::Read(Utf8Path(Primary), Previous, ReadError) && SameSource(Source, Previous.Source)
 			&& Previous.Kind == (Mode == EFbxImportMode::Static ? EFbxMeshKind::Static : EFbxMeshKind::Skeletal))
 		{
 			bool Complete = Mode != EFbxImportMode::Static || Previous.Source.Outputs == static_cast<uint32>(EFbxMeshKind::Static);
@@ -1565,24 +1644,23 @@ bool FFbxImporter::ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbx
 		if (Mode == EFbxImportMode::Skeletal)
 		{
 			FbxScene* Scene = Importer.GetScene();
-			bool bHasSkinnedMesh = false;
+			bool bHasAnyMesh = false;
 			for (int I = 0; I < Scene->GetNodeCount(); ++I)
 			{
-				FbxMesh* Mesh = Scene->GetNode(I)->GetMesh();
-				if (Mesh && Mesh->GetDeformerCount(FbxDeformer::eSkin) > 0)
+				if (Scene->GetNode(I)->GetMesh())
 				{
-					bHasSkinnedMesh = true;
+					bHasAnyMesh = true;
 					break;
 				}
 			}
-			if (!bHasSkinnedMesh)
+			if (!bHasAnyMesh)
 			{
-				OutError = "FBX: Skeletal Mesh import requires a mesh with skin weights. Use Static Mesh import for geometry.";
+				OutError = "FBX: Skeletal Mesh import requires at least one mesh.";
 				return false;
 			}
 		}
 		TArray<FString> Warnings;
-		if (!Importer.ReadMeshData(Warnings, OutError)) { OutResult.Warnings.Append(Warnings); return false; }
+		if (!Importer.ReadMeshData(Warnings, OutError, Options.ImportUniformScale)) { OutResult.Warnings.Append(Warnings); return false; }
 		OutResult.Warnings.Append(Warnings);
 		TArray<FFbxBakedMesh> Outputs;
 		if (Mode == EFbxImportMode::Skeletal)

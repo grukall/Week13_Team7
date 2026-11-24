@@ -1,6 +1,8 @@
 #include "EnginePCH.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Pawn.h"
+#include "GameFramework/WheeledVehicle.h"
+#include "Components/WheeledVehicleMovementComponent.h"
 #include "Camera/PlayerCameraManager.h" 
 #include "Engine/World.h"               
 #include "Camera/CameraShakeBase.h"
@@ -36,6 +38,25 @@ void APlayerController::ProcessPlayerInput(float DeltaTime)
 		-89.9f, 89.9f);
 
 	MouseAxisX = MouseAxisY = 0.0f;
+
+	if (AWheeledVehicle* Vehicle = Cast<AWheeledVehicle>(PossessedPawn))
+	{
+		if (UWheeledVehicleMovementComponent* Movement = Vehicle->GetVehicleMovement())
+		{
+			const float Throttle = bKeyDown[static_cast<int32>(EKeyCode::W)] ? 1.0f : 0.0f;
+			const float Brake = bKeyDown[static_cast<int32>(EKeyCode::S)] ? 1.0f : 0.0f;
+			const float Steer = static_cast<float>(bKeyDown[static_cast<int32>(EKeyCode::D)]) -
+				static_cast<float>(bKeyDown[static_cast<int32>(EKeyCode::A)]);
+			const bool bHandbrake = bKeyDown[static_cast<int32>(EKeyCode::Space)];
+
+			Movement->SetThrottleInput(Throttle);
+			Movement->SetBrakeInput(Brake);
+			Movement->SetSteeringInput(Steer);
+			Movement->SetHandbrakeInput(bHandbrake);
+		}
+		return;
+	}
+
 	const FQuat Rotation = PossessedPawn->GetMovementInputRotation().Quaternion();
 	// UE와 같이 축 값(-1~1)만 넘긴다. DeltaTime은 입력을 소비해 실제로 움직이는 쪽(MovementComponent / Pawn Tick)이 곱한다.
 	if (Forward != 0.0f) PossessedPawn->AddMovementInput(Rotation.GetForwardVector(), Forward);
@@ -57,6 +78,16 @@ void APlayerController::Possess(APawn* InPawn)
 
 void APlayerController::UnPossess()
 {
+	if (AWheeledVehicle* Vehicle = Cast<AWheeledVehicle>(PossessedPawn))
+	{
+		if (UWheeledVehicleMovementComponent* Movement = Vehicle->GetVehicleMovement())
+		{
+			Movement->SetThrottleInput(0.0f);
+			Movement->SetBrakeInput(0.0f);
+			Movement->SetSteeringInput(0.0f);
+			Movement->SetHandbrakeInput(false);
+		}
+	}
 	if (PossessedPawn) PossessedPawn->UnPossessed();
 	PossessedPawn = nullptr;
 }

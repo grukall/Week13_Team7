@@ -95,6 +95,13 @@ public:
 	UPROPERTY(EditAnywhere)
 	bool bSimulateRagdoll = false;
 
+	UPROPERTY(EditAnywhere)
+	bool bUseArticulatedPhysics = true;
+
+	void SetUseArticulatedPhysics(bool bInUse);
+	void SetSingleBodySetupOverride(UBodySetup* InBodySetup);
+	UBodySetup* GetBodySetup() override;
+
 protected:
 	// 단일 애니메이션 에셋 경로/루프/재생 속도를 씬에 저장·복원한다 (Serialize에서 부른다)
 	void SerializeSingleAnimation(FStructuredArchive::FRecord& Record);
@@ -133,6 +140,7 @@ private:
 	FSkeletalMeshPostPhysicsTickFunction PostPhysicsTick;
 	friend struct FSkeletalMeshPostPhysicsTickFunction;
 
+	UBodySetup* SingleBodySetupOverride = nullptr;
 	void InitArticulated(FPhysScene* Scene);
 	void TermArticulated();
 	void UpdateKinematicBodies();                // Ragdoll OFF: 본 → 바디 (PrePhysics, 애니메이션 직후)

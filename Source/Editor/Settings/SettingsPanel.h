@@ -26,6 +26,7 @@ struct FEditorSettings
 	// Debug Draw (UE show 플래그): PIE에서만 적용된다
 	bool bShowCollision = true;   // show Collision
 	bool bShowRootDebug = false;  // root 본 구체 + 액터→root 선
+	bool bShowVehicleDebug = true; // 차량 휠/서스펜션/접지점/COM 디버그 표시
 	bool bDrawBatchLine = true;
 	bool bDrawCascadeBounds = false;
 	bool bDrawPSGrid = false;

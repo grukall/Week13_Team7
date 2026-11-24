@@ -51,6 +51,7 @@
 
 #include "Components/ShapeComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Components/WheeledVehicleMovementComponent.h"
 
 #include "Physics/Collision.h"
 
@@ -752,6 +753,7 @@ void UEditorEngine::Tick(const float DeltaTime)
 		ImGuiRenderer->Begin();
 
 		EditorManager->DrawEditorUI();
+		FEditorFileUtils::DrawFbxImportPopup();
 
 		ImGuiRenderer->End();
 	}
@@ -1174,6 +1176,7 @@ void UEditorEngine::DrawPIEDebug(UWorld* World, const FMatrix& ViewProjection)
 {
 	const FEditorSettings& Settings = SettingsPanel->GetSettings();
 	GShowSkeletalRootDebug = Settings.bShowRootDebug;  // 런타임 "root" 라벨 표시용
+	GShowVehicleDebug = Settings.bShowVehicleDebug;
 
 	FLineBatcher* LineBatcher = World->LineBatcher.get();
 	LineBatcher->BeginFrame();
@@ -1181,11 +1184,14 @@ void UEditorEngine::DrawPIEDebug(UWorld* World, const FMatrix& ViewProjection)
 		DrawCollisionShapes(World, LineBatcher, nullptr);
 	LineBatcher->OnRender(ViewProjection);
 
-	// root는 바닥 높이라 가려지기 쉬우므로 깊이 테스트 없이 따로 그린다 (항상 위에 보임)
-	if (Settings.bShowRootDebug)
+	// root 및 차량 디버그(휠/서스펜션/COM)는 메시에 가려지기 쉬우므로 깊이 테스트 없이 따로 그린다 (항상 위에 보임)
+	if (Settings.bShowRootDebug || Settings.bShowVehicleDebug)
 	{
 		LineBatcher->BeginFrame();
-		DrawSkeletalRootDebug(World, LineBatcher);
+		if (Settings.bShowRootDebug)
+			DrawSkeletalRootDebug(World, LineBatcher);
+		if (Settings.bShowVehicleDebug)
+			DrawVehicleDebug(World, LineBatcher);
 		LineBatcher->SetDepthTest(false);
 		LineBatcher->OnRender(ViewProjection);
 		LineBatcher->SetDepthTest(true);

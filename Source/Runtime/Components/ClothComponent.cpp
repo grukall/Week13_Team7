@@ -9,13 +9,11 @@
 #include <NvCloth/Solver.h> 
 #include <NvCloth/Cloth.h> 
 #include <NvClothExt/ClothFabricCooker.h>
-#include <algorithm>	// std::min
-#include <cmath>		// std::isfinite
+#include <algorithm>	
+#include <cmath>		
 
 namespace
 {
-	// 격자 점 (row, col) 하나의 반경(MaxDistance). 0 = 고정, 클수록 자유
-	// MakeDefaultGridInput에서 쓰므로 그보다 위에 있어야 한다
 	float ComputeGridMaxDistance(int32 row, int32 col, int32 Rows, int32 Cols, const FClothPinSettings& PinSetting)
 	{
 		const bool onRowFirst = PinSetting.bPinRowFirst && row == 0;
@@ -87,20 +85,32 @@ namespace
 
 	constexpr int32 MaxClothCollisionShapes = 32;	// ClothImpl.h의 NV_CLOTH_ASSERT(newSize <= 32)
 
-	// 박스 = 바깥을 향한 평면 6개 + 그 6개를 묶은 convex 1개
-	bool AddBox(FClothCollisionShapes& Out, const FKBoxElem& Box, const FMatrix& MeshToCloth, float Pad)
+	FKBoxElem GetScaledBox(const FKBoxElem& Box, const FVector& Scale3D)
+	{
+		const FVector Size = Scale3D.GetAbs();
+		FKBoxElem Scaled;
+		Scaled.X = Box.X * Size.X;
+		Scaled.Y = Box.Y * Size.Y;
+		Scaled.Z = Box.Z * Size.Z;
+		Scaled.Center = Box.Center * Scale3D;
+		Scaled.Rotation = Box.Rotation;
+		return Scaled;
+	}
+
+	// 박스 = 바깥을 향한 평면 6개 + 그 6개를 묶은 convex 1개. ScaledBox는 스케일이 이미 적용된 값이어야 한다
+	bool AddBox(FClothCollisionShapes& Out, const FKBoxElem& ScaledBox, const FMatrix& RigidToCloth, float Pad)
 	{
 		if (Out.Planes.Num() + 6 > MaxClothCollisionShapes || Out.ConvexMasks.Num() + 1 > MaxClothCollisionShapes)
 		{
 			return false;
 		}
 
-		// X·Y·Z는 전체 길이 → 반축. 박스 자체 회전 → 메시 월드(회전·스케일) → 천 로컬 순서
-		const FVector Center = MeshToCloth.TransformPosition(Box.Center);
+		// X·Y·Z는 전체 길이 → 반축. 박스 자체 회전 → body 포즈(회전·이동) → 천 로컬 순서
+		const FVector Center = RigidToCloth.TransformPosition(ScaledBox.Center);
 		const FVector Axes[3] = {
-			MeshToCloth.TransformVector(Box.Rotation.RotateVector(FVector(Box.X * 0.5f, 0.0f, 0.0f))),
-			MeshToCloth.TransformVector(Box.Rotation.RotateVector(FVector(0.0f, Box.Y * 0.5f, 0.0f))),
-			MeshToCloth.TransformVector(Box.Rotation.RotateVector(FVector(0.0f, 0.0f, Box.Z * 0.5f))),
+			RigidToCloth.TransformVector(ScaledBox.Rotation.RotateVector(FVector(ScaledBox.X * 0.5f, 0.0f, 0.0f))),
+			RigidToCloth.TransformVector(ScaledBox.Rotation.RotateVector(FVector(0.0f, ScaledBox.Y * 0.5f, 0.0f))),
+			RigidToCloth.TransformVector(ScaledBox.Rotation.RotateVector(FVector(0.0f, 0.0f, ScaledBox.Z * 0.5f))),
 		};
 
 		const uint32 BasePlane = Out.Planes.Num();	// 이 박스의 첫 평면 번호 (예산 검사로 26 이하)
@@ -117,29 +127,31 @@ namespace
 		return true;
 	}
 
-	// 구 1개. 반지름은 균등 스케일 가정 (NvCloth 구는 찌그러질 수 없음)
-	bool AddSphere(FClothCollisionShapes& Out, const FKSphereElem& Sphere, const FMatrix& MeshToCloth, float UniformScale, float Pad)
+	// 구 1개. 비균등 스케일은 공용 GetFinalScaled 규칙(가장 작은 축 스케일)을 따른다 (NvCloth 구는 찌그러질 수 없음)
+	bool AddSphere(FClothCollisionShapes& Out, const FKSphereElem& Sphere, const FVector& Scale3D, const FMatrix& RigidToCloth, float Pad)
 	{
 		if (Out.Spheres.Num() + 1 > MaxClothCollisionShapes)
 		{
 			return false;
 		}
-		const FVector Center = MeshToCloth.TransformPosition(Sphere.Center);
-		Out.Spheres.Add(FVector4(Center, Sphere.Radius * UniformScale + Pad));
+		const FKSphereElem Scaled = Sphere.GetFinalScaled(Scale3D);	// 반지름·중심에 스케일 적용 (PhysX body와 같은 함수)
+		const FVector Center = RigidToCloth.TransformPosition(Scaled.Center);
+		Out.Spheres.Add(FVector4(Center, Scaled.Radius + Pad));
 		return true;
 	}
 
 	// 캡슐 = 양 끝 구 2개 + 두 구 번호를 잇는 캡슐 1개. Sphyl은 로컬 Z축 방향이고 Length는 반구를 뺀 원통 길이
-	bool AddSphyl(FClothCollisionShapes& Out, const FKSphylElem& Sphyl, const FMatrix& MeshToCloth, float UniformScale, float Pad)
+	bool AddSphyl(FClothCollisionShapes& Out, const FKSphylElem& Sphyl, const FVector& Scale3D, const FMatrix& RigidToCloth, float Pad)
 	{
 		if (Out.Spheres.Num() + 2 > MaxClothCollisionShapes || Out.CapsuleIndices.Num() / 2 + 1 > MaxClothCollisionShapes)
 		{
 			return false;
 		}
-		const FVector HalfSegment = Sphyl.Rotation.RotateVector(FVector(0.0f, 0.0f, Sphyl.Length * 0.5f));
-		const FVector End0 = MeshToCloth.TransformPosition(Sphyl.Center + HalfSegment);
-		const FVector End1 = MeshToCloth.TransformPosition(Sphyl.Center - HalfSegment);
-		const float Radius = Sphyl.Radius * UniformScale + Pad;
+		const FKSphylElem Scaled = Sphyl.GetFinalScaled(Scale3D);	// 반지름 = max(X,Y) 스케일, 원통 길이 = Z 스케일 기준 (PhysX body와 같은 함수)
+		const FVector HalfSegment = Scaled.Rotation.RotateVector(FVector(0.0f, 0.0f, Scaled.Length * 0.5f));
+		const FVector End0 = RigidToCloth.TransformPosition(Scaled.Center + HalfSegment);
+		const FVector End1 = RigidToCloth.TransformPosition(Scaled.Center - HalfSegment);
+		const float Radius = Scaled.Radius + Pad;
 
 		const uint32 FirstSphere = Out.Spheres.Num();
 		Out.Spheres.Add(FVector4(End0, Radius));
@@ -149,28 +161,30 @@ namespace
 		return true;
 	}
 
-	// Convex는 평면 정보가 없으므로(정점 + PxConvexMesh뿐) 임시로 정점 AABB를 박스로 넣는다
-	bool AddConvexAsBox(FClothCollisionShapes& Out, const FKConvexElem& Convex, const FMatrix& MeshToCloth, float Pad)
+	// Convex는 임시로 정점 AABB를 박스로 넣는다. PxConvexMesh의 polygon 평면을 쓸 수도 있지만 천 충돌 평면은 32개가 상한이다
+	bool AddConvexAsBox(FClothCollisionShapes& Out, const FKConvexElem& Convex, const FVector& Scale3D, const FMatrix& RigidToCloth, float Pad)
 	{
 		if (Convex.VertexData.IsEmpty())
 		{
 			return false;
 		}
-		FVector Min = Convex.VertexData[0];
+		// PhysX는 convex 정점에 축별 스케일(부호 포함, 음수는 NegX 메시·회전으로 처리)을 적용한다. 같은 결과가 되도록 스케일한 정점으로 AABB를 만든다
+		FVector Min = Convex.VertexData[0] * Scale3D;
 		FVector Max = Min;
 		for (const FVector& Vertex : Convex.VertexData)		// VertexData는 바디 로컬
 		{
-			Min = FVector(std::min(Min.X, Vertex.X), std::min(Min.Y, Vertex.Y), std::min(Min.Z, Vertex.Z));
-			Max = FVector(std::max(Max.X, Vertex.X), std::max(Max.Y, Vertex.Y), std::max(Max.Z, Vertex.Z));
+			const FVector V = Vertex * Scale3D;
+			Min = FVector(std::min(Min.X, V.X), std::min(Min.Y, V.Y), std::min(Min.Z, V.Z));
+			Max = FVector(std::max(Max.X, V.X), std::max(Max.Y, V.Y), std::max(Max.Z, V.Z));
 		}
 
-		FKBoxElem Box;
-		Box.Center = (Min + Max) * 0.5f;
+		FKBoxElem ScaledBox;	// 이미 스케일된 정점으로 만들었으므로 GetScaledBox를 다시 거치지 않는다
+		ScaledBox.Center = (Min + Max) * 0.5f;
 		const FVector Size = Max - Min;
-		Box.X = Size.X;
-		Box.Y = Size.Y;
-		Box.Z = Size.Z;
-		return AddBox(Out, Box, MeshToCloth, Pad);
+		ScaledBox.X = Size.X;
+		ScaledBox.Y = Size.Y;
+		ScaledBox.Z = Size.Z;
+		return AddBox(Out, ScaledBox, RigidToCloth, Pad);
 	}
 }
 
@@ -508,16 +522,17 @@ void UClothComponent::GatherCollisionShape(FClothCollisionShapes& CollisionShape
 		const UBodySetup* Setup = PrimComp->GetBodySetup();		// 모양 없는 Primitive(스켈레탈 등)는 nullptr
 		if (Setup == nullptr || Setup->AggGeom.IsEmpty()) continue;
 
-		const FMatrix MeshToCloth = PrimComp->GetWorldMatrix() * WorldToCloth;	// 메시 로컬 → 월드 → 천 로컬
-		const FVector Scale = PrimComp->GetWorldScale3D().GetAbs();
-		const float UniformScale = std::max({ Scale.X, Scale.Y, Scale.Z });	// 구·캡슐 반지름용 (균등 스케일 가정)
+		// PhysX body와 같은 분리: 스케일은 형상에 먼저 적용하고, 포즈는 스케일 없는 회전·이동만 쓴다 (PrimitiveComponent.cpp OnCreatePhysicsState의 BodyTransform)
+		const FVector Scale3D = PrimComp->GetWorldScale3D();
+		const FTransform BodyPose(PrimComp->GetWorldRotation(), PrimComp->GetWorldLocation());	// 스케일 1
+		const FMatrix RigidToCloth = BodyPose.GetLocalMatrix() * WorldToCloth;	// Body 로컬→ Cloth 로컬 변환 행렬
 		const FKAggregateGeom& Geom = Setup->AggGeom;		// 복사하지 않고 참조
 
 		bool bAllAdded = true;
-		for (const FKBoxElem& Box : Geom.BoxElems)          bAllAdded &= AddBox(CollisionShape, Box, MeshToCloth, Pad);					// 평면 6개 + convex 1개
-		for (const FKSphereElem& Sphere : Geom.SphereElems) bAllAdded &= AddSphere(CollisionShape, Sphere, MeshToCloth, UniformScale, Pad);	// 구 1개
-		for (const FKSphylElem& Sphyl : Geom.SphylElems)    bAllAdded &= AddSphyl(CollisionShape, Sphyl, MeshToCloth, UniformScale, Pad);	// 구 2개 + 캡슐 1개
-		for (const FKConvexElem& Convex : Geom.ConvexElems) bAllAdded &= AddConvexAsBox(CollisionShape, Convex, MeshToCloth, Pad);		// 정점 AABB를 박스로 (임시)
+		for (const FKBoxElem& Box : Geom.BoxElems)          bAllAdded &= AddBox(CollisionShape, GetScaledBox(Box, Scale3D), RigidToCloth, Pad);	// 평면 6개 + convex 1개
+		for (const FKSphereElem& Sphere : Geom.SphereElems) bAllAdded &= AddSphere(CollisionShape, Sphere, Scale3D, RigidToCloth, Pad);			// 구 1개
+		for (const FKSphylElem& Sphyl : Geom.SphylElems)    bAllAdded &= AddSphyl(CollisionShape, Sphyl, Scale3D, RigidToCloth, Pad);			// 구 2개 + 캡슐 1개
+		for (const FKConvexElem& Convex : Geom.ConvexElems) bAllAdded &= AddConvexAsBox(CollisionShape, Convex, Scale3D, RigidToCloth, Pad);	// 정점 AABB를 박스로 (임시)
 
 		if (!bAllAdded)
 		{

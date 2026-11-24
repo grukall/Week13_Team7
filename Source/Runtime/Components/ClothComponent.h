@@ -25,6 +25,7 @@ struct FClothInstance			// 천 한장을 정의하는 구조체
 	TArray<FVector> MotionTargets;	// Motion Constraint를 위한 점마다의 목표 위치
 	TArray<float>   MaxDistances;	// 점마다의 MaxDistancez. 0 = 고정, 클수록 자유
 	bool bMotionDirty = true;		// Motion 점 변경시에 체크를 위한 DirtyFlag
+	FClothBuildInput SourceInput;	// 이 천을 만든 원본 입력 (렌더 로컬, 스케일 굽기 전). 스케일이 바뀌면 이걸로 다시 만든다
 };
 
 struct FClothCollisionShapes	// Collision 처리를 위해 Collision이 발생한 Shape들 모아놓는 배열
@@ -80,8 +81,20 @@ public:
 	void SetPinSettings(const FClothPinSettings& NewSettings);
 	const FClothPinSettings& GetPinSettings() const { return PinSettings; }
 
+	bool LineTraceComponentLocal(const FRay& LocalRay, float& OutT) override;
+
 private:
-	bool CreateCloth(const FClothBuildInput& Input);	// 입력 하나(기본 격자·에셋)로 천 한 장을 만들어 Solver와 ClothInstances에 추가
+	// 좌표 공간 (스케일 굽기)
+	//  - 렌더 로컬: GPU가 Proxy 행렬(S·R·T)을 곱하는 공간
+	//  - 시뮬레이션 공간: 천의 R·T만 벗겨낸 공간. 길이가 월드 단위라서 충돌체 반지름·Pad·두께·중력을 그대로 쓴다
+	//  - 시뮬레이션 좌표 = 렌더 로컬 좌표 × S (축별). S는 CreateCloth에서 천 모양에 한 번 굽고, 렌더 직전에 ÷S로 되돌린다
+	FVector GetSimScale() const;		// 천의 월드 스케일 (절댓값, 0 나누기 방지 최소값). 음수 스케일(뒤집기)은 지원하지 않는다
+	FMatrix GetSimToWorldMatrix() const;	// 시뮬레이션 공간 → 월드 (= Proxy 행렬에서 스케일만 뺀 R·T)
+	bool BuildDefaultCloth();			// 기본 격자 천을 만들고 격자 정보(BuiltGridRows/Cols, DefaultGridClothIndex)를 기록
+	void DestroyAllCloths();			// 모든 천을 Solver에서 빼고 해제, 렌더 데이터도 비운다 (Solver는 유지)
+	void RebuildCloth();				// 스케일이 바뀌었을 때 천을 새 스케일로 다시 만든다
+
+	bool CreateCloth(const FClothBuildInput& RawInput);	// 입력 하나(기본 격자·에셋)로 천 한 장을 만들어 Solver와 ClothInstances에 추가
 	void DestroyCloth(FClothInstance& Instance);		// 천 한 장을 Solver에서 빼고 해제
 	void ApplyMotionConstraints(FClothInstance& ClothInstance);	// dirty일 때만 점마다 (목표 위치, 반경)을 NvCloth Motion Constraint에 쓴다
 	void RefreshPinsFromSettings();		// 현재 PinSettings로 기본 격자 천의 반경을 다시 계산하고 dirty를 켠다 (NvCloth에 쓰는 건 ApplyMotionConstraints)
@@ -90,6 +103,7 @@ private:
 	int32 BuiltGridRows = 0;
 	int32 BuiltGridCols = 0;
 	int32 DefaultGridClothIndex = -1;	// ClothInstances 중 기본 격자 천의 번호. -1이면 없음
+	FVector BuiltScale = FVector(1.0f, 1.0f, 1.0f);	// 지금 천 모양에 구워진 스케일. 렌더 ÷S와 스케일 변경 감지에 쓴다
 
 	nv::cloth::Solver* Solver = nullptr;
 	TArray<FClothInstance> ClothInstances;		// Component가 소유중인 천 모음, Solver에 들어가있는것과는 별개임

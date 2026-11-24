@@ -64,6 +64,22 @@ struct FClothMeshData
 		BuildTangentSpace();	// Normal을 읽으므로 마지막에
 	}
 
+	// 시뮬레이션 공간(천 R·T만 벗긴 공간, 스케일이 모양에 구워짐) → 렌더 로컬(GPU가 S·R·T를 곱하는 공간).
+	// FinalizeTwoSided 다음, GPU 업로드 전에 호출한다. 두께 오프셋·법선은 시뮬레이션 공간에서 이미 월드 단위로 계산된 상태여야 한다.
+	//  - 위치·탄젠트: GPU가 World(×S)를 곱하므로 미리 ÷S
+	//  - 법선: GPU가 NormalMatrix(World⁻¹ᵀ, 법선에 ÷S 효과)를 곱하므로 미리 ×S
+	void ConvertSimToRenderSpace(const FVector& SimScale)
+	{
+		constexpr float VectorToleranceSquared{ 1.0e-12f };
+		for (FVertex& Vertex : Vertices)
+		{
+			Vertex.Position = Vertex.Position / SimScale;
+			Vertex.Normal = (Vertex.Normal * SimScale).GetSafeNormal(VectorToleranceSquared, FVector(0.0f, 0.0f, 1.0f));
+			const FVector Tangent = (FVector(Vertex.Tangent.X, Vertex.Tangent.Y, Vertex.Tangent.Z) / SimScale).GetSafeNormal(VectorToleranceSquared, FVector(1.0f, 0.0f, 0.0f));
+			Vertex.Tangent = FVector4{ Tangent, Vertex.Tangent.W };	// W(손 방향)는 양수 스케일에서 바뀌지 않는다
+		}
+	}
+
 	void BuildTangentSpace() {
 		const int32 VertexCount{ Vertices.Num() };
 		const int32 IndexCount{ Indices.Num() };

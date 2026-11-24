@@ -234,35 +234,114 @@ void UClothComponent::OnRegister()
 		return;
 	}
 
-	// 에셋 등록 전에는 기본 격자 천 하나를 추가한다. 에셋이 생기면 그 입력으로 CreateCloth를 호출한다.
-	if (CreateCloth(MakeDefaultGridInput(DefaultGridRows, DefaultGridCols, DefaultGridSpacing, PinSettings)))	// 고정 설정으로 점마다 반경(MaxDistances)을 채운다
-	{
-		// 실행 중 고정 설정 변경(RefreshPinsFromSettings)에서 같은 점 번호로 다시 계산하기 위해 기억
-		BuiltGridRows = DefaultGridRows;
-		BuiltGridCols = DefaultGridCols;
-		DefaultGridClothIndex = ClothInstances.Num() - 1;	// 방금 Add된 천
-	}
+	BuildDefaultCloth();
 	OnTransformDirty();		// Proxy가 천 생성 전에 만들어졌을 수 있으므로 초기 바운드를 반영
 
 }
 
 void UClothComponent::OnUnregister()
 {
-	for (FClothInstance& Instance : ClothInstances)
-	{
-		DestroyCloth(Instance);
-	}
-	ClothInstances.Reset();
-	BuiltGridRows = 0;
-	BuiltGridCols = 0;
-	DefaultGridClothIndex = -1;
+	DestroyAllCloths();
 	NV_CLOTH_DELETE(Solver);	// 천이 모두 빠진 뒤에 Solver 삭제
 	Solver = nullptr;
 	Super::OnUnregister();
 }
 
+FVector UClothComponent::GetSimScale() const
+{
+	constexpr float MinScale = 1.0e-4f;	// 렌더 직전 ÷S에서 0으로 나누지 않도록
+	const FVector Scale = GetWorldScale3D().GetAbs();
+	return FVector(std::max(Scale.X, MinScale), std::max(Scale.Y, MinScale), std::max(Scale.Z, MinScale));
+}
+
+FMatrix UClothComponent::GetSimToWorldMatrix() const
+{
+	// 엔진 월드 행렬은 "회전 행렬의 i행 × Scale_i" + 4행 이동 (Transform.cpp GetLocalMatrix).
+	// 위 3행을 정규화하면 Proxy가 쓰는 행렬과 같은 R·T가 나온다 (회전 Rotator 왕복 오차 없음)
+	FMatrix M = GetWorldMatrix();
+	for (int32 Row = 0; Row < 3; ++Row)
+	{
+		const float Length = std::sqrt(M[Row][0] * M[Row][0] + M[Row][1] * M[Row][1] + M[Row][2] * M[Row][2]);
+		if (Length > 1.0e-8f)
+		{
+			M[Row][0] /= Length;
+			M[Row][1] /= Length;
+			M[Row][2] /= Length;
+		}
+	}
+	return M;
+}
+
+bool UClothComponent::BuildDefaultCloth()
+{
+	// 에셋 등록 전에는 기본 격자 천 하나를 추가한다. 에셋이 생기면 그 입력으로 CreateCloth를 호출한다.
+	if (!CreateCloth(MakeDefaultGridInput(DefaultGridRows, DefaultGridCols, DefaultGridSpacing, PinSettings)))	// 고정 설정으로 점마다 반경(MaxDistances)을 채운다
+	{
+		return false;
+	}
+	// 실행 중 고정 설정 변경(RefreshPinsFromSettings)에서 같은 점 번호로 다시 계산하기 위해 기억
+	BuiltGridRows = DefaultGridRows;
+	BuiltGridCols = DefaultGridCols;
+	DefaultGridClothIndex = ClothInstances.Num() - 1;	// 방금 Add된 천
+	return true;
+}
+
+void UClothComponent::DestroyAllCloths()
+{
+	for (FClothInstance& Instance : ClothInstances)
+	{
+		DestroyCloth(Instance);
+	}
+	ClothInstances.Reset();
+	ClothMeshDatas.Reset();		// ClothInstances와 같은 번호로 짝을 이루므로 함께 비운다
+	BuiltGridRows = 0;
+	BuiltGridCols = 0;
+	DefaultGridClothIndex = -1;
+}
+
+void UClothComponent::RebuildCloth()
+{
+	// 스케일은 Fabric(스프링 원래 길이)에 구워지므로, 바뀌면 천을 새로 만들어야 한다. 천은 처음 모양으로 리셋된다
+	// 기본 격자뿐 아니라 컴포넌트가 가진 모든 천을 각자의 원본 입력으로 다시 만든다
+
+	// 1. 지우기 전에 천마다 원본 입력을 모은다. 실행 중 바뀐 고정 반경(RefreshPinsFromSettings)은 Instance 쪽이 최신이므로 덮어쓴다
+	TArray<FClothBuildInput> Inputs;
+	Inputs.Reserve(ClothInstances.Num());
+	for (const FClothInstance& Instance : ClothInstances)
+	{
+		FClothBuildInput Input = Instance.SourceInput;
+		if (Instance.MaxDistances.Num() == Input.Positions.Num())
+		{
+			Input.MaxDistances = Instance.MaxDistances;
+		}
+		Inputs.Add(std::move(Input));
+	}
+	const int32 OldGridIndex = DefaultGridClothIndex;
+	const int32 OldGridRows = BuiltGridRows;
+	const int32 OldGridCols = BuiltGridCols;
+
+	// 2. 전부 지우고 같은 순서로 새 스케일에 맞춰 다시 만든다 (CreateCloth가 현재 스케일을 굽는다)
+	DestroyAllCloths();
+	for (int32 i = 0; i < Inputs.Num(); ++i)
+	{
+		if (!CreateCloth(Inputs[i]))
+		{
+			HTR_LOG(Error, "[NvCloth] Rebuild failed for cloth {}", i);
+			continue;
+		}
+		if (i == OldGridIndex)	// 기본 격자 천이면 번호·격자 정보를 다시 기록 (실패한 천이 있으면 번호가 당겨질 수 있으므로 새 번호로)
+		{
+			DefaultGridClothIndex = ClothInstances.Num() - 1;
+			BuiltGridRows = OldGridRows;
+			BuiltGridCols = OldGridCols;
+		}
+	}
+	OnTransformDirty();		// 새 정점으로 바운드 갱신
+}
+
 // 입력 하나로 Fabric Cook → Cloth 생성·설정 → Solver에 추가 → ClothInstances에 보관. 실패하면 false
-bool UClothComponent::CreateCloth(const FClothBuildInput& Input)
+// RawInput.Positions는 렌더 로컬(스케일 1 기준). 여기서 천의 스케일을 구워 시뮬레이션 공간 좌표로 바꾼다
+bool UClothComponent::CreateCloth(const FClothBuildInput& RawInput)
 {
 	if (Solver == nullptr)
 	{
@@ -275,16 +354,27 @@ bool UClothComponent::CreateCloth(const FClothBuildInput& Input)
 		HTR_LOG(Error, "[NvCloth] Factory is null (NvClothManager not initialized)");
 		return false;
 	}
-	if (Input.Positions.Num() == 0 || Input.InvMasses.Num() != Input.Positions.Num() || Input.UVs.Num() != Input.Positions.Num() || Input.Indices.Num() % 3 != 0 || Input.MaxDistances.Num() != Input.Positions.Num())
+	if (RawInput.Positions.Num() == 0 || RawInput.InvMasses.Num() != RawInput.Positions.Num() || RawInput.UVs.Num() != RawInput.Positions.Num() || RawInput.Indices.Num() % 3 != 0 || RawInput.MaxDistances.Num() != RawInput.Positions.Num())
 	{
 		HTR_LOG(Error, "[NvCloth] Cloth build input is invalid");
 		return false;
 	}
 
+	// 스케일 굽기: 점 위치 × S. 아래 코드는 모두 이 Input을 쓰므로
+	// Fabric 원래 길이·시작 위치·RestPositions·MotionTargets·렌더 초기값이 한 번에 실제 크기 기준이 된다.
+	// UV·Indices·InvMasses·MaxDistances(월드 길이)는 크기와 무관해 그대로 둔다.
+	// MakeClothMeshDesc가 Positions 포인터만 저장하므로 Input은 Fabric 굽기가 끝날 때까지 살아 있어야 한다 (함수 지역 변수)
+	FClothBuildInput Input = RawInput;
+	BuiltScale = GetSimScale();
+	for (FVector& Position : Input.Positions)
+	{
+		Position = Position * BuiltScale;
+	}
+
 	nv::cloth::ClothMeshDesc ClothDesc = MakeClothMeshDesc(Input);	// Fabric Cook용 Desc
 
 	physx::PxVec3 gravity(0.0f, 0.0f, -1.0f);  // 기본 중력 세팅
-	nv::cloth::Vector<int32_t>::Type phaseTypeInfo;	// phaseType 배열을 저장, 해당 배열은 i번째 phase의 종류를 담고 있음 (선 종류 / vertical 등등)ㄱ
+	nv::cloth::Vector<int32_t>::Type phaseTypeInfo;	// phaseType 배열을 저장, 해당 배열은 i번째 phase의 종류를 담고 있음 (선 종류 / vertical 등등)
 
 	TArray<physx::PxVec4> Particles;
 	Particles.Reserve(Input.Positions.Num());
@@ -340,7 +430,8 @@ bool UClothComponent::CreateCloth(const FClothBuildInput& Input)
 
 	FClothMeshData ClothData;	// Cloth Rendering용 데이터 생성 (앞면·뒷면 두 겹, 정점 2N개)
 	ClothData.InitTwoSided(Input.Positions, Input.UVs, Input.Indices);
-	ClothData.FinalizeTwoSided(RenderThickness);
+	ClothData.FinalizeTwoSided(RenderThickness);		// 시뮬레이션 공간에서 법선·두께 (월드 단위)
+	ClothData.ConvertSimToRenderSpace(BuiltScale);		// 첫 업로드 전에 렌더 로컬로 (빠지면 첫 프레임만 S배로 보임)
 
 	ClothData.IndexBuffer = RenderCommand::CreateStaticIndexBuffer(ClothData.Indices.GetData(), ClothData.Indices.Num());
 	ClothData.VertexBuffer = RenderCommand::CreateDynamicVertexBuffer(sizeof(FVertex) * ClothData.Vertices.Num(), sizeof(FVertex));
@@ -360,6 +451,7 @@ bool UClothComponent::CreateCloth(const FClothBuildInput& Input)
 	FClothInstance Instance{ Fabric, Cloth, Input.Indices };
 	Instance.MotionTargets = Input.Positions;			// 지켜야 하는 초기 위치, SkeletalMesh의 경우 Bone 정점으로 Tick마다 업데이트
 	Instance.MaxDistances = Input.MaxDistances;			// 점의 최대 반경
+	Instance.SourceInput = RawInput;					// 스케일 굽기 전 원본. RebuildCloth가 새 스케일로 다시 구울 때 쓴다
 	ClothInstances.Add(Instance);
 	ClothMeshDatas.Add(std::move(ClothData));
 	return true;
@@ -391,8 +483,19 @@ void UClothComponent::TickComponent(float DeltaTime)
 	if (!(DeltaTime > 0.0f) || !std::isfinite(DeltaTime)) return;
 	float dt = std::min(DeltaTime, 1.0f / 30.0f);
 
-	// 바람: 켜져 있으면 시간에 따라 세기·방향이 바뀌는 값, 꺼져 있으면 0.
-	// 꺼질 때도 0을 넣어야 이전 바람이 Cloth에 남지 않는다 (setWindVelocity는 값이 바뀔 때만 실제로 갱신)
+	if (!ClothInstances.IsEmpty())
+	{
+		const FVector CurrentScale = GetSimScale();
+		constexpr float ScaleTolerance = 1.0e-4f;
+		if (std::abs(CurrentScale.X - BuiltScale.X) > ScaleTolerance ||
+			std::abs(CurrentScale.Y - BuiltScale.Y) > ScaleTolerance ||
+			std::abs(CurrentScale.Z - BuiltScale.Z) > ScaleTolerance)
+		{
+			RebuildCloth();
+			if (ClothInstances.IsEmpty()) return;
+		}
+	}
+
 	physx::PxVec3 Wind(0.0f);
 	if (bEnableWind)
 	{
@@ -404,7 +507,9 @@ void UClothComponent::TickComponent(float DeltaTime)
 			0.2f * BaseWind * std::sin(WindTime * 3.7f));
 	}
 
-	FMatrix WorldToCloth = GetWorldMatrix().Inverse();
+	// 월드 → 시뮬레이션 공간: 천의 R·T만 되돌리고 S⁻¹은 적용하지 않는다.
+	// 천 모양에 이미 S가 구워져 있으므로 충돌체 반지름·Pad를 월드 값 그대로 쓸 수 있다
+	const FMatrix WorldToCloth = GetSimToWorldMatrix().Inverse();
 	GatherCollisionShape(CollisionShapes, WorldToCloth);
 
 	for (FClothInstance& Instance : ClothInstances)
@@ -444,7 +549,8 @@ void UClothComponent::TickComponent(float DeltaTime)
 				Data.Vertices[j].Position = FVector(Particles[j].x, Particles[j].y, Particles[j].z);
 			}
 		}	// Particles 소멸 → unlock
-		Data.FinalizeTwoSided(RenderThickness);		// 뒷면 복사 → 법선 → 두께 오프셋 → 탄젠트
+		Data.FinalizeTwoSided(RenderThickness);		// 뒷면 복사 → 법선 → 두께 오프셋 → 탄젠트 (시뮬레이션 공간, 월드 단위)
+		Data.ConvertSimToRenderSpace(BuiltScale);	// GPU가 S·R·T를 곱하므로 ÷S로 상쇄 (앞면 위치는 다음 Tick에 파티클로 다시 덮어씀)
 
 		void* Dst = RenderCommand::MapWriteDiscard(Data.VertexBuffer.get());	// 업데이트 된 정점들 GPU에 다시 기록
 		if (Dst)
@@ -628,4 +734,25 @@ void UClothComponent::PostEditChangeProperty(const FProperty& Property)
 	{
 		RefreshPinsFromSettings();
 	}
+}
+
+
+bool UClothComponent::LineTraceComponentLocal(const FRay& LocalRay, float& OutT)
+{
+	bool bHit = false;
+	for (int k = 0;k < ClothMeshDatas.Num();k++)
+	{
+		const TArray<FVertex>* Vertices = &ClothMeshDatas[k].Vertices;
+		const TArray<uint32>& Indices = ClothMeshDatas[k].Indices;
+		for (int32 I = 0; I + 2 < Indices.Num(); I += 3)
+		{
+			float T = FLT_MAX;
+			if (RayIntersectsTriangle(LocalRay, (*Vertices)[Indices[I]].Position,(*Vertices)[Indices[I + 1]].Position, (*Vertices)[Indices[I + 2]].Position, T) && T < OutT)
+			{
+				OutT = T;
+				bHit = true;
+			}
+		}
+	}
+	return bHit;
 }

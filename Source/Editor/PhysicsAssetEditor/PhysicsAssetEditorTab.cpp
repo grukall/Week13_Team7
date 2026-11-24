@@ -2,6 +2,7 @@
 #include "PhysicsAssetEditorTab.h"
 #include "Editor/PhysicsAssetEditor/PhysicsAssetEditor.h"
 #include "Panels/PhysicsAssetViewportPanel.h"
+#include "Panels/PhysicsAssetSkeletonTreePanel.h"
 
 #include <imgui_internal.h>
 
@@ -14,8 +15,9 @@ FPhysicsAssetEditorTab::FPhysicsAssetEditorTab(FPhysicsAssetEditor& InEditor)
 	DockSpaceId = ImHashStr("PhysicsAssetDockSpace", 0, AssetId);
 	PanelClassId = ImHashStr("PhysicsAssetPanelClass", 0, AssetId);
 
-	// Panels[0]은 항상 뷰포트 (BuildDefaultLayout이 인덱스로 배치한다)
+	// 순서 = BuildDefaultLayout이 쓰는 인덱스. [0] 뷰포트, [1] 스켈레톤 트리
 	Panels.Add(MakeUnique<FPhysicsAssetViewportPanel>(InEditor));
+	Panels.Add(MakeUnique<FPhysicsAssetSkeletonTreePanel>(InEditor));
 	for (auto& Panel : Panels)
 	{
 		Panel->SetDockClass(PanelClassId);
@@ -43,11 +45,14 @@ void FPhysicsAssetEditorTab::DrawMenuBar()
 
 void FPhysicsAssetEditorTab::BuildDefaultLayout(ImGuiID InDockSpaceId, const ImVec2& Size)
 {
-	// 지금은 뷰포트 하나가 전체를 차지한다.
-	// 스켈레톤 트리 · 디테일 패널을 추가하면 여기서 DockBuilderSplitNode로 오른쪽을 나눈다
+	// 왼쪽 22% 스켈레톤 트리, 나머지 뷰포트 (UE Physics Asset Editor와 같은 배치).
+	// 디테일 패널을 추가하면 오른쪽을 한 번 더 나눈다
 	ImGui::DockBuilderAddNode(InDockSpaceId, ImGuiDockNodeFlags_DockSpace);
 	ImGui::DockBuilderSetNodeSize(InDockSpaceId, Size);
-	ImGui::DockBuilderDockWindow(Panels[0]->GetWindowName(), InDockSpaceId);
+	ImGuiID ViewportId = InDockSpaceId;
+	const ImGuiID TreeId = ImGui::DockBuilderSplitNode(ViewportId, ImGuiDir_Left, 0.22f, nullptr, &ViewportId);
+	ImGui::DockBuilderDockWindow(Panels[0]->GetWindowName(), ViewportId);
+	ImGui::DockBuilderDockWindow(Panels[1]->GetWindowName(), TreeId);
 	ImGui::DockBuilderFinish(InDockSpaceId);
 }
 

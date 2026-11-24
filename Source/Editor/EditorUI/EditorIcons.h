@@ -68,6 +68,7 @@ enum class EEditorIcon : uint8
 	File,
 	Widget,
 	PhysicsAsset,   // 캡슐로 만든 사람 (Physics Asset)
+	PhysicsBody,    // 기울어진 캡슐 (Physics Asset 바디 트리 행)
 	// 뷰 모드 (Lit은 위의 Lit을 쓴다)
 	ViewWireframe,
 	ViewDepth,

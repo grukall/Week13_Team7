@@ -90,6 +90,7 @@ namespace
 		"File",
 		"Widget",
 		"PhysicsAsset",
+		"PhysicsBody",
 		"ViewWireframe",
 		"ViewDepth",
 		"ViewNormal",

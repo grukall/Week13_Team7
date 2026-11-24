@@ -1384,12 +1384,14 @@ namespace
 
 	// UClass에 등록된 프로퍼티 한 줄. 구조체 멤버 하나가 바뀌어도 객체에는 바깥 프로퍼티(구조체)가 바뀌었다고 알린다.
 	// (UE는 FPropertyChangedEvent에 MemberProperty와 안쪽 Property를 따로 담는다)
-	void DrawProperty(UObject* Object, const FProperty& Property, ImFont* CustomFont)
+	bool DrawProperty(UObject* Object, const FProperty& Property, ImFont* CustomFont)
 	{
 		if (DrawPropertyRow(Object, Object, Property, CustomFont))
 		{
 			Object->PostEditChangeProperty(Property);
+			return true;
 		}
+		return false;
 	}
 
 	// 클래스 계층을 따라 올라가며 각 단계의 프로퍼티를 표시
@@ -1508,9 +1510,31 @@ namespace
 // 보조 함수들이 이 파일의 익명 네임스페이스에 있어 구현은 옮기지 않고 넘겨 준다.
 namespace FPropertyEditor
 {
-	void DrawProperty(UObject* Object, const FProperty& Property, ImFont* CustomFont)
+	bool DrawProperty(UObject* Object, const FProperty& Property, ImFont* CustomFont, const char* Label)
 	{
-		::DrawProperty(Object, Property, CustomFont);
+		const bool bReadOnly = Property.HasAnyFlags(CPF_EditConst);
+		if (bReadOnly) ImGui::BeginDisabled();
+		const bool bChanged = DrawPropertyRow(Object, Object, Property, CustomFont, Label);
+		if (bReadOnly) ImGui::EndDisabled();
+		if (bChanged)
+		{
+			Object->PostEditChangeProperty(Property);
+		}
+		return bChanged;
+	}
+
+	bool DrawStructMemberProperty(UObject* Owner, const FProperty& OwnerProperty, void* StructValue, const FProperty& Member,
+		ImFont* CustomFont, const char* Label)
+	{
+		const bool bReadOnly = Member.HasAnyFlags(CPF_EditConst);
+		if (bReadOnly) ImGui::BeginDisabled();
+		const bool bChanged = DrawPropertyRow(Owner, StructValue, Member, CustomFont, Label);
+		if (bReadOnly) ImGui::EndDisabled();
+		if (bChanged)
+		{
+			Owner->PostEditChangeProperty(OwnerProperty);
+		}
+		return bChanged;
 	}
 
 	void DrawObjectProperties(UObject* Object, ImFont* CustomFont)

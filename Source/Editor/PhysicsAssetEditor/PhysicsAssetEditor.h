@@ -47,6 +47,15 @@ public:
 	EPhysicsSelection GetSelectionType() const { return SelectionType; }
 	int32 GetSelectedIndex() const { return SelectedIndex; }
 
+	// 저장하지 않은 변경. 디테일 패널 · 기즈모가 에셋을 고치면 부른다 (탭 이름에 *)
+	void MarkDirty() { bDirty = true; }
+	bool IsDirty() const override { return bDirty; }
+
+	// 관절 프레임 하나의 위치 또는 회전을 기본값(자동 생성과 같은 값)으로 되돌린다
+	enum class EConstraintFrameComponent : uint8 { ChildPosition, ChildRotation, ParentPosition, ParentRotation };
+	bool SnapConstraintFrameToDefault(int32 ConstraintIndex, EConstraintFrameComponent Component);
+	bool IsConstraintFrameAtDefault(int32 ConstraintIndex, EConstraintFrameComponent Component) const;
+
 protected:
 	// 이 에디터에 연결된 탭을 생성합니다.
 	TUniquePtr<IEditorTab> CreateTab() override;
@@ -73,6 +82,7 @@ private:
 
 	EPhysicsSelection SelectionType = EPhysicsSelection::None;
 	int32 SelectedIndex = -1;
+	bool bDirty = false;
 
 	FEditorModeTools ModeTools;
 	FGizmo Gizmo{ &ModeTools };

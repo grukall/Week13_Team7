@@ -34,8 +34,7 @@ namespace
 	// 래그돌 바디 솔버/감쇠 설정 (UE 래그돌도 위치 반복 8회 정도를 쓴다)
 	constexpr uint32 RagdollPositionIterations = 8;
 	constexpr uint32 RagdollVelocityIterations = 1;
-	constexpr float RagdollLinearDamping = 0.05f;
-	constexpr float RagdollAngularDamping = 0.1f;
+	// 감쇠는 바디마다 USkeletalBodySetup::LinearDamping / AngularDamping (기본 0.05 / 0.1)
 	// 질량으로 나눈 운동에너지(≈ 0.5·v²) 기준. PhysX 기본값(0.00005 × 속도 스케일²)은 끝 바디의 미세 떨림 때문에
 	// 래그돌 덩어리(island)가 영원히 깨어 있다. 대략 0.1~0.15 m/s 이하로 느려지면 잠들게 한다
 	constexpr float RagdollSleepThreshold = 0.01f;
@@ -130,8 +129,8 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
 
 	Super::TickComponent(DeltaTime);   // 여기서 CS가 갱신된다
 
-	if (!bRagdollActive)
-		UpdateKinematicBodies();
+	// 시뮬레이션하지 않는 바디를 애니메이션 포즈로 끌고 간다 (시뮬레이션 중인 바디는 건너뜀)
+	UpdateKinematicBodies();
 }
 
 const TArray<FBoneInfo>& USkeletalMeshComponent::GetBones() const
@@ -343,9 +342,9 @@ void USkeletalMeshComponent::OnCreatePhysicsState()
 	PostPhysicsTick.TickGroup = ETickingGroup::PostPhysics;
 	PostPhysicsTick.RegisterTickFunction(GetWorld()->GetTickTaskManager());
 
-	// 씬에 Ragdoll ON으로 저장돼 있었으면 바로 적용
-	if (bSimulateRagdoll)
-		SetSimulatePhysics(true);
+	// 바디마다 시뮬레이션 여부를 정한다. Ragdoll OFF여도 PhysicsType = Simulated 바디는 여기서 켜진다
+	// (씬에 Ragdoll ON으로 저장돼 있었으면 모든 Default 바디도 켜진다)
+	SetSimulatePhysics(bSimulateRagdoll);
 
 	UActorComponent::OnCreatePhysicsState();
 }
@@ -354,6 +353,7 @@ void USkeletalMeshComponent::OnDestroyPhysicsState()
 {
 	PostPhysicsTick.UnRegisterTickFunction();
 	bRagdollActive = false;
+	bAnyBodySimulating = false;
 	TermArticulated();
 	UActorComponent::OnDestroyPhysicsState();
 }
@@ -371,13 +371,28 @@ void USkeletalMeshComponent::SetSimulatePhysics(bool bSimulate)
 	{
 		// 아직 물리 상태가 없다. OnCreatePhysicsState가 bSimulateRagdoll을 보고 적용한다
 		bRagdollActive = false;
+		bAnyBodySimulating = false;
 		return;
 	}
 
-	// eKINEMATIC 플래그를 끄면 PhysX가 중력·관절을 적용하기 시작한다. 켜면 다시 애니메이션이 끌고 다닌다
+	// eKINEMATIC 플래그를 끄면 PhysX가 중력·관절을 적용하기 시작한다. 켜면 다시 애니메이션이 끌고 다닌다.
+	// 바디마다 PhysicsType으로 정한다:
+	//   Default   → Ragdoll 요청을 따른다
+	//   Kinematic → 항상 애니메이션 (Ragdoll ON이어도)
+	//   Simulated → 항상 시뮬레이션 (Ragdoll OFF여도). 관절로 이어진 Kinematic 부모에 매달려 흔들린다
+	const UPhysicsAsset* PA = GetSkeletalMesh() ? GetSkeletalMesh()->GetPhysicsAsset() : nullptr;
+	bAnyBodySimulating = false;
 	for (FBodyInstance* Body : Bodies)
-		if (Body && Body->IsValidBodyInstance())
-			Body->SetInstanceSimulatePhysics(bSimulate);
+	{
+		if (!Body || !Body->IsValidBodyInstance())
+			continue;
+		const USkeletalBodySetup* Setup = PA && PA->SkeletalBodySetups.IsValidIndex(Body->InstanceBodyIndex)
+			? PA->SkeletalBodySetups[Body->InstanceBodyIndex] : nullptr;
+		const EPhysicsType Type = Setup ? Setup->PhysicsType : EPhysicsType::Default;
+		const bool bSimulateBody = Type == EPhysicsType::Simulated || (Type == EPhysicsType::Default && bSimulate);
+		Body->SetInstanceSimulatePhysics(bSimulateBody);
+		bAnyBodySimulating |= bSimulateBody;
+	}
 	bRagdollActive = bSimulate;
 }
 
@@ -388,21 +403,25 @@ void USkeletalMeshComponent::PostEditChangeProperty(const FProperty& Property)
 		SetSimulatePhysics(bSimulateRagdoll);
 }
 
-// Ragdoll OFF: 애니메이션 포즈의 본 월드 위치로 Kinematic 바디를 끌고 간다 (StartFrame이 서브스텝마다 보간)
+// 애니메이션 포즈의 본 월드 위치로 Kinematic 바디를 끌고 간다 (StartFrame이 서브스텝마다 보간)
+// 시뮬레이션하지 않는 바디만 해당된다 (Ragdoll OFF면 Simulated 외 전부, ON이면 Kinematic 바디)
 void USkeletalMeshComponent::UpdateKinematicBodies()
 {
 	for (FBodyInstance* Body : Bodies)
 	{
-		if (!Body || !Body->IsValidBodyInstance())
+		// 시뮬레이션 중인 바디에 SetBodyTransform을 하면 setGlobalPose로 순간이동하니 건너뛴다
+		if (!Body || !Body->IsValidBodyInstance() || Body->bSimulatePhysics)
 			continue;
 		Body->SetBodyTransform(FTransform(GetBoneWorldMatrix(Body->InstanceBoneIndex)));
 	}
 }
 
-// Ragdoll ON: PhysX 바디 월드 → 컴포넌트 공간(CS) → 부모 기준 Local 로 되돌려 BoneSpaceTransforms에 넣는다
+// 시뮬레이션 중인 바디(Ragdoll ON의 Default 바디, 항상 Simulated 바디)의 PhysX 월드 →
+// 컴포넌트 공간(CS) → 부모 기준 Local 로 되돌려 BoneSpaceTransforms에 넣는다
 void USkeletalMeshComponent::BlendInPhysics()
 {
-	if (!bRagdollActive)
+	// Ragdoll OFF여도 Simulated 바디가 있으면 그 본은 물리 결과로 덮어써야 한다
+	if (!bAnyBodySimulating)
 		return;
 	const TArray<FBoneInfo>& Bones = GetBones();
 	const int32 NumBones = Bones.Num();
@@ -420,7 +439,8 @@ void USkeletalMeshComponent::BlendInPhysics()
 		const int32 Parent = Bones[i].ParentIndex;
 		const int32 BodyIndex = BoneToBody[i];
 
-		if (BodyIndex != -1)
+		// Kinematic 바디(시뮬레이션 안 함)의 본은 애니메이션 값을 그대로 둔다
+		if (BodyIndex != -1 && Bodies[BodyIndex]->bSimulatePhysics)
 		{
 			// 1단계: 월드 → 컴포넌트 공간.
 			FTransform BodyWorld = Bodies[BodyIndex]->GetUnrealWorldTransform();
@@ -464,6 +484,11 @@ void USkeletalMeshComponent::InitArticulated(FPhysScene* Scene)
 		auto* Body = new FBodyInstance();
 		Body->bSimulatePhysics = false;
 		Body->ObjectType = ECollisionChannel::ECC_PhysicsBody;
+		// Physics Asset 에디터에서 정한 바디 설정 (InitBody 전에 넣어야 질량 · 중력 · 필터에 반영된다)
+		Body->CollisionEnabled = Setup->CollisionEnabled;
+		Body->bOverrideMass = Setup->bOverrideMass;
+		Body->MassInKg = Setup->MassInKg;
+		Body->bEnableGravity = Setup->bEnableGravity;
 		// Character 캡슐(Pawn) 안에서 시작하므로 Pawn과 충돌하면 켜는 순간 밀려 튕겨 나간다
 		Body->CollisionResponses.SetResponse(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
 		Body->InstanceBodyIndex = i;
@@ -475,7 +500,7 @@ void USkeletalMeshComponent::InitArticulated(FPhysScene* Scene)
 		{
 			// 관절이 많은 사슬은 기본 반복(4회)으로는 오차가 남아 쌓인다. 감쇠로 쌓이는 에너지도 조금씩 뺀다 (InitBody가 이미 WaitPhysScenes 함)
 			FPhysicsInterface::SetSolverIterationCounts(Body->ActorHandle, RagdollPositionIterations, RagdollVelocityIterations);
-			FPhysicsInterface::SetDamping(Body->ActorHandle, RagdollLinearDamping, RagdollAngularDamping);
+			FPhysicsInterface::SetDamping(Body->ActorHandle, Setup->LinearDamping, Setup->AngularDamping);
 			FPhysicsInterface::SetSleepThresholds(Body->ActorHandle, RagdollSleepThreshold, RagdollStabilizationThreshold);
 		}
 		Bodies.Add(Body);

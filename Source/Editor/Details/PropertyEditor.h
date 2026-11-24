@@ -9,8 +9,13 @@ class FProperty;
 
 namespace FPropertyEditor
 {
-	// DetailsPanel.cpp의 DrawProperty를 그대로 옮긴다 (값이 바뀌면 PostEditChangeProperty 호출).
-	void DrawProperty(UObject* Object, const FProperty& Property, ImFont* CustomFont = nullptr);
+	// DetailsPanel.cpp의 DrawProperty를 그대로 옮긴다 (값이 바뀌면 PostEditChangeProperty 호출 후 true).
+	// VisibleAnywhere(CPF_EditConst)는 흐리게 읽기 전용으로 그린다. Label이 있으면 속성 이름 대신 쓴다
+	bool DrawProperty(UObject* Object, const FProperty& Property, ImFont* CustomFont = nullptr, const char* Label = nullptr);
+	// USTRUCT 멤버 한 줄을 원하는 자리에 그린다. StructValue는 Owner 안의 구조체 값 주소, OwnerProperty는 그 구조체 프로퍼티.
+	// 바뀌면 Owner->PostEditChangeProperty(OwnerProperty) 후 true (UE의 MemberProperty 알림과 같은 규칙)
+	bool DrawStructMemberProperty(UObject* Owner, const FProperty& OwnerProperty, void* StructValue, const FProperty& Member,
+		ImFont* CustomFont = nullptr, const char* Label = nullptr);
 	// 기반 클래스부터 CPF_Edit 속성을 CollapsingHeader로 묶어 그린다 (DetailsPanel의 루프를 옮김).
 	void DrawObjectProperties(UObject* Object, ImFont* CustomFont = nullptr);
 

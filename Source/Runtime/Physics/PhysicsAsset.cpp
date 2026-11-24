@@ -129,6 +129,46 @@ namespace
     }
 }
 
+namespace
+{
+    // 관절 자식 프레임: 트위스트 축(X)을 캡슐 길이 축(본 길이 방향)에 맞춘다
+    FTransform MakeChildFrame(int32 BoneAxis)
+    {
+        FQuat Q = FQuat::Identity();                                                        // X
+        if (BoneAxis == 1) Q = FQuat::MakeFromAxisAngle(FVector(0, 0, 1), PI * 0.5f);       // Y
+        if (BoneAxis == 2) Q = FQuat::MakeFromAxisAngle(FVector(0, 1, 0), -PI * 0.5f);      // Z
+        return FTransform(Q, FVector::ZeroVector);
+    }
+
+    // 부모 프레임: 바인드 포즈에서 자식 프레임과 같은 월드 위치 · 방향이 되도록 부모 본 공간으로 옮긴다.
+    // 조인트 프레임에 스케일은 의미가 없고 저장도 안 하므로 1로 둔다 (불러온 뒤와 같은 상태)
+    FTransform MakeParentFrame(const FTransform& ChildFrame, const FMatrix& ChildBindCS, const FMatrix& ParentBindCS)
+    {
+        FTransform Frame(ChildFrame.GetLocalMatrix() * ChildBindCS * ParentBindCS.Inverse());
+        Frame.Scale = FVector::OneVector;
+        return Frame;
+    }
+}
+
+bool UPhysicsAsset::CalcDefaultConstraintFrames(const USkeletalMesh* Mesh, const FString& ChildBone, const FString& ParentBone,
+    FTransform& OutFrame1, FTransform& OutFrame2)
+{
+    if (!Mesh || Mesh->GetRenderData().LODRenderData.Num() == 0) return false;
+    const TArray<FBoneInfo>& Bones = Mesh->GetRefSkeleton();
+    const TArray<FBox>& Bounds = Mesh->GetRenderData().LODRenderData[0].BoneBounds;
+    const int32 Child = Mesh->FindBoneIndex(ChildBone);
+    const int32 Parent = Mesh->FindBoneIndex(ParentBone);
+    if (Child == -1 || Parent == -1 || !Bounds.IsValidIndex(Child)) return false;
+
+    // CreateFromSkeletalMesh와 같은 계산 (캡슐 길이 축 → 자식 프레임 → 부모 프레임)
+    int32 BoneAxis = 0;
+    if (HasVertices(Bounds[Child]))
+        MakeCapsule(Bounds[Child], Bones[Child].InverseBindPose, BoneAxis);
+    OutFrame1 = MakeChildFrame(BoneAxis);
+    OutFrame2 = MakeParentFrame(OutFrame1, Bones[Child].InverseBindPose.Inverse(), Bones[Parent].InverseBindPose.Inverse());
+    return true;
+}
+
 UPhysicsAsset* UPhysicsAsset::CreateFromSkeletalMesh(const USkeletalMesh* Mesh)
 {
     if (!Mesh || Mesh->GetRenderData().LODRenderData.Num() == 0) return nullptr;
@@ -170,17 +210,14 @@ UPhysicsAsset* UPhysicsAsset::CreateFromSkeletalMesh(const USkeletalMesh* Mesh)
         if (P == -1) continue; // 루트 바디에는 관절이 없음
 
         // ③ 관절 + 프레임
-        FQuat Q = FQuat::Identity();                                                        // X
-        if (BoneAxis == 1) Q = FQuat::MakeFromAxisAngle(FVector(0, 0, 1), PI * 0.5f);       // Y
-        if (BoneAxis == 2) Q = FQuat::MakeFromAxisAngle(FVector(0, 1, 0), -PI * 0.5f);      // Z
-        const FTransform QT(Q, FVector::ZeroVector);
+        const FTransform QT = MakeChildFrame(BoneAxis);
 
         auto* CT = NewObject<UPhysicsConstraintTemplate>(PhysicsAsset);
         FConstraintInstance& CI = CT->DefaultInstance;
         CI.ConstraintBone1 = Bones[i].Name;
         CI.ConstraintBone2 = Bones[P].Name;
         CI.Frame1 = QT;
-        CI.Frame2 = FTransform(QT.GetLocalMatrix() * BindCS[i] * BindCS[P].Inverse());
+        CI.Frame2 = MakeParentFrame(QT, BindCS[i], BindCS[P]);
         // Motion · Limit은 FConstraintInstance(ConstraintInstance.h)의 기본값을 그대로 쓴다. 관절별 조정은 Physics Asset Editor에서 한다
         PhysicsAsset->ConstraintSetup.Add(CT);
     }

@@ -65,6 +65,7 @@ bool PhysicsAssetFile::Write(const std::filesystem::path& Path, UPhysicsAsset& A
 	OutError.clear();
 	TArray<uint8> Bytes;
 	FMemoryWriter Writer(Bytes);
+	Writer.SetIsPersistent(true);   // 파일에는 Transient를 쓰지 않는다 (ConstraintTemplate::DefaultInstance는 수동 저장)
 	{
 		FJsonArchiveOutputFormatter Formatter(Writer);
 		FStructuredArchive Archive(Formatter);

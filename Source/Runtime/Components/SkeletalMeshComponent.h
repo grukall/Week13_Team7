@@ -129,6 +129,7 @@ private:
 	TArray<struct FConstraintInstance*> Constraints;
 	TArray<int32> BoneToBody;                    // 본 인덱스 → Bodies 인덱스 (바디 없으면 -1)
 	bool bRagdollActive = false;                 // 실제로 시뮬레이션 중인지 (bSimulateRagdoll은 요청값)
+	bool bAnyBodySimulating = false;             // 시뮬레이션 중인 바디가 하나라도 있는지 (Ragdoll OFF여도 Simulated 바디면 true)
 	FSkeletalMeshPostPhysicsTickFunction PostPhysicsTick;
 	friend struct FSkeletalMeshPostPhysicsTickFunction;
 

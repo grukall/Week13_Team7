@@ -86,6 +86,11 @@ struct FBodyInstance
 	UPROPERTY(EditAnywhere)
 	UPhysicalMaterial* PhysMaterialOverride = nullptr;
 
+	// 래그돌 바디 설정 (USkeletalBodySetup에서 InitArticulated가 복사한다. 컴포넌트 BodyInstance는 기본값 그대로)
+	bool bOverrideMass = false;     // true면 밀도로 구한 질량 대신 MassInKg
+	float MassInKg = 0.0f;
+	bool bEnableGravity = true;     // InitBody에서 PxActorFlag::eDISABLE_GRAVITY로 반영
+
 	UPhysicalMaterial* GetSimplePhysicalMaterial() const;
 	void SetPhysMaterialOverride(UPhysicalMaterial* Material);
 	void UpdatePhysicalMaterials();

@@ -789,4 +789,77 @@ void FPhysicsAssetEditor::ApplyPhysicsGizmoTransform()
 			break;   // 관절은 스케일이 없다
 		}
 	}
+	MarkDirty();
+}
+
+// ─────────────────────────────────────────────────────────────
+// 관절 프레임 기본값 (디테일 패널의 ↶ 버튼)
+// ─────────────────────────────────────────────────────────────
+
+namespace
+{
+	using EFrameComponent = FPhysicsAssetEditor::EConstraintFrameComponent;
+
+	bool IsPositionComponent(EFrameComponent Component)
+	{
+		return Component == EFrameComponent::ChildPosition || Component == EFrameComponent::ParentPosition;
+	}
+}
+
+bool FPhysicsAssetEditor::SnapConstraintFrameToDefault(int32 ConstraintIndex, EConstraintFrameComponent Component)
+{
+	UPhysicsAsset* PhysicsAsset = GetPhysicsAsset();
+	if (!PhysicsAsset || !PhysicsAsset->ConstraintSetup.IsValidIndex(ConstraintIndex) || !PhysicsAsset->ConstraintSetup[ConstraintIndex])
+	{
+		return false;
+	}
+	FConstraintInstance& CI = PhysicsAsset->ConstraintSetup[ConstraintIndex]->DefaultInstance;
+	FTransform DefaultFrame1, DefaultFrame2;
+	if (!UPhysicsAsset::CalcDefaultConstraintFrames(Mesh, CI.ConstraintBone1, CI.ConstraintBone2, DefaultFrame1, DefaultFrame2))
+	{
+		return false;
+	}
+
+	Gizmo.EndDrag();
+	const bool bChild = Component == EFrameComponent::ChildPosition || Component == EFrameComponent::ChildRotation;
+	FTransform& Frame = bChild ? CI.Frame1 : CI.Frame2;
+	const FTransform& DefaultFrame = bChild ? DefaultFrame1 : DefaultFrame2;
+	if (IsPositionComponent(Component))
+	{
+		Frame.Location = DefaultFrame.Location;
+	}
+	else
+	{
+		Frame.Rotation = DefaultFrame.Rotation;
+	}
+	MarkDirty();
+	SyncPhysicsGizmo();
+	return true;
+}
+
+bool FPhysicsAssetEditor::IsConstraintFrameAtDefault(int32 ConstraintIndex, EConstraintFrameComponent Component) const
+{
+	const UPhysicsAsset* PhysicsAsset = GetPhysicsAsset();
+	if (!PhysicsAsset || !PhysicsAsset->ConstraintSetup.IsValidIndex(ConstraintIndex) || !PhysicsAsset->ConstraintSetup[ConstraintIndex])
+	{
+		return true;
+	}
+	const FConstraintInstance& CI = PhysicsAsset->ConstraintSetup[ConstraintIndex]->DefaultInstance;
+	FTransform DefaultFrame1, DefaultFrame2;
+	if (!UPhysicsAsset::CalcDefaultConstraintFrames(Mesh, CI.ConstraintBone1, CI.ConstraintBone2, DefaultFrame1, DefaultFrame2))
+	{
+		return true;   // 기본값을 모르면 ↶를 숨긴다
+	}
+
+	const bool bChild = Component == EFrameComponent::ChildPosition || Component == EFrameComponent::ChildRotation;
+	const FTransform& Frame = bChild ? CI.Frame1 : CI.Frame2;
+	const FTransform& DefaultFrame = bChild ? DefaultFrame1 : DefaultFrame2;
+	if (IsPositionComponent(Component))
+	{
+		return (Frame.Location - DefaultFrame.Location).SizeSquared() < 1e-8f;
+	}
+	// q와 -q는 같은 회전이다
+	const FQuat& A = Frame.Rotation;
+	const FQuat& B = DefaultFrame.Rotation;
+	return std::abs(A.X * B.X + A.Y * B.Y + A.Z * B.Z + A.W * B.W) > 1.0f - 1e-6f;
 }

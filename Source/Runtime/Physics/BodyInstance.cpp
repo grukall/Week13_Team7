@@ -104,7 +104,10 @@ bool FBodyInstance::UpdateMassProperties() const
 	if (!physx::PxRigidBodyExt::updateMassAndInertia(*Dynamic, Density, nullptr, true))
 		return false;
 	const float BaseMass = Dynamic->getMass();
-	const float Mass = std::pow(BaseMass, std::clamp(Material->RaiseMassToPower, KINDA_SMALL_NUMBER, 1.f));
+	// 질량 지정이면 관성 텐서도 같은 비율로 늘려 모양에 맞는 회전 특성을 유지한다
+	const float Mass = (bOverrideMass && MassInKg > 0.f)
+		? MassInKg
+		: std::pow(BaseMass, std::clamp(Material->RaiseMassToPower, KINDA_SMALL_NUMBER, 1.f));
 	Dynamic->setMassSpaceInertiaTensor(Dynamic->getMassSpaceInertiaTensor() * (Mass / BaseMass));
 	Dynamic->setMass(Mass);
 	return true;
@@ -150,6 +153,9 @@ void FBodyInstance::InitBody(UBodySetup* Setup, const FTransform& Transform, UPr
 		return;
 	if (!Params.bStatic)
 		FPhysicsInterface::SetIsKinematic_AssumesLocked(ActorHandle, !bSimulatePhysics);
+	// 아직 씬에 넣기 전이라 잠금 없이 플래그를 바꿀 수 있다
+	if (!bEnableGravity)
+		ActorHandle.SyncActor->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, true);
 
 	OwnerComponent = PrimComp;
 	BodySetup = Setup;

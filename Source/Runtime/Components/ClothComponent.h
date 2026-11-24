@@ -5,7 +5,7 @@
 #include "ClothComponent.generated.h"
 
 // NvCloth 헤더는 ClothComponent.cpp에서만 include 한다.
-namespace nv { namespace cloth { class Solver; class Fabric; class Cloth; } }
+namespace nv { namespace cloth { class Factory; class Solver; class Fabric; class Cloth; } }
 
 // 천 한 장을 만드는 데 필요한 원본 정보. 격자·메시 에셋 등 원본이 무엇이든 이 형태로 채움
 struct FClothBuildInput
@@ -94,7 +94,12 @@ private:
 	FMatrix GetSimToWorldMatrix() const;	// 시뮬레이션 공간 → 월드 (= Proxy 행렬에서 스케일만 뺀 R·T)
 	bool BuildDefaultCloth();			// 기본 격자 천을 만들고 격자 정보(BuiltGridRows/Cols, DefaultGridClothIndex)를 기록
 	void DestroyAllCloths();			// 모든 천을 Solver에서 빼고 해제, 렌더 데이터도 비운다 (Solver는 유지)
-	void RebuildCloth();				// 스케일이 바뀌었을 때 천을 새 스케일로 다시 만든다
+	// 모든 천을 각자의 원본 입력으로 다시 만든다. 천은 처음 모양으로 리셋된다
+	//  - 스케일 변경: bRecreateSolver = false (같은 Solver에 새 스케일로)
+	//  - CPU/CUDA 변경: bRecreateSolver = true (Factory가 바뀌므로 Solver·Fabric·Cloth를 모두 새 Factory로)
+	void RebuildCloth(bool bRecreateSolver = false);
+	bool CreateSolver();				// 전역 설정(NvClothManager::GetUseCUDA)에 맞는 Factory로 Solver를 만든다. CUDA가 없거나 실패하면 CPU로 대체. SimFactory·Solver를 채운다
+	void DestroySolver();				// 천이 모두 빠진 뒤에 부른다
 
 	bool CreateCloth(const FClothBuildInput& RawInput);	// 입력 하나(기본 격자·에셋)로 천 한 장을 만들어 Solver와 ClothInstances에 추가
 	void DestroyCloth(FClothInstance& Instance);		// 천 한 장을 Solver에서 빼고 해제
@@ -107,7 +112,12 @@ private:
 	int32 DefaultGridClothIndex = -1;	// ClothInstances 중 기본 격자 천의 번호. -1이면 없음
 	FVector BuiltScale = FVector(1.0f, 1.0f, 1.0f);	// 지금 천 모양에 구워진 스케일. 렌더 ÷S와 스케일 변경 감지에 쓴다
 
+	// Solver·Fabric·Cloth를 만든 Factory. 서로 다른 Factory의 객체는 섞을 수 없으므로 셋 모두 이것으로 만든다 (NvClothManager 소유)
+	nv::cloth::Factory* SimFactory = nullptr;
 	nv::cloth::Solver* Solver = nullptr;
+	// Solver를 만들 때의 NvClothManager::GetBackendSerial(). 전역 CPU/CUDA 설정(Settings 패널)이 바뀌면 달라지고,
+	// 다음 Tick 시작(simulate 전)에 RebuildCloth(true)로 새 Factory에 다시 만든다. CUDA가 실패해 CPU로 대체돼도 번호는 맞추므로 매 프레임 재생성하지 않는다
+	uint32 BuiltBackendSerial = 0;
 	TArray<FClothInstance> ClothInstances;		// Component가 소유중인 천 모음, Solver에 들어가있는것과는 별개임
 	TArray<FClothMeshData> ClothMeshDatas;		// Cloth 렌더링용 데이터 배열
 	FClothCollisionShapes CollisionShapes;		// Collision 발생시킬 Shape 모음

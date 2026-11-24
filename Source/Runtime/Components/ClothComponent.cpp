@@ -221,17 +221,8 @@ void UClothComponent::OnRegister()
 {
 	Super::OnRegister();
 
-	nv::cloth::Factory* Factory = FNvClothManager::Get().GetFactory();  // NvCloth용 관련 객체들 생성하기 위한 Factory
-	if (Factory == nullptr)
+	if (!CreateSolver())	// 등록할 때 전역 CPU/CUDA 설정대로 만든다	// 천 계산할 Solver 세팅 (컴포넌트의 모든 천이 공유)
 	{
-		HTR_LOG(Error, "[NvCloth] Factory is null (NvClothManager not initialized)");
-		return;
-	}
-
-	Solver = Factory->createSolver();	// 천 계산할 Solver 세팅 (컴포넌트의 모든 천이 공유)
-	if (Solver == nullptr)
-	{
-		HTR_LOG(Error, "[NvCloth] createSolver failed");
 		return;
 	}
 
@@ -243,9 +234,54 @@ void UClothComponent::OnRegister()
 void UClothComponent::OnUnregister()
 {
 	DestroyAllCloths();
-	NV_CLOTH_DELETE(Solver);	// 천이 모두 빠진 뒤에 Solver 삭제
-	Solver = nullptr;
+	DestroySolver();	// 천이 모두 빠진 뒤에 Solver 삭제
 	Super::OnUnregister();
+}
+
+bool UClothComponent::CreateSolver()
+{
+	FNvClothManager& Manager = FNvClothManager::Get();
+	BuiltBackendSerial = Manager.GetBackendSerial();	// 실패·대체 여부와 상관없이 이번 설정으로 시도했음을 기록 (매 프레임 재시도 방지)
+	const bool bUseCUDA = Manager.GetUseCUDA();
+	if (bUseCUDA && !Manager.IsCUDAAvailable())
+	{
+		HTR_LOG(Warning, "[NvCloth] CUDA requested but unavailable (CPU-only build or no NVIDIA driver/device). Using CPU solver.");
+	}
+
+	SimFactory = Manager.GetFactory(bUseCUDA);	// CUDA가 없으면 CPU Factory
+	if (SimFactory == nullptr)
+	{
+		HTR_LOG(Error, "[NvCloth] Factory is null (NvClothManager not initialized)");
+		return false;
+	}
+
+	Solver = SimFactory->createSolver();
+	if (Solver == nullptr && Manager.IsCUDAFactory(SimFactory))
+	{
+		// CUDA 솔버 생성 실패 (커널 로드 실패 등) → CPU로 대체
+		HTR_LOG(Warning, "[NvCloth] CUDA createSolver failed. Falling back to CPU solver.");
+		SimFactory = Manager.GetFactory(false);
+		Solver = SimFactory ? SimFactory->createSolver() : nullptr;
+	}
+	if (Solver == nullptr)
+	{
+		HTR_LOG(Error, "[NvCloth] createSolver failed");
+		SimFactory = nullptr;
+		return false;
+	}
+
+	HTR_LOG(Info, "[NvCloth] {} solver: {}", GetName(), Manager.IsCUDAFactory(SimFactory) ? "CUDA" : "CPU");
+	return true;
+}
+
+void UClothComponent::DestroySolver()
+{
+	if (Solver != nullptr)
+	{
+		NV_CLOTH_DELETE(Solver);
+		Solver = nullptr;
+	}
+	SimFactory = nullptr;
 }
 
 FVector UClothComponent::GetSimScale() const
@@ -300,9 +336,10 @@ void UClothComponent::DestroyAllCloths()
 	DefaultGridClothIndex = -1;
 }
 
-void UClothComponent::RebuildCloth()
+void UClothComponent::RebuildCloth(bool bRecreateSolver)
 {
 	// 스케일은 Fabric(스프링 원래 길이)에 구워지므로, 바뀌면 천을 새로 만들어야 한다. 천은 처음 모양으로 리셋된다
+	// CPU/CUDA를 바꿀 때는 Factory가 바뀌므로 Solver까지 새 Factory로 만든다 (다른 Factory의 Cloth를 Solver에 넣을 수 없다)
 	// 기본 격자뿐 아니라 컴포넌트가 가진 모든 천을 각자의 원본 입력으로 다시 만든다
 
 	// 1. 지우기 전에 천마다 원본 입력을 모은다. 실행 중 바뀐 고정 반경(RefreshPinsFromSettings)은 Instance 쪽이 최신이므로 덮어쓴다
@@ -321,8 +358,19 @@ void UClothComponent::RebuildCloth()
 	const int32 OldGridRows = BuiltGridRows;
 	const int32 OldGridCols = BuiltGridCols;
 
-	// 2. 전부 지우고 같은 순서로 새 스케일에 맞춰 다시 만든다 (CreateCloth가 현재 스케일을 굽는다)
+	// 2. 전부 지운다. 이전 Factory의 Cloth·Fabric을 먼저 해제한 뒤 Solver를 바꾼다
 	DestroyAllCloths();
+	if (bRecreateSolver)
+	{
+		DestroySolver();
+		if (!CreateSolver())
+		{
+			OnTransformDirty();
+			return;		// Solver가 없으면 천을 만들 수 없다 (CreateSolver가 로그를 남김)
+		}
+	}
+
+	// 3. 같은 순서로 다시 만든다 (CreateCloth가 현재 스케일을 굽고, 현재 SimFactory를 쓴다)
 	for (int32 i = 0; i < Inputs.Num(); ++i)
 	{
 		if (!CreateCloth(Inputs[i]))
@@ -349,10 +397,10 @@ bool UClothComponent::CreateCloth(const FClothBuildInput& RawInput)
 		HTR_LOG(Error, "[NvCloth] CreateCloth called without Solver");
 		return false;
 	}
-	nv::cloth::Factory* Factory = FNvClothManager::Get().GetFactory();
+	nv::cloth::Factory* Factory = SimFactory;	// Solver를 만든 Factory와 같아야 한다 (Fabric·Cloth를 다른 Factory로 만들면 Solver에 넣을 수 없음)
 	if (Factory == nullptr)
 	{
-		HTR_LOG(Error, "[NvCloth] Factory is null (NvClothManager not initialized)");
+		HTR_LOG(Error, "[NvCloth] CreateCloth called without SimFactory");
 		return false;
 	}
 	if (RawInput.Positions.Num() == 0 || RawInput.InvMasses.Num() != RawInput.Positions.Num() || RawInput.UVs.Num() != RawInput.Positions.Num() || RawInput.Indices.Num() % 3 != 0 || RawInput.MaxDistances.Num() != RawInput.Positions.Num())
@@ -479,6 +527,18 @@ void UClothComponent::DestroyCloth(FClothInstance& Instance)
 void UClothComponent::TickComponent(float DeltaTime)
 {
 	Super::TickComponent(DeltaTime);
+
+	// CPU/CUDA 전환은 simulate 밖(Tick 맨 앞)에서만 한다. begin~endSimulation 사이에 Solver·Cloth를 지우면 안 된다
+	if (BuiltBackendSerial != FNvClothManager::Get().GetBackendSerial())	// Settings 패널에서 CPU/CUDA가 바뀌었다
+	{
+		const bool bHadCloth = !ClothInstances.IsEmpty();
+		RebuildCloth(true);
+		if (!bHadCloth && Solver != nullptr && ClothInstances.IsEmpty())
+		{
+			BuildDefaultCloth();	// 등록 때 Solver 생성에 실패해 천이 없었던 경우, 새 Solver로 기본 격자를 만든다
+			OnTransformDirty();
+		}
+	}
 
 	if (Solver == nullptr) return;
 	if (!(DeltaTime > 0.0f) || !std::isfinite(DeltaTime)) return;

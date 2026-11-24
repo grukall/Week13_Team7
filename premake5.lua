@@ -98,7 +98,42 @@ IncludeDir["NvCloth"]  = "Source/ThirdParty/NvCloth/NvCloth"
 -- NvCloth 헤더를 읽는 모든 프로젝트가 같은 값을 써야 한다.
 -- NV_CLOTH_IMPORT를 비워 두지 않으면 헤더가 dllimport로 해석되어 정적 링크에서 __imp_ 기호를 찾다 LNK2019가 난다.
 -- PxShared(foundation/Px*.h)는 PhysXSettings가 넣는 PhysX 4.1의 pxshared/include 한 벌만 쓴다.
-NvClothDefines = { "NV_CLOTH_IMPORT=", "NV_CLOTH_ENABLE_CUDA=0", "NV_CLOTH_ENABLE_DX11=0" }
+-- CUDA 솔버: CUDA 툴킷(CUDA_PATH)이 있을 때만 켠다. 없으면 지금처럼 CPU 솔버만 빌드된다.
+-- GPU 커널은 NvCloth에 미리 컴파일된 fatbinary(src/cuda/CuSolverKernelBlob.h)를 쓰므로 nvcc는 필요 없고,
+-- 드라이버 API 헤더(cuda.h)와 임포트 라이브러리(cuda.lib)만 쓴다.
+local CudaPath = os.getenv("CUDA_PATH")
+if CudaPath and CudaPath ~= "" then
+	CudaPath = path.translate(CudaPath, "/")
+	if not os.isfile(path.join(CudaPath, "include/cuda.h")) then
+		print("[NvCloth] CUDA_PATH has no include/cuda.h. Building without CUDA: " .. CudaPath)
+		CudaPath = nil
+	end
+else
+	CudaPath = nil
+end
+NvClothCudaEnabled = CudaPath ~= nil
+print("[NvCloth] CUDA solver " .. (NvClothCudaEnabled and ("enabled: " .. CudaPath) or "disabled (CUDA_PATH not set)"))
+
+NvClothDefines = { "NV_CLOTH_IMPORT=", "NV_CLOTH_ENABLE_CUDA=" .. (NvClothCudaEnabled and "1" or "0"), "NV_CLOTH_ENABLE_DX11=0" }
+
+-- cuda.h 경로. NvCloth(CUDA 소스)와 엔진(NvClothManager가 CUDA 컨텍스트를 만든다)이 쓴다
+function NvClothCudaIncludes()
+	if NvClothCudaEnabled then
+		includedirs { CudaPath .. "/include" }
+	end
+end
+
+-- 최종 exe 전용. 정적 라이브러리(HitoriEngine)에 임포트 라이브러리를 넣으면 /WHOLEARCHIVE 때 LNK2005가 나므로 exe에서 링크한다.
+-- nvcuda.dll은 NVIDIA 드라이버에 들어 있다. 지연 로드로 두어야 드라이버가 없는 PC에서도 exe가 시작되고
+-- NvClothManager가 LoadLibrary로 확인한 뒤 CPU로 대체할 수 있다 (NvCloth 공식 CMake도 /DELAYLOAD:nvcuda.dll을 쓴다).
+function NvClothCudaLink()
+	if NvClothCudaEnabled then
+		libdirs     { CudaPath .. "/lib/x64" }
+		links       { "cuda.lib", "delayimp.lib" }
+		linkoptions { "/DELAYLOAD:nvcuda.dll" }
+	end
+end
+
 NvClothIncludeDirs =
 {
 	"%{IncludeDir.NvCloth}/include",
@@ -246,6 +281,12 @@ project "NvCloth"
 		"%{IncludeDir.NvCloth}/extensions/src",
 	}
 
+	-- CUDA 솔버 (CuFactory·CuSolver 등 .cpp 7개). .cu는 넣지 않는다: 커널은 CuSolverKernelBlob.h의 fatbinary를 실행 중에 불러온다
+	if NvClothCudaEnabled then
+		files { "%{IncludeDir.NvCloth}/src/cuda/*.cpp", "%{IncludeDir.NvCloth}/src/cuda/*.h" }
+	end
+	NvClothCudaIncludes()
+
 	defines (NvClothDefines)
 	defines { "WIN64", "_CRT_SECURE_NO_DEPRECATE" }
 
@@ -302,6 +343,7 @@ project "HitoriEngine"
 	}
 	includedirs (NvClothIncludeDirs)
 	defines (NvClothDefines)
+	NvClothCudaIncludes()	-- NvClothManager가 cuda.h로 CUDA 컨텍스트를 만든다. cuda.lib 링크는 exe가 한다 (아래 주석 참고)
 
 	links { "Lua", "NvCloth" }
 
@@ -360,6 +402,7 @@ project "HitoriEditor"
 	pchsource "Source/Editor/EditorPCH.cpp"
 
 	links { "HitoriEngine", "ImGui", "Lua", "NvCloth" }
+	NvClothCudaLink()
 
 	-- UClass는 헤더의 정적 객체가 등록하므로, exe가 직접 참조하지 않는 클래스의 .obj를 링커가 버리면
 	-- 그 클래스가 등록되지 않아 씬 로드 때 액터가 사라진다. 엔진 .obj를 전부 링크해 막는다.
@@ -426,6 +469,7 @@ project "HitoriGame"
 	pchsource "Source/Game/GamePCH.cpp"
 
 	links { "HitoriEngine", "Lua", "NvCloth" }
+	NvClothCudaLink()
 
 	-- 에디터와 같은 이유. 게임 코드는 라이트 액터 등을 직접 참조하지 않아 특히 빠지기 쉽다.
 	linkoptions { "/WHOLEARCHIVE:HitoriEngine" }

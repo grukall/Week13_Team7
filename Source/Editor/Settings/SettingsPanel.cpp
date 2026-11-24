@@ -11,6 +11,7 @@
 #include "GameFramework/DefaultPawn.h"
 #include "Components/StaticMeshComponent.h"
 #include "UObject/UObjectIterator.h"
+#include "Physics/NvClothManager.h"
 
 // 종료 시 렌더·에디터·뷰포트 설정을 함께 저장한다.
 FSettingsPanel::~FSettingsPanel()
@@ -164,6 +165,8 @@ void FSettingsPanel::OnRender()
 	//////////////////////////////////////////////////////////
 	DrawShadowMapSettings();
 	//////////////////////////////////////////////////////////
+	DrawPhysicsSettings();
+	//////////////////////////////////////////////////////////
 
 	//////////////////////////////////////////////////////////
 	DrawDefaultPawnSettings();
@@ -232,6 +235,7 @@ bool FSettingsPanel::SaveSettings() const
 	File << "ShowVignette=" << Settings.bShowVignette << "\n";
 	File << "ShowCameraOverlay=" << Settings.bShowCameraOverlay << "\n";
 	File << "ShowSkeletalMesh=" << Settings.bShowSkeletalMesh << "\n";
+	File << "ClothUseCUDA=" << Settings.bClothUseCUDA << "\n";
 
 	File << "LightCullingMode=" << (Settings.LightCullingMode == ELightCullingMode::Off ? "Off" : Settings.LightCullingMode == ELightCullingMode::Tiled ? "Tiled" : Settings.LightCullingMode == ELightCullingMode::Tiled25D ? "Tiled25D" : "Clustered") << "\n";
 	File << "RenderingPath=" << (Settings.RenderingPath == ERenderingPath::Forward ? "Forward" : "Deferred") << "\n";
@@ -393,6 +397,7 @@ bool FSettingsPanel::LoadSettings()
 				else if (Key == "ShowVignette")      Settings.bShowVignette = std::stoi(ValueStr);
 				else if (Key == "ShowCameraOverlay") Settings.bShowCameraOverlay = std::stoi(ValueStr);
 				else if (Key == "ShowSkeletalMesh")  Settings.bShowSkeletalMesh = std::stoi(ValueStr);
+				else if (Key == "ClothUseCUDA")      Settings.bClothUseCUDA = std::stoi(ValueStr);
 
 				else if (Key == "LightCullingMode")
 				{
@@ -471,6 +476,7 @@ bool FSettingsPanel::LoadSettings()
 	Settings.PointShadowMapSizeLevel = FMath::Clamp(Settings.PointShadowMapSizeLevel, 0, 4);
 	Settings.SpotShadowMapSizeLevel = FMath::Clamp(Settings.SpotShadowMapSizeLevel, 0, 4);
 	ApplyViewportSettings();
+	FNvClothManager::Get().SetUseCUDA(Settings.bClothUseCUDA);	// 저장된 천 솔버 선택을 전역에 반영 (천 컴포넌트가 다음 Tick에 따른다)
 	return true;
 }
 
@@ -639,5 +645,31 @@ void FSettingsPanel::DrawShadowMapSettings()
 	ImGui::SetNextItemWidth(200.0f);
 	if (ImGui::Combo("Shadow Filter", &PcfModeIndex, PcfModes, IM_ARRAYSIZE(PcfModes)))
 		Settings.PcfMode = static_cast<EPcfMode>(PcfModeIndex);
+}
+
+void FSettingsPanel::DrawPhysicsSettings()
+{
+	ImGui::Dummy(ImVec2(0.0f, SectionGap));
+	ImGui::SeparatorText("Physics");
+
+	FNvClothManager& ClothManager = FNvClothManager::Get();
+	const bool bCUDAAvailable = ClothManager.IsCUDAAvailable();
+
+	// CUDA가 없으면 체크해도 CPU로 대체되므로 비활성화해서 보여 준다 (저장된 값은 유지)
+	ImGui::BeginDisabled(!bCUDAAvailable);
+	if (ImGui::Checkbox("Cloth: Use CUDA Solver", &Settings.bClothUseCUDA))
+	{
+		ClothManager.SetUseCUDA(Settings.bClothUseCUDA);	// 모든 천 컴포넌트가 다음 Tick에 새 솔버로 다시 만든다 (천은 처음 모양으로 리셋)
+	}
+	ImGui::EndDisabled();
+
+	if (bCUDAAvailable)
+	{
+		ImGui::TextDisabled("Current: %s. Switching resets all cloths.", (ClothManager.GetUseCUDA() ? "CUDA (GPU)" : "CPU"));
+	}
+	else
+	{
+		ImGui::TextDisabled("CUDA unavailable (CPU-only build or no NVIDIA driver). Using CPU.");
+	}
 }
 

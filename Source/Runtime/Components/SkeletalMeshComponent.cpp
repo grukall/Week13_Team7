@@ -828,6 +828,52 @@ void USkeletalMeshComponent::DrawPhysicsDebug(FLineBatcher& LineBatcher)
 	}
 }
 
+void USkeletalMeshComponent::ForEachBodyShape(const FBodyShapeCallback& Callback) const
+{
+	USkeletalMesh* SkeletalMesh = GetSkeletalMesh();
+	UPhysicsAsset* PA = SkeletalMesh ? SkeletalMesh->GetPhysicsAsset() : nullptr;
+	if (!PA || !Callback)
+		return;
+
+	bool bHasPhysicsBody = false;
+	for (const FBodyInstance* Body : Bodies)
+	{
+		if (Body && Body->IsValidBodyInstance())
+		{
+			bHasPhysicsBody = true;
+			break;
+		}
+	}
+
+	// PhysX 바디가 없으면 에셋 값 × 본 월드 행렬 (DrawPhysicsDebug와 같은 대체 규칙)
+	if (!bHasPhysicsBody)
+	{
+		for (const USkeletalBodySetup* Setup : PA->SkeletalBodySetups)
+		{
+			const int32 BoneIndex = Setup ? FindBoneIndex(Setup->BoneName) : -1;
+			if (BoneIndex < 0)
+				continue;
+			const FTransform BoneWorld(GetBoneWorldMatrix(BoneIndex));
+			Callback(*Setup, FTransform(BoneWorld.Rotation, BoneWorld.Location), BoneWorld.Scale);
+		}
+		return;
+	}
+
+	for (const FBodyInstance* Body : Bodies)
+	{
+		if (!Body || !Body->IsValidBodyInstance() || !PA->SkeletalBodySetups.IsValidIndex(Body->InstanceBodyIndex))
+			continue;
+		const USkeletalBodySetup* Setup = PA->SkeletalBodySetups[Body->InstanceBodyIndex];
+		if (!Setup)
+			continue;
+
+		// 위치·회전은 PhysX가 들고 있는 실제 값 (래그돌 중에도 맞다), 스케일은 본 월드 스케일 (InitArticulated가 도형에 곱한 값)
+		const FTransform Pose = Body->GetUnrealWorldTransform();
+		const FVector Scale = FTransform(GetBoneWorldMatrix(Body->InstanceBoneIndex)).Scale;
+		Callback(*Setup, FTransform(Pose.Rotation, Pose.Location), Scale);
+	}
+}
+
 int32 USkeletalMeshComponent::GetNumPhysicsBodies(int32& OutSimulating) const
 {
 	int32 Count = 0;

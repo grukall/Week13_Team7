@@ -2,9 +2,11 @@
 
 #include "SkinnedMeshComponent.h"
 #include "Animation/AnimInstance.h"
+#include <functional>
 #include "SkeletalMeshComponent.generated.h"
 
 class UAnimInstance;
+class USkeletalBodySetup;
 class UAnimSequence;
 class UBlendSpace1D;
 class UWorld;
@@ -95,6 +97,13 @@ public:
 	// stat physics: 만들어진 바디 수 (OutSimulating = 그중 시뮬레이션 중인 수)와 관절 수
 	int32 GetNumPhysicsBodies(int32& OutSimulating) const;
 	int32 GetNumPhysicsConstraints() const;
+
+	// Physics Asset 바디마다 (바디 설정, 스케일 없는 월드 포즈, 본 월드 스케일)을 넘긴다. 천 충돌체 수집이 쓴다.
+	// 포즈 규칙은 DrawPhysicsDebug와 같다: PhysX 바디가 있으면 PhysX 위치·회전, 없으면(에디터 월드) 본 월드 행렬.
+	// 도형(AggGeom)은 본 공간 값이라 받는 쪽이 Scale을 도형에 먼저 곱하고 Pose로 옮겨야 한다
+	using FBodyShapeCallback = std::function<void(const USkeletalBodySetup& Setup, const FTransform& Pose, const FVector& Scale)>;
+	void ForEachBodyShape(const FBodyShapeCallback& Callback) const;
+
 	void PostEditChangeProperty(const FProperty& Property) override;
 
 	// 테스트용: Details에서 켜고 끈다 (PostEditChangeProperty → SetSimulatePhysics)

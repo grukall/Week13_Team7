@@ -37,38 +37,33 @@ struct FClothCollisionShapes	// Collision 처리를 위해 Collision이 발생�
 	void Reset() { Spheres.Reset(); CapsuleIndices.Reset(); Planes.Reset(); ConvexMasks.Reset(); }
 };
 
-// ---- 디테일 패널 묶음 ----
-// 디테일 패널은 UPROPERTY Category를 지원하지 않으므로, 옵션을 USTRUCT로 묶어 구조체 이름 아래에 들여 그린다.
-// 값이 바뀌면 PostEditChangeProperty에 바깥 이름("SimSettings" 등)으로 온다 (DetailsPanel.cpp DrawProperty).
-// 조건부 숨김(바람 끄면 세기 숨김 등)은 에디터가 RegisterStructMemberRule로 등록한다 (Editor/Details/ClothDetails.cpp)
-
-// 매 Tick NvCloth에 넣는 시뮬레이션 값. 바꾸면 다음 Tick에 바로 반영된다
 USTRUCT()
 struct FClothSimSettings
 {
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere) bool bEnableGravity = false;
-	UPROPERTY(EditAnywhere) bool bEnableWind = true;	// 끄면 바람 속도 0 (끈 뒤에도 남지 않게 매 Tick 0을 넣음)
-	UPROPERTY(EditAnywhere, meta=(ClampMin=0, Delta=0.1)) float WindStrength = 3.0f;	// 기본 바람 세기. 실제 바람은 이 값에 돌풍 변화를 곱한다
-	UPROPERTY(EditAnywhere, meta=(ClampMin=0, Delta=0.05)) float Friction = 3.0f;		// 충돌체와의 마찰
+	UPROPERTY(EditAnywhere) bool bEnableWind = true;	
+	UPROPERTY(EditAnywhere, meta=(ClampMin=0, Delta=0.1)) float WindStrength = 3.0f;	
+	UPROPERTY(EditAnywhere, meta = (ClampMin = 0, Delta = 0.05)) float Friction = 3.0f;
+
+	UPROPERTY(EditAnywhere, meta=(ClampMin=0, ClampMax=1, Delta=0.01)) float LinearInertia = 1.0f;		// 이동 가속·감속 → 뒤처짐
+	UPROPERTY(EditAnywhere, meta=(ClampMin=0, ClampMax=1, Delta=0.01)) float AngularInertia = 1.0f;		// 회전 가속·감속
+	UPROPERTY(EditAnywhere, meta=(ClampMin=0, ClampMax=1, Delta=0.01)) float CentrifugalInertia = 1.0f;	// 회전 중 바깥으로 벌어짐
+
+	UPROPERTY(EditAnywhere, meta=(ClampMin=0, Delta=0.1)) float TeleportDistance = 2.0f;
 };
 
-// 접힌 천이 자기 자신을 통과하지 않게 하는 점끼리 충돌. 비용이 커서 점 수가 많으면 프레임을 확인할 것
 USTRUCT()
 struct FClothSelfCollisionSettings
 {
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere) bool bEnabled = true;
-	// 점끼리 최소 간격. 격자 간격(0.12)의 절반 정도, 렌더 두께(0.05)보다 커야 겹이 파고들지 않음
 	UPROPERTY(EditAnywhere, meta=(ClampMin=0, Delta=0.005)) float Distance = 0.06f;
-	// 한 번에 밀어내는 비율. 1이면 모자란 거리를 한 번에 모두 밀어낸다
 	UPROPERTY(EditAnywhere, meta=(ClampMin=0, ClampMax=1, Delta=0.01)) float Stiffness = 1.0f;
 };
 
-// 기본 격자 천 (에셋이 없을 때). 바꾸면 다음 Tick에 격자 천을 다시 만든다 (천은 처음 모양으로 리셋)
-// Rows·Cols는 "점" 개수. 33×33 점 = 32×32칸 = 사각형 면 1024개(삼각형 2048개)
 USTRUCT()
 struct FClothGridSettings
 {
@@ -76,10 +71,10 @@ struct FClothGridSettings
 
 	UPROPERTY(EditAnywhere, meta=(ClampMin=2, ClampMax=128)) int32 Rows = 33;
 	UPROPERTY(EditAnywhere, meta=(ClampMin=2, ClampMax=128)) int32 Cols = 33;
-	UPROPERTY(EditAnywhere, meta=(ClampMin=0.001, Delta=0.005)) float Spacing = 0.12f;	// 32칸 × 0.12 = 약 3.84 × 3.84 크기
+	UPROPERTY(EditAnywhere, meta=(ClampMin=0.001, Delta=0.005)) float Spacing = 0.12f;
 };
 
-// 기본 격자 천의 고정점. 바꾸면 다음 Tick에 반경만 다시 계산한다 (천은 리셋되지 않음)
+
 USTRUCT()
 struct FClothPinSettings
 {
@@ -129,18 +124,11 @@ public:
 	bool LineTraceComponentLocal(const FRay& LocalRay, float& OutT) override;
 
 private:
-	// 좌표 공간 (스케일 굽기)
-	//  - 렌더 로컬: GPU가 Proxy 행렬(S·R·T)을 곱하는 공간
-	//  - 시뮬레이션 공간: 천의 R·T만 벗겨낸 공간. 길이가 월드 단위라서 충돌체 반지름·Pad·두께·중력을 그대로 쓴다
-	//  - 시뮬레이션 좌표 = 렌더 로컬 좌표 × S (축별). S는 CreateCloth에서 천 모양에 한 번 굽고, 렌더 직전에 ÷S로 되돌린다
 	FVector GetSimScale() const;		// 천의 월드 스케일 (절댓값, 0 나누기 방지 최소값). 음수 스케일(뒤집기)은 지원하지 않는다
 	FMatrix GetSimToWorldMatrix() const;	// 시뮬레이션 공간 → 월드 (= Proxy 행렬에서 스케일만 뺀 R·T)
 	bool BuildDefaultCloth();			// 기본 격자 천을 만들고 격자 정보(BuiltGridRows/Cols, DefaultGridClothIndex)를 기록
 	void DestroyAllCloths();			// 모든 천을 Solver에서 빼고 해제, 렌더 데이터도 비운다 (Solver는 유지)
-	// 모든 천을 각자의 원본 입력으로 다시 만든다. 천은 처음 모양으로 리셋된다
-	//  - 스케일 변경: bRecreateSolver = false (같은 Solver에 새 스케일로)
-	//  - CPU/CUDA 변경: bRecreateSolver = true (Factory가 바뀌므로 Solver·Fabric·Cloth를 모두 새 Factory로)
-	//  - 격자 설정 변경: bRegenerateGrid = true (기본 격자 천만 현재 GridSettings·PinSettings로 새 입력을 만들고, 나머지 천은 원본 입력 그대로)
+
 	void RebuildCloth(bool bRecreateSolver = false, bool bRegenerateGrid = false);
 	bool CreateSolver();				// 전역 설정(NvClothManager::GetUseCUDA)에 맞는 Factory로 Solver를 만든다. CUDA가 없거나 실패하면 CPU로 대체. SimFactory·Solver를 채운다
 	void DestroySolver();				// 천이 모두 빠진 뒤에 부른다
@@ -168,11 +156,9 @@ private:
 	bool bGridDirty = false;		// GridSettings가 바뀌었다. 다음 Tick 시작(simulate 전)에 기본 격자 천을 다시 만든다
 	float WindTime = 0.0f;			// 돌풍 계산용 누적 시간 (실행 중 상태라 편집·저장하지 않는다)
 
-	// ---- 디테일 패널 (위에서 아래 순서로 그려진다) ----
 	UPROPERTY(EditAnywhere) FClothSimSettings SimSettings;
 	UPROPERTY(EditAnywhere) FClothSelfCollisionSettings SelfCollision;
 	UPROPERTY(EditAnywhere) FClothPinSettings PinSettings;
 	UPROPERTY(EditAnywhere) FClothGridSettings GridSettings;
-	// 렌더링 전용 두께 (앞면·뒷면 간격). 0이면 두께 없는 양면. 시뮬레이션에는 영향 없음 (충돌체 Pad에는 반영)
 	UPROPERTY(EditAnywhere, meta=(ClampMin=0, Delta=0.005)) float RenderThickness = 0.05f;
 };

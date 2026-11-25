@@ -88,7 +88,9 @@ public:
 
 	void SetSkeletalMesh(USkeletalMesh* InMesh) override;
 
-	// Ragdoll ON/OFF. ON이면 모든 본 바디를 시뮬레이션하고 PostPhysics에서 바디 → 본으로 되돌린다
+	// Ragdoll ON/OFF. ON이면 모든 본 바디를 시뮬레이션하고 PostPhysics에서 바디 → 본으로 되돌린다.
+	// Unreal처럼 요청값은 컴포넌트 BodyInstance.bSimulatePhysics (Details의 Simulate Physics)에 둔다.
+	// 관절 모드에서는 이 BodyInstance로 PhysX 바디를 만들지 않으므로 이 값은 "래그돌 요청"으로만 쓰인다
 	void SetSimulatePhysics(bool bSimulate);
 	bool IsSimulatingRagdoll() const { return bRagdollActive; }
 
@@ -105,10 +107,6 @@ public:
 	void ForEachBodyShape(const FBodyShapeCallback& Callback) const;
 
 	void PostEditChangeProperty(const FProperty& Property) override;
-
-	// 테스트용: Details에서 켜고 끈다 (PostEditChangeProperty → SetSimulatePhysics)
-	UPROPERTY(EditAnywhere)
-	bool bSimulateRagdoll = false;
 
 	UPROPERTY(EditAnywhere)
 	bool bUseArticulatedPhysics = true;
@@ -156,7 +154,7 @@ private:
 	TArray<struct FBodyInstance*>       Bodies;
 	TArray<struct FConstraintInstance*> Constraints;
 	TArray<int32> BoneToBody;                    // 본 인덱스 → Bodies 인덱스 (바디 없으면 -1)
-	bool bRagdollActive = false;                 // 실제로 시뮬레이션 중인지 (bSimulateRagdoll은 요청값)
+	bool bRagdollActive = false;                 // 실제로 시뮬레이션 중인지 (BodyInstance.bSimulatePhysics는 요청값)
 	bool bAnyBodySimulating = false;             // 시뮬레이션 중인 바디가 하나라도 있는지 (Ragdoll OFF여도 Simulated 바디면 true)
 	FSkeletalMeshPostPhysicsTickFunction PostPhysicsTick;
 	friend struct FSkeletalMeshPostPhysicsTickFunction;

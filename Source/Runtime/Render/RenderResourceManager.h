@@ -38,6 +38,7 @@ enum class EPSOType : uint8
 	ParticleTrail_Additive,      // 새로 추가
 	DepthOfFieldSetup,
 	DepthOfFieldTiles,
+	DepthOfFieldRecombine,
 	DepthOfFieldGather,
 	Count
 };

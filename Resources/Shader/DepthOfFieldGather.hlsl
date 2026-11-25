@@ -3,16 +3,16 @@ Texture2D<float4> SceneColor : register(t0);
 Texture2D<float> SignedCoC : register(t1);
 Texture2D<float> TileNearRadius : register(t2);
 
-float4 mainVS(uint vertexID : SV_VertexID) : SV_Position
+struct Layers
 {
-    float2 uv = float2((vertexID << 1) & 2, vertexID & 2);
-    return float4(uv * float2(2, -2) + float2(-1, 1), 0, 1);
-}
+    float4 nearLayer : SV_Target0;
+    float4 farLayer : SV_Target1;
+};
 
-float4 mainPS(float4 position : SV_Position) : SV_Target
+Layers mainPS(float4 position : SV_Position)
 {
     int2 pixel = int2(position.xy);
-    float4 sharp = SceneColor.Load(int3(pixel, 0));
+    Layers layers = (Layers)0;
     float centerRadius = clamp(SignedCoC.Load(int3(pixel, 0)), -MaxGatherRadius, MaxGatherRadius);
     uint width, height;
     SignedCoC.GetDimensions(width, height);
@@ -26,7 +26,7 @@ float4 mainPS(float4 position : SV_Position) : SV_Target
         for (int tx = firstTile.x; tx <= lastTile.x; ++tx)
             searchRadius = max(searchRadius, TileNearRadius.Load(int3(tx, ty, 0)));
     if (searchRadius <= 0.5f)
-        return sharp;
+        return layers;
 
     float3 farColor = 0, nearColor = 0;
     float farWeight = 0, coverage = 0;
@@ -60,7 +60,8 @@ float4 mainPS(float4 position : SV_Position) : SV_Target
         }
     }
 
-    float3 background = farWeight > 0 ? farColor / farWeight : sharp.rgb;
-    float3 foreground = nearColor / max(coverage, 1e-6f);
-    return float4(lerp(background, foreground, saturate(coverage)), sharp.a);
+    layers.nearLayer = float4(nearColor / max(coverage, 1e-6f) * saturate(coverage), saturate(coverage));
+    if (farWeight > 0)
+        layers.farLayer = float4(farColor / farWeight, 1);
+    return layers;
 }

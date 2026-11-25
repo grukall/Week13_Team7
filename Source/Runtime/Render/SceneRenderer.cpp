@@ -358,15 +358,18 @@ bool FSceneRenderer::AddDepthOfFieldPasses(FRenderGraphBuilder& Graph, FRenderer
 	FPipelineState* Setup = FRenderResourceManager::GetPSO(EPSOType::DepthOfFieldSetup);
 	FPipelineState* Tiles = FRenderResourceManager::GetPSO(EPSOType::DepthOfFieldTiles);
 	FPipelineState* Gather = FRenderResourceManager::GetPSO(EPSOType::DepthOfFieldGather);
+	FPipelineState* Recombine = FRenderResourceManager::GetPSO(EPSOType::DepthOfFieldRecombine);
 	FConstantBuffer* Constants = Renderer->GetDepthOfFieldConstants();
-	if (!Constants || !Constants->GetBuffer() || !Setup || !Setup->Shader || !Tiles || !Tiles->Shader || !Gather || !Gather->Shader)
+	if (!Constants || !Constants->GetBuffer() || !Setup || !Setup->Shader || !Tiles || !Tiles->Shader || !Gather || !Gather->Shader || !Recombine || !Recombine->Shader)
 		return false;
 
 	constexpr uint32 TileSize = 8; // DepthOfFieldGatherCommon.hlsli
 	const auto SignedCoC = Graph.CreateTexture({ HDRDesc.Width, HDRDesc.Height, ETextureFormat::R32_Float }, "DOFSignedCoC");
 	const auto TileRadius = Graph.CreateTexture({ (HDRDesc.Width + TileSize - 1) / TileSize, (HDRDesc.Height + TileSize - 1) / TileSize, ETextureFormat::R32_Float }, "DOFTileNearRadius");
+	const auto NearLayer = Graph.CreateTexture(HDRDesc, "DOFNearLayer");
+	const auto FarLayer = Graph.CreateTexture(HDRDesc, "DOFFarLayer");
 	const auto BlurredColor = Graph.CreateTexture(HDRDesc, "DOFSceneColor");
-	if (!SignedCoC || !TileRadius || !BlurredColor)
+	if (!SignedCoC || !TileRadius || !NearLayer || !FarLayer || !BlurredColor)
 		return false;
 
 	const FDepthOfFieldData Lens{ View.ProjectionMatrix.M[0][2], View.ProjectionMatrix.M[3][2], View.DepthOfField.FocusDistanceMeters, InfinityRadius };
@@ -396,13 +399,25 @@ bool FSceneRenderer::AddDepthOfFieldPasses(FRenderGraphBuilder& Graph, FRenderer
 		}))
 		return false;
 
-	FRenderGraphRasterPassDesc Combine{};
-	Combine.Name = "DOFGatherAndRecombine";
-	Combine.ReadTextures = { Color, SignedCoC, TileRadius };
-	Combine.ColorAttachments = { { BlurredColor } };
-	if (!Graph.AddRasterPass(std::move(Combine), [Gather]
+	FRenderGraphRasterPassDesc GatherPass{};
+	GatherPass.Name = "DOFGather";
+	GatherPass.ReadTextures = { Color, SignedCoC, TileRadius };
+	GatherPass.ColorAttachments = { { NearLayer }, { FarLayer } };
+	if (!Graph.AddRasterPass(std::move(GatherPass), [Gather]
 		{
 			RenderCommand::BindPipelineState(*Gather);
+			RenderCommand::BindVertexBuffer(nullptr);
+			RenderCommand::Draw(3);
+		}))
+		return false;
+
+	FRenderGraphRasterPassDesc Combine{};
+	Combine.Name = "DOFRecombine";
+	Combine.ReadTextures = { Color, SignedCoC, NearLayer, FarLayer };
+	Combine.ColorAttachments = { { BlurredColor } };
+	if (!Graph.AddRasterPass(std::move(Combine), [Recombine]
+		{
+			RenderCommand::BindPipelineState(*Recombine);
 			RenderCommand::BindVertexBuffer(nullptr);
 			RenderCommand::Draw(3);
 		}))

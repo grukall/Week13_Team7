@@ -1,4 +1,10 @@
 #include "DepthOfFieldGatherCommon.hlsli"
+
+float4 mainVS(uint vertexID : SV_VertexID) : SV_Position
+{
+    return FullscreenTrianglePosition(vertexID);
+}
+
 Texture2D<float> SignedCoC : register(t0);
 
 // RG: signed foreground min/max. BA: signed background min/max.

@@ -1,4 +1,10 @@
 #include "DepthOfFieldGatherCommon.hlsli"
+
+float4 mainVS(uint vertexID : SV_VertexID) : SV_Position
+{
+    return FullscreenTrianglePosition(vertexID);
+}
+
 Texture2D<float4> FlattenedTiles : register(t0);
 
 float4 mainPS(float4 position : SV_Position) : SV_Target

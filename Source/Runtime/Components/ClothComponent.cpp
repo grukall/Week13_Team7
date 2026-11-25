@@ -778,6 +778,7 @@ void UClothComponent::GatherCollisionShape(FClothCollisionShapes& CollisionShape
 		if (Body->CollisionEnabled == ECollisionEnabled::NoCollision) continue;
 		if (Body->CollisionResponses.Cloth != ECollisionResponse::ECR_Block) continue;
 
+		// SkeletalMesh일 경우
 		const USkeletalMeshComponent* SkelComp = Cast<USkeletalMeshComponent>(PrimComp);
 		if (SkelComp && SkelComp->bUseArticulatedPhysics)
 		{
@@ -795,10 +796,10 @@ void UClothComponent::GatherCollisionShape(FClothCollisionShapes& CollisionShape
 			continue;
 		}
 
+		// StaticMesh일경우
 		const UBodySetup* Setup = PrimComp->GetBodySetup();		// 모양 없는 Primitive(스켈레탈 등)는 nullptr
 		if (Setup == nullptr || Setup->AggGeom.IsEmpty()) continue;
 
-		// PhysX body와 같은 분리: 스케일은 형상에 먼저 적용하고, 포즈는 스케일 없는 회전·이동만 쓴다 (PrimitiveComponent.cpp OnCreatePhysicsState의 BodyTransform)
 		const FVector Scale3D = PrimComp->GetWorldScale3D();
 		const FTransform BodyPose(PrimComp->GetWorldRotation(), PrimComp->GetWorldLocation());	// 스케일 1
 		const FMatrix RigidToCloth = BodyPose.GetLocalMatrix() * WorldToCloth;	// Body 로컬→ Cloth 로컬 변환 행렬

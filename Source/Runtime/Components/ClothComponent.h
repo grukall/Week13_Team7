@@ -52,6 +52,9 @@ struct FClothSimSettings
 	UPROPERTY(EditAnywhere, meta=(ClampMin=0, ClampMax=1, Delta=0.01)) float CentrifugalInertia = 1.0f;	// 회전 중 바깥으로 벌어짐
 
 	UPROPERTY(EditAnywhere, meta=(ClampMin=0, Delta=0.1)) float TeleportDistance = 2.0f;
+
+	// 1초에 제약을 푸는 횟수 (NvCloth 기본 300). 높을수록 덜 늘어나고 덜 뚫리지만 비용이 비례해 늘어난다
+	UPROPERTY(EditAnywhere, meta=(ClampMin=30, ClampMax=2000, Delta=10)) float SolverFrequency = 300.0f;
 };
 
 USTRUCT()
@@ -64,14 +67,30 @@ struct FClothSelfCollisionSettings
 	UPROPERTY(EditAnywhere, meta=(ClampMin=0, ClampMax=1, Delta=0.01)) float Stiffness = 1.0f;
 };
 
+// 기본 격자 천의 모양
+UENUM()
+enum class EClothGridShape : uint8
+{
+	Flag,	// 수평(XY) 평면, 원점 = 모서리. 점 = (c, r, 0) * Spacing. 고정은 PinSettings
+	Cape	// 세로(YZ) 평면의 사다리꼴 (위 좁고 아래 넓음). 원점 = 윗변 가운데, r = 0이 윗변(자동 고정). Spacing·PinSettings는 쓰지 않는다
+};
+
 USTRUCT()
 struct FClothGridSettings
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, meta=(ClampMin=2, ClampMax=128)) int32 Rows = 33;
-	UPROPERTY(EditAnywhere, meta=(ClampMin=2, ClampMax=128)) int32 Cols = 33;
-	UPROPERTY(EditAnywhere, meta=(ClampMin=0.001, Delta=0.005)) float Spacing = 0.12f;
+	UPROPERTY(EditAnywhere) EClothGridShape Shape = EClothGridShape::Flag;
+	UPROPERTY(EditAnywhere, meta=(ClampMin=2, ClampMax=128)) int32 Rows = 33;	// Cape: 세로(윗변 → 밑단) 점 수
+	UPROPERTY(EditAnywhere, meta=(ClampMin=2, ClampMax=128)) int32 Cols = 33;	// Cape: 가로(왼쪽 → 오른쪽) 점 수
+	UPROPERTY(EditAnywhere, meta=(ClampMin=0.001, Delta=0.005)) float Spacing = 0.12f;	// Flag 전용
+
+	// ---- Cape 전용 (원점 = 윗변 가운데, 좌우 = Y, 아래 = -Z) ----
+	UPROPERTY(EditAnywhere, meta=(ClampMin=0.01, Delta=0.01)) float CapeTopWidth = 0.4f;		// 윗변(어깨선) 폭
+	UPROPERTY(EditAnywhere, meta=(ClampMin=0.01, Delta=0.01)) float CapeBottomWidth = 0.8f;	// 밑단 폭
+	UPROPERTY(EditAnywhere, meta=(ClampMin=0.05, Delta=0.01)) float CapeLength = 1.0f;		// 윗변에서 밑단까지 높이
+	UPROPERTY(EditAnywhere, meta=(ClampMin=0, Delta=0.01)) float CapeFreeDistance = 0.5f;	// 밑단 점이 처음 자리에서 움직일 수 있는 최대 거리
+	UPROPERTY(EditAnywhere, meta=(ClampMin=0.1, Delta=0.05)) float CapeFreeExponent = 1.5f;	// 반경 = Free * t^Exp (t: 윗변 0 → 밑단 1). 클수록 윗부분이 등에 더 붙는다
 };
 
 
@@ -130,6 +149,7 @@ private:
 	void DestroyAllCloths();			// 모든 천을 Solver에서 빼고 해제, 렌더 데이터도 비운다 (Solver는 유지)
 
 	void RebuildCloth(bool bRecreateSolver = false, bool bRegenerateGrid = false);
+	void RegenerateDefaultGrid();		// 현재 GridSettings로 기본 격자 천을 다시 만들고 bGridDirty를 끈다. simulate 밖에서만 부른다
 	bool CreateSolver();				// 전역 설정(NvClothManager::GetUseCUDA)에 맞는 Factory로 Solver를 만든다. CUDA가 없거나 실패하면 CPU로 대체. SimFactory·Solver를 채운다
 	void DestroySolver();				// 천이 모두 빠진 뒤에 부른다
 
@@ -141,20 +161,19 @@ private:
 	// 기본 격자 천을 만들 때 실제로 쓴 값. GridSettings는 실행 중에 바뀔 수 있어서 점 번호(r * Cols + c) 계산에는 이것을 쓴다
 	int32 BuiltGridRows = 0;
 	int32 BuiltGridCols = 0;
+	FClothGridSettings BuiltGridSettings;	// 기본 격자 천을 만들 때 쓴 격자 설정 전체. 고정 반경 재계산(Cape 그라데이션)이 만든 모양 기준으로 계산하게 한다
 	int32 DefaultGridClothIndex = -1;	// ClothInstances 중 기본 격자 천의 번호. -1이면 없음
 	FVector BuiltScale = FVector(1.0f, 1.0f, 1.0f);	// 지금 천 모양에 구워진 스케일. 렌더 ÷S와 스케일 변경 감지에 쓴다
 
-	// Solver·Fabric·Cloth를 만든 Factory. 서로 다른 Factory의 객체는 섞을 수 없으므로 셋 모두 이것으로 만든다 (NvClothManager 소유)
 	nv::cloth::Factory* SimFactory = nullptr;
 	nv::cloth::Solver* Solver = nullptr;
-	// Solver를 만들 때의 NvClothManager::GetBackendSerial(). 전역 CPU/CUDA 설정(Settings 패널)이 바뀌면 달라지고,
-	// 다음 Tick 시작(simulate 전)에 RebuildCloth(true)로 새 Factory에 다시 만든다. CUDA가 실패해 CPU로 대체돼도 번호는 맞추므로 매 프레임 재생성하지 않는다
+
 	uint32 BuiltBackendSerial = 0;
 	TArray<FClothInstance> ClothInstances;		// Component가 소유중인 천 모음, Solver에 들어가있는것과는 별개임
 	TArray<FClothMeshData> ClothMeshDatas;		// Cloth 렌더링용 데이터 배열
 	FClothCollisionShapes CollisionShapes;		// Collision 발생시킬 Shape 모음
-	bool bGridDirty = false;		// GridSettings가 바뀌었다. 다음 Tick 시작(simulate 전)에 기본 격자 천을 다시 만든다
-	float WindTime = 0.0f;			// 돌풍 계산용 누적 시간 (실행 중 상태라 편집·저장하지 않는다)
+	bool bGridDirty = false;
+	float WindTime = 0.0f;			
 
 	UPROPERTY(EditAnywhere) FClothSimSettings SimSettings;
 	UPROPERTY(EditAnywhere) FClothSelfCollisionSettings SelfCollision;

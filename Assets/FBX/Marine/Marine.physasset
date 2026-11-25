@@ -1,0 +1,1829 @@
+{
+    "Bodies": [
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": 2.3469328880310059e-07,
+                        "Y": -0.00433066301047802,
+                        "Z": -0.0007208958268165588
+                    },
+                    "Length": 0.02364461123943329,
+                    "Radius": 0.1099596843123436,
+                    "Rotation": {
+                        "W": 0.70710688829422,
+                        "X": 0.0,
+                        "Y": 0.7071066498756409,
+                        "Z": 0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "AngularDamping": 0.10000000149011612,
+                "BoneName": "C_Pelvis_00",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": -2.644956111907959e-07,
+                        "Y": -0.009807427413761616,
+                        "Z": 0.016102075576782227
+                    },
+                    "Length": 0.01849532127380371,
+                    "Radius": 0.08773425221443176,
+                    "Rotation": {
+                        "W": 0.70710688829422,
+                        "X": 0.0,
+                        "Y": 0.7071066498756409,
+                        "Z": 0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "AngularDamping": 0.10000000149011612,
+                "BoneName": "C_Spine_A_02",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": -2.4586915969848633e-07,
+                        "Y": -0.020752692595124245,
+                        "Z": 0.0060005784034729
+                    },
+                    "Length": 0.010807976126670837,
+                    "Radius": 0.08362898230552673,
+                    "Rotation": {
+                        "W": 1.0,
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "AngularDamping": 0.10000000149011612,
+                "BoneName": "C_Spine_B_03",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": -2.2724270820617676e-07,
+                        "Y": -0.03118896484375,
+                        "Z": 0.017530476674437523
+                    },
+                    "Length": 0.015344321727752686,
+                    "Radius": 0.06621678173542023,
+                    "Rotation": {
+                        "W": 0.70710688829422,
+                        "X": 0.0,
+                        "Y": 0.7071066498756409,
+                        "Z": 0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "AngularDamping": 0.10000000149011612,
+                "BoneName": "C_Spine_C_04",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": 7.136166095733643e-05,
+                        "Y": -0.16600283980369568,
+                        "Z": -0.025169722735881805
+                    },
+                    "Length": 0.005639314651489258,
+                    "Radius": 0.2804630398750305,
+                    "Rotation": {
+                        "W": 0.70710688829422,
+                        "X": -0.7071066498756409,
+                        "Y": -0.0,
+                        "Z": -0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "AngularDamping": 0.10000000149011612,
+                "BoneName": "C_Head_05",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": -0.008554965257644653,
+                        "Y": -0.22080591320991516,
+                        "Z": 0.03253326937556267
+                    },
+                    "Length": 0.022953033447265625,
+                    "Radius": 0.13982614874839783,
+                    "Rotation": {
+                        "W": 0.70710688829422,
+                        "X": -0.7071066498756409,
+                        "Y": -0.0,
+                        "Z": -0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "AngularDamping": 0.10000000149011612,
+                "BoneName": "L_Needle_A_Swing_07",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": 0.008553624153137207,
+                        "Y": 0.22080597281455994,
+                        "Z": -0.032534968107938766
+                    },
+                    "Length": 0.022953957319259644,
+                    "Radius": 0.13982589542865753,
+                    "Rotation": {
+                        "W": 0.70710688829422,
+                        "X": -0.7071066498756409,
+                        "Y": -0.0,
+                        "Z": -0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "AngularDamping": 0.10000000149011612,
+                "BoneName": "R_Needle_A_Swing_09",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": 0.003498069941997528,
+                        "Y": -0.06942153722047806,
+                        "Z": -0.008027659729123116
+                    },
+                    "Length": 0.009384989738464355,
+                    "Radius": 0.06547506898641586,
+                    "Rotation": {
+                        "W": 1.0,
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "AngularDamping": 0.10000000149011612,
+                "BoneName": "L_Arm_B_011",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": 0.008443363010883331,
+                        "Y": -0.06630785763263702,
+                        "Z": -0.015557698905467987
+                    },
+                    "Length": 0.03833813965320587,
+                    "Radius": 0.05392913520336151,
+                    "Rotation": {
+                        "W": 1.0,
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "AngularDamping": 0.10000000149011612,
+                "BoneName": "L_Hand_012",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": 0.004029318690299988,
+                        "Y": -0.01858491450548172,
+                        "Z": -0.008968040347099304
+                    },
+                    "Length": 0.0024117231369018555,
+                    "Radius": 0.058933332562446594,
+                    "Rotation": {
+                        "W": 0.70710688829422,
+                        "X": 0.0,
+                        "Y": 0.7071066498756409,
+                        "Z": 0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "AngularDamping": 0.10000000149011612,
+                "BoneName": "L_FingerThumb_A_025",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": -0.0034980550408363342,
+                        "Y": 0.06942184269428253,
+                        "Z": 0.008027972653508186
+                    },
+                    "Length": 0.00938519835472107,
+                    "Radius": 0.06547504663467407,
+                    "Rotation": {
+                        "W": 1.0,
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "AngularDamping": 0.10000000149011612,
+                "BoneName": "R_Arm_B_029",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": -0.008443441241979599,
+                        "Y": 0.06630818545818329,
+                        "Z": 0.015558179467916489
+                    },
+                    "Length": 0.038338303565979004,
+                    "Radius": 0.053929105401039124,
+                    "Rotation": {
+                        "W": 1.0,
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "AngularDamping": 0.10000000149011612,
+                "BoneName": "R_Hand_030",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": -0.0040298327803611755,
+                        "Y": 0.018584616482257843,
+                        "Z": 0.008968539535999298
+                    },
+                    "Length": 0.002411752939224243,
+                    "Radius": 0.058933280408382416,
+                    "Rotation": {
+                        "W": 0.70710688829422,
+                        "X": 0.0,
+                        "Y": 0.7071066498756409,
+                        "Z": 0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "AngularDamping": 0.10000000149011612,
+                "BoneName": "R_FingerThumb_A_043",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": -7.82310962677002e-08,
+                        "Y": -0.21684114634990692,
+                        "Z": 0.009738266468048096
+                    },
+                    "Length": 0.06755337119102478,
+                    "Radius": 0.142182856798172,
+                    "Rotation": {
+                        "W": 0.70710688829422,
+                        "X": -0.7071066498756409,
+                        "Y": -0.0,
+                        "Z": -0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "AngularDamping": 0.10000000149011612,
+                "BoneName": "C_Tail_A_046",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": -2.8312206268310547e-07,
+                        "Y": -0.1600549966096878,
+                        "Z": 0.00388433039188385
+                    },
+                    "Length": 0.007818818092346191,
+                    "Radius": 0.12858156859874725,
+                    "Rotation": {
+                        "W": 1.0,
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "AngularDamping": 0.10000000149011612,
+                "BoneName": "C_Tail_B_Swing_047",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": 0.003197554498910904,
+                        "Y": -0.07432231307029724,
+                        "Z": 0.0014382004737854004
+                    },
+                    "Length": 0.008061021566390991,
+                    "Radius": 0.07056553661823273,
+                    "Rotation": {
+                        "W": 0.70710688829422,
+                        "X": -0.7071066498756409,
+                        "Y": -0.0,
+                        "Z": -0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "AngularDamping": 0.10000000149011612,
+                "BoneName": "L_Leg_B_049",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": -0.006185881793498993,
+                        "Y": -0.07548488676548004,
+                        "Z": -0.026739194989204407
+                    },
+                    "Length": 0.011387854814529419,
+                    "Radius": 0.1547522097826004,
+                    "Rotation": {
+                        "W": 0.70710688829422,
+                        "X": -0.7071066498756409,
+                        "Y": -0.0,
+                        "Z": -0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "AngularDamping": 0.10000000149011612,
+                "BoneName": "L_Foot_A_050",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": 0.00022104009985923767,
+                        "Y": -0.06305639445781708,
+                        "Z": 0.008890362456440926
+                    },
+                    "Length": 0.029460236430168152,
+                    "Radius": 0.05553016811609268,
+                    "Rotation": {
+                        "W": 0.70710688829422,
+                        "X": 0.0,
+                        "Y": 0.7071066498756409,
+                        "Z": 0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "AngularDamping": 0.10000000149011612,
+                "BoneName": "L_Foot_B_051",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": -0.003197263926267624,
+                        "Y": 0.07432236522436142,
+                        "Z": -0.001437898725271225
+                    },
+                    "Length": 0.008061155676841736,
+                    "Radius": 0.07056544721126556,
+                    "Rotation": {
+                        "W": 0.70710688829422,
+                        "X": -0.7071066498756409,
+                        "Y": -0.0,
+                        "Z": -0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "AngularDamping": 0.10000000149011612,
+                "BoneName": "R_Leg_B_053",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": 0.006186187267303467,
+                        "Y": 0.07548464834690094,
+                        "Z": 0.026739493012428284
+                    },
+                    "Length": 0.011388033628463745,
+                    "Radius": 0.15475201606750488,
+                    "Rotation": {
+                        "W": 0.70710688829422,
+                        "X": -0.7071066498756409,
+                        "Y": -0.0,
+                        "Z": -0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "AngularDamping": 0.10000000149011612,
+                "BoneName": "R_Foot_A_054",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
+            },
+            "Spheres": []
+        },
+        {
+            "Boxes": [],
+            "Capsules": [
+                {
+                    "Center": {
+                        "X": -0.0002205297350883484,
+                        "Y": 0.06305605173110962,
+                        "Z": -0.00888998992741108
+                    },
+                    "Length": 0.02946034073829651,
+                    "Radius": 0.0555301308631897,
+                    "Rotation": {
+                        "W": 0.70710688829422,
+                        "X": 0.0,
+                        "Y": 0.7071066498756409,
+                        "Z": 0.0
+                    }
+                }
+            ],
+            "Convexes": [],
+            "Properties": {
+                "AngularDamping": 0.10000000149011612,
+                "BoneName": "R_Foot_B_055",
+                "COMNudge": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "CollisionEnabled": "QueryAndPhysics",
+                "LinearDamping": 0.05000000074505806,
+                "MassInKg": 10.0,
+                "MaxAngularVelocity": 3600.0,
+                "PhysMaterial": null,
+                "PhysicsType": "Default",
+                "bEnableGravity": true,
+                "bOverrideMass": false,
+                "bOverrideMaxAngularVelocity": false,
+                "bUseCCD": false
+            },
+            "Spheres": []
+        }
+    ],
+    "Constraints": [
+        {
+            "Bone1": "C_Spine_A_02",
+            "Bone2": "C_Pelvis_00",
+            "Frame1": {
+                "Location": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "Rotation": {
+                    "W": 1.0,
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                }
+            },
+            "Frame2": {
+                "Location": {
+                    "X": 5.391882496041944e-09,
+                    "Y": 0.021750152111053467,
+                    "Z": -1.8107698451785836e-08
+                },
+                "Rotation": {
+                    "W": 4.32035875519432e-07,
+                    "X": -3.123173186736494e-08,
+                    "Y": -0.058961767703294754,
+                    "Z": 0.9982602000236511
+                }
+            },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
+            "Properties": {},
+            "Swing1LimitDeg": 35.0,
+            "Swing1Motion": "Limited",
+            "Swing2LimitDeg": 35.0,
+            "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
+            "TwistLimitDeg": 20.0,
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
+        },
+        {
+            "Bone1": "C_Spine_B_03",
+            "Bone2": "C_Spine_A_02",
+            "Frame1": {
+                "Location": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "Rotation": {
+                    "W": 0.70710688829422,
+                    "X": -0.0,
+                    "Y": -0.7071066498756409,
+                    "Z": -0.0
+                }
+            },
+            "Frame2": {
+                "Location": {
+                    "X": -3.718952257258934e-09,
+                    "Y": -0.03837714344263077,
+                    "Z": 2.3418106138706207e-06
+                },
+                "Rotation": {
+                    "W": 0.7063239812850952,
+                    "X": 0.033265333622694016,
+                    "Y": -0.7063236832618713,
+                    "Z": -0.03326534107327461
+                }
+            },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
+            "Properties": {},
+            "Swing1LimitDeg": 35.0,
+            "Swing1Motion": "Limited",
+            "Swing2LimitDeg": 35.0,
+            "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
+            "TwistLimitDeg": 20.0,
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
+        },
+        {
+            "Bone1": "C_Spine_C_04",
+            "Bone2": "C_Spine_B_03",
+            "Frame1": {
+                "Location": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "Rotation": {
+                    "W": 1.0,
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                }
+            },
+            "Frame2": {
+                "Location": {
+                    "X": -4.085109139850829e-09,
+                    "Y": -0.05623587965965271,
+                    "Z": -2.1476298570632935e-06
+                },
+                "Rotation": {
+                    "W": 0.9921387434005737,
+                    "X": 0.12514156103134155,
+                    "Y": -9.242398846254218e-09,
+                    "Z": -1.7015868536418566e-07
+                }
+            },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
+            "Properties": {},
+            "Swing1LimitDeg": 35.0,
+            "Swing1Motion": "Limited",
+            "Swing2LimitDeg": 35.0,
+            "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
+            "TwistLimitDeg": 20.0,
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
+        },
+        {
+            "Bone1": "C_Head_05",
+            "Bone2": "C_Spine_C_04",
+            "Frame1": {
+                "Location": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "Rotation": {
+                    "W": 0.70710688829422,
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.7071066498756409
+                }
+            },
+            "Frame2": {
+                "Location": {
+                    "X": 1.643830671582691e-08,
+                    "Y": -0.06178383156657219,
+                    "Z": 9.393319487571716e-06
+                },
+                "Rotation": {
+                    "W": 0.7026911973953247,
+                    "X": -0.0802522525191307,
+                    "Y": 0.08021776378154755,
+                    "Z": 0.7023885250091553
+                }
+            },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
+            "Properties": {},
+            "Swing1LimitDeg": 35.0,
+            "Swing1Motion": "Limited",
+            "Swing2LimitDeg": 35.0,
+            "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
+            "TwistLimitDeg": 20.0,
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
+        },
+        {
+            "Bone1": "L_Needle_A_Swing_07",
+            "Bone2": "C_Head_05",
+            "Frame1": {
+                "Location": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "Rotation": {
+                    "W": 0.70710688829422,
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.7071066498756409
+                }
+            },
+            "Frame2": {
+                "Location": {
+                    "X": 0.14813880622386932,
+                    "Y": 0.0028743285220116377,
+                    "Z": -0.14223892986774445
+                },
+                "Rotation": {
+                    "W": -0.20448444783687592,
+                    "X": -0.38354480266571045,
+                    "Y": 0.6523403525352478,
+                    "Z": -0.6209117770195007
+                }
+            },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
+            "Properties": {},
+            "Swing1LimitDeg": 35.0,
+            "Swing1Motion": "Limited",
+            "Swing2LimitDeg": 35.0,
+            "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
+            "TwistLimitDeg": 20.0,
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
+        },
+        {
+            "Bone1": "R_Needle_A_Swing_09",
+            "Bone2": "C_Head_05",
+            "Frame1": {
+                "Location": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "Rotation": {
+                    "W": 0.70710688829422,
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.7071066498756409
+                }
+            },
+            "Frame2": {
+                "Location": {
+                    "X": -0.14814120531082153,
+                    "Y": 0.0027469599153846502,
+                    "Z": -0.1422390341758728
+                },
+                "Rotation": {
+                    "W": 0.3832676410675049,
+                    "X": -0.20475345849990845,
+                    "Y": 0.6208199262619019,
+                    "Z": 0.6525063514709473
+                }
+            },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
+            "Properties": {},
+            "Swing1LimitDeg": 35.0,
+            "Swing1Motion": "Limited",
+            "Swing2LimitDeg": 35.0,
+            "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
+            "TwistLimitDeg": 20.0,
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
+        },
+        {
+            "Bone1": "L_Arm_B_011",
+            "Bone2": "C_Spine_C_04",
+            "Frame1": {
+                "Location": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "Rotation": {
+                    "W": 0.70710688829422,
+                    "X": -0.0,
+                    "Y": -0.7071066498756409,
+                    "Z": -0.0
+                }
+            },
+            "Frame2": {
+                "Location": {
+                    "X": 0.147429957985878,
+                    "Y": -0.026829848065972328,
+                    "Z": -0.001960218884050846
+                },
+                "Rotation": {
+                    "W": 0.5481699705123901,
+                    "X": 0.43619468808174133,
+                    "Y": -0.4440411627292633,
+                    "Z": 0.5586333274841309
+                }
+            },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
+            "Properties": {},
+            "Swing1LimitDeg": 35.0,
+            "Swing1Motion": "Limited",
+            "Swing2LimitDeg": 35.0,
+            "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
+            "TwistLimitDeg": 20.0,
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
+        },
+        {
+            "Bone1": "L_Hand_012",
+            "Bone2": "L_Arm_B_011",
+            "Frame1": {
+                "Location": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "Rotation": {
+                    "W": 0.70710688829422,
+                    "X": -0.0,
+                    "Y": -0.7071066498756409,
+                    "Z": -0.0
+                }
+            },
+            "Frame2": {
+                "Location": {
+                    "X": -3.0734954634681344e-06,
+                    "Y": -0.12011829018592834,
+                    "Z": -0.00012073526158928871
+                },
+                "Rotation": {
+                    "W": 0.7070798277854919,
+                    "X": 0.006303303875029087,
+                    "Y": -0.7070732116699219,
+                    "Z": -0.006756613962352276
+                }
+            },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
+            "Properties": {},
+            "Swing1LimitDeg": 35.0,
+            "Swing1Motion": "Limited",
+            "Swing2LimitDeg": 35.0,
+            "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
+            "TwistLimitDeg": 20.0,
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
+        },
+        {
+            "Bone1": "L_FingerThumb_A_025",
+            "Bone2": "L_Hand_012",
+            "Frame1": {
+                "Location": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "Rotation": {
+                    "W": 1.0,
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                }
+            },
+            "Frame2": {
+                "Location": {
+                    "X": 0.026353802531957626,
+                    "Y": -0.04543042182922363,
+                    "Z": 0.0351276695728302
+                },
+                "Rotation": {
+                    "W": 0.7480600476264954,
+                    "X": -0.5238757133483887,
+                    "Y": 0.3345431089401245,
+                    "Z": -0.23246759176254272
+                }
+            },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
+            "Properties": {},
+            "Swing1LimitDeg": 35.0,
+            "Swing1Motion": "Limited",
+            "Swing2LimitDeg": 35.0,
+            "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
+            "TwistLimitDeg": 20.0,
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
+        },
+        {
+            "Bone1": "R_Arm_B_029",
+            "Bone2": "C_Spine_C_04",
+            "Frame1": {
+                "Location": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "Rotation": {
+                    "W": 0.70710688829422,
+                    "X": -0.0,
+                    "Y": -0.7071066498756409,
+                    "Z": -0.0
+                }
+            },
+            "Frame2": {
+                "Location": {
+                    "X": -0.14742998778820038,
+                    "Y": -0.026829997077584267,
+                    "Z": -0.0019602698739618063
+                },
+                "Rotation": {
+                    "W": 0.4361945688724518,
+                    "X": -0.5481705665588379,
+                    "Y": 0.5586327910423279,
+                    "Z": 0.4440411627292633
+                }
+            },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
+            "Properties": {},
+            "Swing1LimitDeg": 35.0,
+            "Swing1Motion": "Limited",
+            "Swing2LimitDeg": 35.0,
+            "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
+            "TwistLimitDeg": 20.0,
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
+        },
+        {
+            "Bone1": "R_Hand_030",
+            "Bone2": "R_Arm_B_029",
+            "Frame1": {
+                "Location": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "Rotation": {
+                    "W": 0.70710688829422,
+                    "X": -0.0,
+                    "Y": -0.7071066498756409,
+                    "Z": -0.0
+                }
+            },
+            "Frame2": {
+                "Location": {
+                    "X": 3.294699126854539e-06,
+                    "Y": 0.12011809647083282,
+                    "Z": 0.0001206686720252037
+                },
+                "Rotation": {
+                    "W": 0.7070798873901367,
+                    "X": 0.006303394213318825,
+                    "Y": -0.7070732116699219,
+                    "Z": -0.006756698712706566
+                }
+            },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
+            "Properties": {},
+            "Swing1LimitDeg": 35.0,
+            "Swing1Motion": "Limited",
+            "Swing2LimitDeg": 35.0,
+            "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
+            "TwistLimitDeg": 20.0,
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
+        },
+        {
+            "Bone1": "R_FingerThumb_A_043",
+            "Bone2": "R_Hand_030",
+            "Frame1": {
+                "Location": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "Rotation": {
+                    "W": 1.0,
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                }
+            },
+            "Frame2": {
+                "Location": {
+                    "X": -0.026353904977440834,
+                    "Y": 0.045430272817611694,
+                    "Z": -0.03512771800160408
+                },
+                "Rotation": {
+                    "W": 0.7480601072311401,
+                    "X": -0.5238755345344543,
+                    "Y": 0.3345433473587036,
+                    "Z": -0.23246769607067108
+                }
+            },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
+            "Properties": {},
+            "Swing1LimitDeg": 35.0,
+            "Swing1Motion": "Limited",
+            "Swing2LimitDeg": 35.0,
+            "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
+            "TwistLimitDeg": 20.0,
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
+        },
+        {
+            "Bone1": "C_Tail_A_046",
+            "Bone2": "C_Pelvis_00",
+            "Frame1": {
+                "Location": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "Rotation": {
+                    "W": 0.70710688829422,
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.7071066498756409
+                }
+            },
+            "Frame2": {
+                "Location": {
+                    "X": 2.2410233668779256e-09,
+                    "Y": 0.009040126577019691,
+                    "Z": -0.0596100352704525
+                },
+                "Rotation": {
+                    "W": 0.5974860191345215,
+                    "X": 0.37816739082336426,
+                    "Y": -0.3781673312187195,
+                    "Z": 0.5974857211112976
+                }
+            },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
+            "Properties": {},
+            "Swing1LimitDeg": 35.0,
+            "Swing1Motion": "Limited",
+            "Swing2LimitDeg": 35.0,
+            "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
+            "TwistLimitDeg": 20.0,
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
+        },
+        {
+            "Bone1": "C_Tail_B_Swing_047",
+            "Bone2": "C_Tail_A_046",
+            "Frame1": {
+                "Location": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "Rotation": {
+                    "W": 0.70710688829422,
+                    "X": -0.0,
+                    "Y": -0.7071066498756409,
+                    "Z": -0.0
+                }
+            },
+            "Frame2": {
+                "Location": {
+                    "X": -1.5946753251228074e-08,
+                    "Y": -0.2648827135562897,
+                    "Z": 1.6242265701293945e-06
+                },
+                "Rotation": {
+                    "W": 0.6272114515304565,
+                    "X": 0.32650554180145264,
+                    "Y": -0.6272112727165222,
+                    "Z": -0.3265054523944855
+                }
+            },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
+            "Properties": {},
+            "Swing1LimitDeg": 35.0,
+            "Swing1Motion": "Limited",
+            "Swing2LimitDeg": 35.0,
+            "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
+            "TwistLimitDeg": 20.0,
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
+        },
+        {
+            "Bone1": "L_Leg_B_049",
+            "Bone2": "C_Pelvis_00",
+            "Frame1": {
+                "Location": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "Rotation": {
+                    "W": 0.70710688829422,
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.7071066498756409
+                }
+            },
+            "Frame2": {
+                "Location": {
+                    "X": -0.06626003235578537,
+                    "Y": -0.10725989192724228,
+                    "Z": 0.0076499818824231625
+                },
+                "Rotation": {
+                    "W": 0.742806077003479,
+                    "X": 0.02063513919711113,
+                    "Y": -0.022924572229385376,
+                    "Z": 0.6687957048416138
+                }
+            },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
+            "Properties": {},
+            "Swing1LimitDeg": 35.0,
+            "Swing1Motion": "Limited",
+            "Swing2LimitDeg": 35.0,
+            "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
+            "TwistLimitDeg": 20.0,
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
+        },
+        {
+            "Bone1": "L_Foot_A_050",
+            "Bone2": "L_Leg_B_049",
+            "Frame1": {
+                "Location": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "Rotation": {
+                    "W": 0.70710688829422,
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.7071066498756409
+                }
+            },
+            "Frame2": {
+                "Location": {
+                    "X": -0.00011596083641052246,
+                    "Y": -0.10869364440441132,
+                    "Z": 1.914217136800289e-06
+                },
+                "Rotation": {
+                    "W": 0.6041352152824402,
+                    "X": -0.358083575963974,
+                    "Y": 0.2843529284000397,
+                    "Z": 0.6526407599449158
+                }
+            },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
+            "Properties": {},
+            "Swing1LimitDeg": 35.0,
+            "Swing1Motion": "Limited",
+            "Swing2LimitDeg": 35.0,
+            "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
+            "TwistLimitDeg": 20.0,
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
+        },
+        {
+            "Bone1": "L_Foot_B_051",
+            "Bone2": "L_Foot_A_050",
+            "Frame1": {
+                "Location": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "Rotation": {
+                    "W": 1.0,
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                }
+            },
+            "Frame2": {
+                "Location": {
+                    "X": 2.9355287551879883e-06,
+                    "Y": -0.16626223921775818,
+                    "Z": -3.1366944313049316e-06
+                },
+                "Rotation": {
+                    "W": 0.9732768535614014,
+                    "X": -0.22709542512893677,
+                    "Y": 0.01495356298983097,
+                    "Z": 0.03059672936797142
+                }
+            },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
+            "Properties": {},
+            "Swing1LimitDeg": 35.0,
+            "Swing1Motion": "Limited",
+            "Swing2LimitDeg": 35.0,
+            "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
+            "TwistLimitDeg": 20.0,
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
+        },
+        {
+            "Bone1": "R_Leg_B_053",
+            "Bone2": "C_Pelvis_00",
+            "Frame1": {
+                "Location": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "Rotation": {
+                    "W": 0.70710688829422,
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.7071066498756409
+                }
+            },
+            "Frame2": {
+                "Location": {
+                    "X": 0.06625999510288239,
+                    "Y": -0.10725996643304825,
+                    "Z": 0.007650069892406464
+                },
+                "Rotation": {
+                    "W": -0.020634904503822327,
+                    "X": 0.7428060173988342,
+                    "Y": -0.6687958240509033,
+                    "Z": -0.022924235090613365
+                }
+            },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
+            "Properties": {},
+            "Swing1LimitDeg": 35.0,
+            "Swing1Motion": "Limited",
+            "Swing2LimitDeg": 35.0,
+            "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
+            "TwistLimitDeg": 20.0,
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
+        },
+        {
+            "Bone1": "R_Foot_A_054",
+            "Bone2": "R_Leg_B_053",
+            "Frame1": {
+                "Location": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "Rotation": {
+                    "W": 0.70710688829422,
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.7071066498756409
+                }
+            },
+            "Frame2": {
+                "Location": {
+                    "X": 0.00011591613292694092,
+                    "Y": 0.10869356244802475,
+                    "Z": -1.8846476450562477e-06
+                },
+                "Rotation": {
+                    "W": 0.6041353344917297,
+                    "X": -0.3580835163593292,
+                    "Y": 0.28435277938842773,
+                    "Z": 0.6526408195495605
+                }
+            },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
+            "Properties": {},
+            "Swing1LimitDeg": 35.0,
+            "Swing1Motion": "Limited",
+            "Swing2LimitDeg": 35.0,
+            "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
+            "TwistLimitDeg": 20.0,
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
+        },
+        {
+            "Bone1": "R_Foot_B_055",
+            "Bone2": "R_Foot_A_054",
+            "Frame1": {
+                "Location": {
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                },
+                "Rotation": {
+                    "W": 1.0,
+                    "X": 0.0,
+                    "Y": 0.0,
+                    "Z": 0.0
+                }
+            },
+            "Frame2": {
+                "Location": {
+                    "X": -2.905726432800293e-06,
+                    "Y": 0.16626214981079102,
+                    "Z": 3.0249357223510742e-06
+                },
+                "Rotation": {
+                    "W": 0.9732767939567566,
+                    "X": -0.2270956188440323,
+                    "Y": 0.014953533187508583,
+                    "Z": 0.030596710741519928
+                }
+            },
+            "ProjectionAngularToleranceDeg": 180.0,
+            "ProjectionLinearTolerance": 0.05000000074505806,
+            "Properties": {},
+            "Swing1LimitDeg": 35.0,
+            "Swing1Motion": "Limited",
+            "Swing2LimitDeg": 35.0,
+            "Swing2Motion": "Limited",
+            "SwingDamping": 5.0,
+            "SwingStiffness": 50.0,
+            "TwistDamping": 5.0,
+            "TwistLimitDeg": 20.0,
+            "TwistMotion": "Limited",
+            "TwistStiffness": 50.0,
+            "bDisableCollision": true,
+            "bEnableProjection": true,
+            "bParentDominates": false,
+            "bSoftSwingLimit": false,
+            "bSoftTwistLimit": false
+        }
+    ],
+    "Properties": {},
+    "Version": 1
+}

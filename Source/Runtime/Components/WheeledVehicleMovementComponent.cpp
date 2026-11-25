@@ -32,26 +32,54 @@ UWheeledVehicleMovementComponent::UWheeledVehicleMovementComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 
-	// Default 4-Wheels (0: FL, 1: FR, 2: RL, 3: RR, +X Forward / +Y Right / +Z Up)
+	// Default 4-Wheels (2019 Porsche 911 Carrera S 992.1: Wheelbase 2.45m, Front 245/35 ZR20, Rear 305/30 ZR21, RWD)
 	WheelSetups.SetNum(4);
 
-	WheelSetups[0].AdditionalOffset = { 1.4f, -0.85f, -0.3f };
-	WheelSetups[0].MaxSteerAngle = 40.0f;
+	WheelSetups[0].AdditionalOffset = { 1.225f, -0.795f, -0.25f };
+	WheelSetups[0].Radius = 0.340f;
+	WheelSetups[0].Width = 0.245f;
+	WheelSetups[0].Mass = DefaultWheelMass;
+	WheelSetups[0].MaxSteerAngle = DefaultMaxSteerAngle;
+	WheelSetups[0].SuspensionMaxRaise = DefaultSuspensionMaxRaise;
+	WheelSetups[0].SuspensionMaxDrop = DefaultSuspensionMaxDrop;
+	WheelSetups[0].SpringStrength = DefaultSpringStrength;
+	WheelSetups[0].SpringDamperRate = DefaultSpringDamperRate;
 	WheelSetups[0].bAffectedByHandbrake = false;
-	WheelSetups[0].bDriven = true;
+	WheelSetups[0].bDriven = false;
 
-	WheelSetups[1].AdditionalOffset = { 1.4f, 0.85f, -0.3f };
-	WheelSetups[1].MaxSteerAngle = 40.0f;
+	WheelSetups[1].AdditionalOffset = { 1.225f, 0.795f, -0.25f };
+	WheelSetups[1].Radius = 0.340f;
+	WheelSetups[1].Width = 0.245f;
+	WheelSetups[1].Mass = DefaultWheelMass;
+	WheelSetups[1].MaxSteerAngle = DefaultMaxSteerAngle;
+	WheelSetups[1].SuspensionMaxRaise = DefaultSuspensionMaxRaise;
+	WheelSetups[1].SuspensionMaxDrop = DefaultSuspensionMaxDrop;
+	WheelSetups[1].SpringStrength = DefaultSpringStrength;
+	WheelSetups[1].SpringDamperRate = DefaultSpringDamperRate;
 	WheelSetups[1].bAffectedByHandbrake = false;
-	WheelSetups[1].bDriven = true;
+	WheelSetups[1].bDriven = false;
 
-	WheelSetups[2].AdditionalOffset = { -1.4f, -0.85f, -0.3f };
+	WheelSetups[2].AdditionalOffset = { -1.225f, -0.784f, -0.25f };
+	WheelSetups[2].Radius = 0.358f;
+	WheelSetups[2].Width = 0.305f;
+	WheelSetups[2].Mass = DefaultWheelMass;
 	WheelSetups[2].MaxSteerAngle = 0.0f;
+	WheelSetups[2].SuspensionMaxRaise = DefaultSuspensionMaxRaise;
+	WheelSetups[2].SuspensionMaxDrop = DefaultSuspensionMaxDrop;
+	WheelSetups[2].SpringStrength = DefaultSpringStrength;
+	WheelSetups[2].SpringDamperRate = DefaultSpringDamperRate;
 	WheelSetups[2].bAffectedByHandbrake = true;
 	WheelSetups[2].bDriven = true;
 
-	WheelSetups[3].AdditionalOffset = { -1.4f, 0.85f, -0.3f };
+	WheelSetups[3].AdditionalOffset = { -1.225f, 0.784f, -0.25f };
+	WheelSetups[3].Radius = 0.358f;
+	WheelSetups[3].Width = 0.305f;
+	WheelSetups[3].Mass = DefaultWheelMass;
 	WheelSetups[3].MaxSteerAngle = 0.0f;
+	WheelSetups[3].SuspensionMaxRaise = DefaultSuspensionMaxRaise;
+	WheelSetups[3].SuspensionMaxDrop = DefaultSuspensionMaxDrop;
+	WheelSetups[3].SpringStrength = DefaultSpringStrength;
+	WheelSetups[3].SpringDamperRate = DefaultSpringDamperRate;
 	WheelSetups[3].bAffectedByHandbrake = true;
 	WheelSetups[3].bDriven = true;
 }
@@ -248,11 +276,11 @@ bool UWheeledVehicleMovementComponent::AutoDetectWheelBones(USkeletalMeshCompone
 		const bool bIsFront = (Detected[i].CompPosition.X >= AvgX);
 		Setup.MaxSteerAngle = bIsFront ? DefaultMaxSteerAngle : 0.0f;
 		Setup.bAffectedByHandbrake = !bIsFront;
-		Setup.bDriven = true;
+		Setup.bDriven = bAllWheelDrive ? true : !bIsFront;
 	}
 
-	// 무게중심을 감지된 휠 사각형 중심 및 바퀴 중심보다 약간 위(+0.15m)로 자동 정렬
-	COMOffset = FVector(AvgX, AvgY, AvgZ + 0.15f);
+	// 무게중심을 감지된 휠 사각형 중심 + 전후 배분(RR 911: 후방 편향) 및 낮은 스포츠카 무게중심(+0.10m)으로 자동 정렬
+	COMOffset = FVector(AvgX + COMLongitudinalBias, AvgY, AvgZ + 0.10f);
 
 	return true;
 }
@@ -436,11 +464,14 @@ void UWheeledVehicleMovementComponent::CreateVehicle()
 
 		physx::PxVehicleTireData TireData;
 		TireData.mType = 0; // UpdateTireFrictionTable()에 등록한 0번 타이어 타입과 매칭
+		const bool bIsRearWheel = (Setup.MaxSteerAngle <= 0.01f);
+		const float GripScale = bIsRearWheel ? RearTireGripMultiplier : 1.0f;
 		TireData.mLatStiffX = TireLateralStiffnessX;
-		TireData.mLatStiffY = TireLateralStiffnessY;
+		TireData.mLatStiffY = TireLateralStiffnessY * GripScale;
 		TireData.mLongitudinalStiffnessPerUnitGravity = TireLongitudinalStiffness;
-		TireData.mFrictionVsSlipGraph[1][1] = TireFrictionPeak;
-		TireData.mFrictionVsSlipGraph[2][1] = TireFrictionSlip;
+		TireData.mFrictionVsSlipGraph[1][0] = 0.15f; // 드리프트 허용을 위한 넓은 피크 슬립 구간
+		TireData.mFrictionVsSlipGraph[1][1] = TireFrictionPeak * GripScale;
+		TireData.mFrictionVsSlipGraph[2][1] = TireFrictionSlip * (bIsRearWheel ? std::sqrt(GripScale) : 1.0f);
 
 		// 힘 작용점 Z 오프셋: 바퀴 허브 높이 근처(무게중심 아래 -0.35m ~ -0.05m)로 제한해 전복 억제
 		const float ForceAppZ = std::clamp(WheelCMOffset.z, -0.35f, -0.05f);
@@ -477,14 +508,47 @@ void UWheeledVehicleMovementComponent::CreateVehicle()
 	}
 	DriveSimData.setDiffData(Diff);
 
+	// 3.0L Twin-Turbo Flat-6 (530 N·m @ 2300~5000 RPM, 450 PS @ 6500 RPM, Redline 7500 RPM)
 	physx::PxVehicleEngineData EngineData;
+	EngineData.mMOI = 0.85f;
 	EngineData.mPeakTorque = PeakTorque;
 	EngineData.mMaxOmega = MaxEngineOmega;
+	EngineData.mTorqueCurve.clear();
+	EngineData.mTorqueCurve.addPair(0.00f, 0.55f);
+	EngineData.mTorqueCurve.addPair(0.15f, 0.78f);
+	EngineData.mTorqueCurve.addPair(0.31f, 1.00f); // 2,300 RPM: 최대 토크 530 N·m 시작
+	EngineData.mTorqueCurve.addPair(0.67f, 1.00f); // 5,000 RPM: 최대 토크 유지
+	EngineData.mTorqueCurve.addPair(0.87f, 0.92f); // 6,500 RPM: 최고 출력 450 PS
+	EngineData.mTorqueCurve.addPair(1.00f, 0.82f); // 7,500 RPM: 레드라인
 	DriveSimData.setEngineData(EngineData);
 
+	// 8-Speed PDK Dual-Clutch (992.1 Carrera S 순정 기어비 & 종감속비 3.12)
 	physx::PxVehicleGearsData GearsData;
+	GearsData.mNbRatios = 10; // R, N, 1~8단
+	GearsData.mFinalRatio = 3.12f;
 	GearsData.mSwitchTime = GearSwitchTime;
+	GearsData.mRatios[physx::PxVehicleGearsData::eREVERSE] = -3.99f;
+	GearsData.mRatios[physx::PxVehicleGearsData::eNEUTRAL] = 0.0f;
+	GearsData.mRatios[physx::PxVehicleGearsData::eFIRST]   = 4.89f;
+	GearsData.mRatios[physx::PxVehicleGearsData::eSECOND]  = 3.17f;
+	GearsData.mRatios[physx::PxVehicleGearsData::eTHIRD]   = 2.15f;
+	GearsData.mRatios[physx::PxVehicleGearsData::eFOURTH]  = 1.56f;
+	GearsData.mRatios[physx::PxVehicleGearsData::eFIFTH]   = 1.18f;
+	GearsData.mRatios[physx::PxVehicleGearsData::eSIXTH]   = 0.94f;
+	GearsData.mRatios[physx::PxVehicleGearsData::eSEVENTH] = 0.76f;
+	GearsData.mRatios[physx::PxVehicleGearsData::eEIGHTH]  = 0.61f;
 	DriveSimData.setGearsData(GearsData);
+
+	// PDK 스포츠 자동 변속 시점 (업시프트 ~6,450 RPM, 다운시프트 ~3,600 RPM, 지연 0.35초)
+	physx::PxVehicleAutoBoxData AutoBoxData;
+	for (physx::PxU32 g = physx::PxVehicleGearsData::eFIRST; g <= physx::PxVehicleGearsData::eEIGHTH; ++g)
+	{
+		AutoBoxData.mUpRatios[g] = 0.86f;
+		AutoBoxData.mDownRatios[g] = 0.48f;
+	}
+	AutoBoxData.mUpRatios[physx::PxVehicleGearsData::eNEUTRAL] = 0.15f;
+	AutoBoxData.setLatency(0.35f);
+	DriveSimData.setAutoBoxData(AutoBoxData);
 
 	physx::PxVehicleClutchData ClutchData;
 	ClutchData.mStrength = ClutchStrength;
@@ -649,30 +713,31 @@ void UWheeledVehicleMovementComponent::PreTick(float SubstepDeltaTime)
 			6.0f,  // eANALOG_INPUT_ACCEL rise rate
 			6.0f,  // eANALOG_INPUT_BRAKE rise rate
 			12.0f, // eANALOG_INPUT_HANDBRAKE rise rate
-			2.5f,  // eANALOG_INPUT_STEER_LEFT rise rate
-			2.5f   // eANALOG_INPUT_STEER_RIGHT rise rate
+			3.2f,  // eANALOG_INPUT_STEER_LEFT rise rate (카운터스티어 반응 개선)
+			3.2f   // eANALOG_INPUT_STEER_RIGHT rise rate
 		},
 		{
 			10.0f, // eANALOG_INPUT_ACCEL fall rate
 			10.0f, // eANALOG_INPUT_BRAKE fall rate
 			12.0f, // eANALOG_INPUT_HANDBRAKE fall rate
-			5.0f,  // eANALOG_INPUT_STEER_LEFT fall rate
-			5.0f   // eANALOG_INPUT_STEER_RIGHT fall rate
+			6.5f,  // eANALOG_INPUT_STEER_LEFT fall rate
+			6.5f   // eANALOG_INPUT_STEER_RIGHT fall rate
 		}
 	};
 
+	// 속도별 조향 제한 (드리프트 허용형: 중속 드리프트 진입 허용, 초고속 급스핀 억제)
 	static const physx::PxF32 SteerVsForwardSpeedData[2 * 8] =
 	{
-		0.0f,   1.0f,
-		5.0f,   0.75f,
-		30.0f,  0.125f,
-		120.0f, 0.1f,
-		PX_MAX_F32, PX_MAX_F32,
-		PX_MAX_F32, PX_MAX_F32,
+		0.0f,   1.00f,  // 0 km/h   : 최대 35°
+		10.0f,  0.55f,  // 36 km/h  : ~19°
+		20.0f,  0.26f,  // 72 km/h  : ~9.1° (중속 드리프트 진입 용이)
+		35.0f,  0.11f,  // 126 km/h : ~3.8°
+		60.0f,  0.042f, // 216 km/h : ~1.5°
+		90.0f,  0.022f, // 324 km/h : ~0.8°
 		PX_MAX_F32, PX_MAX_F32,
 		PX_MAX_F32, PX_MAX_F32
 	};
-	static const physx::PxFixedSizeLookupTable<8> SteerVsForwardSpeedTable(SteerVsForwardSpeedData, 4);
+	static const physx::PxFixedSizeLookupTable<8> SteerVsForwardSpeedTable(SteerVsForwardSpeedData, 6);
 
 	bool bIsVehicleInAir = !WheelStates.IsEmpty();
 	for (const FWheelRuntimeState& State : WheelStates)
@@ -691,6 +756,59 @@ void UWheeledVehicleMovementComponent::PreTick(float SubstepDeltaTime)
 		SubstepDeltaTime,
 		bIsVehicleInAir,
 		*PVehicle);
+
+	// 공력 항력/다운포스 및 드리프트 허용형 요(Yaw) 안정화
+	if (physx::PxRigidDynamic* RigidDynamic = PVehicle->getRigidDynamicActor())
+	{
+		const physx::PxTransform Pose = RigidDynamic->getGlobalPose();
+		const physx::PxVec3 LinVel = RigidDynamic->getLinearVelocity();
+		const float SpeedSq = LinVel.magnitudeSquared();
+		const float Speed = std::sqrt(SpeedSq);
+
+		// 공기저항 (F = -Cd * v^2 * dir)
+		if (AeroDragCoeff > 0.0f && Speed > 0.5f)
+		{
+			RigidDynamic->addForce(-LinVel * (AeroDragCoeff * Speed), physx::PxForceMode::eFORCE);
+		}
+
+		if (!bIsVehicleInAir && Speed > 5.0f)
+		{
+			// 고속 공력 다운포스 (차체 하방 접지 보강)
+			if (AeroDownforceCoeff > 0.0f)
+			{
+				const physx::PxVec3 ChassisUp = Pose.q.rotate(physx::PxVec3(0.0f, 0.0f, 1.0f));
+				RigidDynamic->addForce(-ChassisUp * (AeroDownforceCoeff * SpeedSq), physx::PxForceMode::eFORCE);
+			}
+
+			// 드리프트 허용형 자세 안정화: 35° 이내 드리프트는 허용, 과도한 스핀아웃(요레이트/슬립각 초과)만 억제
+			if (DriftStabilityStrength > 0.0f)
+			{
+				const physx::PxVec3 LocalVel = Pose.q.rotateInv(LinVel);
+				if (LocalVel.x > 5.0f)
+				{
+					const physx::PxVec3 LocalAngVel = Pose.q.rotateInv(RigidDynamic->getAngularVelocity());
+					const float SlipAngle = std::atan2(LocalVel.y, LocalVel.x);
+					constexpr float FreeDriftAngleRad = 0.61f; // 약 35°까지는 자유 드리프트 허용
+
+					float ExcessSlip = 0.0f;
+					if (SlipAngle > FreeDriftAngleRad)
+					{
+						ExcessSlip = SlipAngle - FreeDriftAngleRad;
+					}
+					else if (SlipAngle < -FreeDriftAngleRad)
+					{
+						ExcessSlip = SlipAngle + FreeDriftAngleRad;
+					}
+
+					const float SpeedFactor = std::clamp((Speed - 5.0f) / 25.0f, 0.0f, 1.0f);
+					const float YawDampingTorque = -LocalAngVel.z * (ChassisMass * 0.9f) * DriftStabilityStrength * SpeedFactor;
+					const float SpinGuardTorque = ExcessSlip * (ChassisMass * 4.5f) * DriftStabilityStrength * SpeedFactor;
+					const physx::PxVec3 WorldTorque = Pose.q.rotate(physx::PxVec3(0.0f, 0.0f, YawDampingTorque + SpinGuardTorque));
+					RigidDynamic->addTorque(WorldTorque, physx::PxForceMode::eFORCE);
+				}
+			}
+		}
+	}
 }
 
 void UWheeledVehicleMovementComponent::UpdateWheelBones()
@@ -732,6 +850,11 @@ void UWheeledVehicleMovementComponent::UpdateWheelBones()
 			WheelResult.tireContactPoint.x,
 			WheelResult.tireContactPoint.y,
 			WheelResult.tireContactPoint.z);
+		const FVector RawNormal(
+			WheelResult.tireContactNormal.x,
+			WheelResult.tireContactNormal.y,
+			WheelResult.tireContactNormal.z);
+		State.ContactNormal = (RawNormal.Length() > 1e-4f) ? RawNormal.Normalized() : UpVector;
 
 		if (State.BoneIndex != -1)
 		{
@@ -779,67 +902,139 @@ void UWheeledVehicleMovementComponent::DrawDebug(FLineBatcher* LineBatcher) cons
 	LineBatcher->AddLine(COMWorld - ChassisUp * COMCrossSize, COMWorld + ChassisUp * COMCrossSize, COMColor);
 	LineBatcher->AddSphere(COMWorld, 0.06f, COMColor, 12);
 
-	const int32 Count = std::min(WheelStates.Num(), WheelSetups.Num());
 	const FVector4 SuspRangeColor(0.55f, 0.45f, 0.05f, 1.0f);
 	const FVector4 SuspActiveColor(1.0f, 0.95f, 0.1f, 1.0f);
 	const FVector4 GroundedWheelColor(0.15f, 1.0f, 0.25f, 1.0f);
 	const FVector4 AirWheelColor(1.0f, 0.2f, 0.2f, 1.0f);
+	const FVector4 PreviewWheelColor(0.35f, 0.85f, 1.0f, 1.0f);
 	const FVector4 ContactColor(0.0f, 1.0f, 1.0f, 1.0f);
 
-	for (int32 i = 0; i < Count; ++i)
+	auto DrawWheelWire = [&](const FVector& WheelLocalPos, float SuspOffset, float MaxRaise, float MaxDrop,
+		float Radius, float Width, float SteerAngle, float RotationAngle, const FVector4& WheelColor)
 	{
-		const FWheelSetup& Setup = WheelSetups[i];
-		const FWheelRuntimeState& State = WheelStates[i];
-
-		const FVector WheelDisplacedLocal = State.WheelLocalPos + UpVector * State.SuspOffset;
+		const FVector WheelDisplacedLocal = WheelLocalPos + UpVector * SuspOffset;
 		const FVector WheelCenterWorld = WorldMat.TransformPosition(WheelDisplacedLocal);
-		const FVector SuspTopWorld = WorldMat.TransformPosition(State.WheelLocalPos + UpVector * Setup.SuspensionMaxRaise);
-		const FVector SuspBottomWorld = WorldMat.TransformPosition(State.WheelLocalPos - UpVector * Setup.SuspensionMaxDrop);
+		const FVector SuspTopWorld = WorldMat.TransformPosition(WheelLocalPos + UpVector * MaxRaise);
+		const FVector SuspBottomWorld = WorldMat.TransformPosition(WheelLocalPos - UpVector * MaxDrop);
 
-		// 서스펜션 전체 가동 범위(어두운 노랑) 및 현재 압축 스트로크(밝은 노랑)
 		LineBatcher->AddLine(SuspTopWorld, SuspBottomWorld, SuspRangeColor);
 		LineBatcher->AddLine(SuspTopWorld, WheelCenterWorld, SuspActiveColor);
 
-		// 조향/회전 반영된 휠 원 및 스포크 (접지: 초록, 공중: 빨강)
-		const FQuat SteerLocal = FQuat::MakeFromAxisAngle(UpVector, State.SteerAngle);
+		const FQuat SteerLocal = FQuat::MakeFromAxisAngle(UpVector, SteerAngle);
 		const FQuat WheelWorldRot = (WorldRot * SteerLocal).Normalized();
 		const FVector WheelForward = WheelWorldRot.GetForwardVector();
 		const FVector WheelRight = WheelWorldRot.GetRightVector();
 		const FVector WheelUp = WheelWorldRot.GetUpVector();
-		const FVector4 WheelColor = State.bIsInAir ? AirWheelColor : GroundedWheelColor;
 
 		constexpr int32 CircleSegments = 24;
 		constexpr float TwoPi = 2.0f * physx::PxPi;
-		FVector PrevPt = WheelCenterWorld + WheelForward * Setup.Radius;
+		FVector PrevPt = WheelCenterWorld + WheelForward * Radius;
 		for (int32 s = 1; s <= CircleSegments; ++s)
 		{
 			const float Angle = (static_cast<float>(s) / static_cast<float>(CircleSegments)) * TwoPi;
 			const FVector NextPt = WheelCenterWorld
-				+ (WheelForward * std::cos(Angle) + WheelUp * std::sin(Angle)) * Setup.Radius;
+				+ (WheelForward * std::cos(Angle) + WheelUp * std::sin(Angle)) * Radius;
 			LineBatcher->AddLine(PrevPt, NextPt, WheelColor);
 			PrevPt = NextPt;
 		}
 
-		// 휠 회전각 확인용 직교 스포크 + 타이어 폭 축선
-		const FQuat SpinLocal = FQuat::MakeFromAxisAngle(RightVector, State.RotationAngle);
+		const FQuat SpinLocal = FQuat::MakeFromAxisAngle(RightVector, RotationAngle);
 		const FQuat WheelSpinWorldRot = (WheelWorldRot * SpinLocal).Normalized();
-		const FVector SpokeA = WheelSpinWorldRot.GetForwardVector() * Setup.Radius;
-		const FVector SpokeB = WheelSpinWorldRot.GetUpVector() * Setup.Radius;
+		const FVector SpokeA = WheelSpinWorldRot.GetForwardVector() * Radius;
+		const FVector SpokeB = WheelSpinWorldRot.GetUpVector() * Radius;
 		LineBatcher->AddLine(WheelCenterWorld - SpokeA, WheelCenterWorld + SpokeA, WheelColor);
 		LineBatcher->AddLine(WheelCenterWorld - SpokeB, WheelCenterWorld + SpokeB, WheelColor);
 
-		const float HalfWidth = Setup.Width * 0.5f;
+		const float HalfWidth = Width * 0.5f;
 		LineBatcher->AddLine(WheelCenterWorld - WheelRight * HalfWidth, WheelCenterWorld + WheelRight * HalfWidth, WheelColor);
 
-		// 노면 접지점 (시안 십자 + 허브->접지점 선)
-		if (!State.bIsInAir)
+		return WheelCenterWorld;
+	};
+
+	const int32 Count = std::min(WheelStates.Num(), WheelSetups.Num());
+	if (Count > 0)
+	{
+		for (int32 i = 0; i < Count; ++i)
 		{
-			constexpr float ContactCrossSize = 0.12f;
-			LineBatcher->AddLine(WheelCenterWorld, State.ContactPoint, ContactColor);
-			LineBatcher->AddLine(State.ContactPoint - ForwardVector * ContactCrossSize, State.ContactPoint + ForwardVector * ContactCrossSize, ContactColor);
-			LineBatcher->AddLine(State.ContactPoint - RightVector * ContactCrossSize, State.ContactPoint + RightVector * ContactCrossSize, ContactColor);
-			LineBatcher->AddLine(State.ContactPoint - UpVector * ContactCrossSize, State.ContactPoint + UpVector * ContactCrossSize, ContactColor);
-			LineBatcher->AddSphere(State.ContactPoint, 0.035f, ContactColor, 8);
+			const FWheelSetup& Setup = WheelSetups[i];
+			const FWheelRuntimeState& State = WheelStates[i];
+			const FVector4 WheelColor = State.bIsInAir ? AirWheelColor : GroundedWheelColor;
+			const FVector WheelCenterWorld = DrawWheelWire(
+				State.WheelLocalPos, State.SuspOffset, Setup.SuspensionMaxRaise, Setup.SuspensionMaxDrop,
+				Setup.Radius, Setup.Width, State.SteerAngle, State.RotationAngle, WheelColor);
+
+			if (!State.bIsInAir)
+			{
+				constexpr float ContactCrossSize = 0.12f;
+				LineBatcher->AddLine(WheelCenterWorld, State.ContactPoint, ContactColor);
+				LineBatcher->AddLine(State.ContactPoint - ForwardVector * ContactCrossSize, State.ContactPoint + ForwardVector * ContactCrossSize, ContactColor);
+				LineBatcher->AddLine(State.ContactPoint - RightVector * ContactCrossSize, State.ContactPoint + RightVector * ContactCrossSize, ContactColor);
+				LineBatcher->AddLine(State.ContactPoint - UpVector * ContactCrossSize, State.ContactPoint + UpVector * ContactCrossSize, ContactColor);
+				LineBatcher->AddSphere(State.ContactPoint, 0.035f, ContactColor, 8);
+			}
+		}
+		return;
+	}
+
+	// 비-PIE 에디터 뷰포트 프리뷰: 감지된 휠 본 또는 WheelSetups 기준으로 위치/반지름/서스펜션 범위 미리보기
+	const USkeletalMeshComponent* SkelComp = Cast<USkeletalMeshComponent>(UpdatedComponent);
+	bool bDrewFromBones = false;
+	if (bAutoDetectWheelBones && SkelComp && !SkelComp->GetBones().IsEmpty())
+	{
+		const TArray<FBoneInfo>& Bones = SkelComp->GetBones();
+		const USkeletalMesh* SkelMesh = SkelComp->GetSkeletalMesh();
+		const FSkeletalMeshLODRenderData* LOD0 = (SkelMesh && !SkelMesh->GetRenderData().LODRenderData.IsEmpty())
+			? &SkelMesh->GetRenderData().LODRenderData[0]
+			: nullptr;
+
+		for (int32 i = 0; i < Bones.Num(); ++i)
+		{
+			if (!ContainsWheelKeyword(Bones[i].Name))
+			{
+				continue;
+			}
+			bool bHasWheelAncestor = false;
+			for (int32 Parent = Bones[i].ParentIndex; Parent >= 0 && Parent < Bones.Num(); Parent = Bones[Parent].ParentIndex)
+			{
+				if (ContainsWheelKeyword(Bones[Parent].Name))
+				{
+					bHasWheelAncestor = true;
+					break;
+				}
+			}
+			if (bHasWheelAncestor)
+			{
+				continue;
+			}
+
+			const FVector4 Origin = SkelComp->GetBoneComponentMatrix(i).GetOrigin();
+			const FVector LocalPos(Origin.X, Origin.Y, Origin.Z);
+			float Radius = 0.35f;
+			float Width = 0.25f;
+			if (LOD0 && LOD0->BoneBounds.IsValidIndex(i))
+			{
+				const FBox& B = LOD0->BoneBounds[i];
+				if (B.Min.Z < B.Max.Z)
+				{
+					const float MR = (B.Max.Z - B.Min.Z) * 0.5f;
+					const float MW = B.Max.Y - B.Min.Y;
+					if (MR >= 0.1f && MR <= 1.5f) Radius = MR;
+					if (MW >= 0.05f && MW <= 1.0f) Width = MW;
+				}
+			}
+
+			DrawWheelWire(LocalPos, 0.0f, DefaultSuspensionMaxRaise, DefaultSuspensionMaxDrop,
+				Radius, Width, 0.0f, 0.0f, PreviewWheelColor);
+			bDrewFromBones = true;
+		}
+	}
+
+	if (!bDrewFromBones)
+	{
+		for (const FWheelSetup& Setup : WheelSetups)
+		{
+			DrawWheelWire(Setup.AdditionalOffset, 0.0f, Setup.SuspensionMaxRaise, Setup.SuspensionMaxDrop,
+				Setup.Radius, Setup.Width, 0.0f, 0.0f, PreviewWheelColor);
 		}
 	}
 }

@@ -216,6 +216,7 @@ namespace EditorViewportUI
 				{ "Skeletal Meshes", EEditorIcon::SkeletalMesh, &Flags.SkeletalMeshes },
 				{ "Particles", EEditorIcon::Particle, &Flags.Particles },
 				{ "Physics", EEditorIcon::PhysicsAsset, &Flags.Physics },
+				{ "Vehicle Debug", EEditorIcon::PhysicsAsset, &Flags.VehicleDebug },
 				{ "Decals", EEditorIcon::ShowDecal, &Flags.Decals },
 				{ "Fog", EEditorIcon::ShowFog, &Flags.Fog },
 				{ "Depth of Field", EEditorIcon::Eye, &Flags.DepthOfField },

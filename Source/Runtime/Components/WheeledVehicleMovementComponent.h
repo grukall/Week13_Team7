@@ -77,6 +77,7 @@ struct FWheelRuntimeState
 	float LongitudinalSlip = 0.0f;
 	float LateralSlip = 0.0f;
 	FVector ContactPoint = FVector::ZeroVector;
+	FVector ContactNormal = UpVector;
 };
 
 UCLASS()
@@ -114,16 +115,22 @@ public:
 	const TArray<FWheelRuntimeState>& GetWheelStates() const;
 
 	UPROPERTY(EditAnywhere, meta=(ClampMin=100.0, ClampMax=50000.0, Delta=10.0))
-	float ChassisMass = 1500.0f;
+	float ChassisMass = 1585.0f;
 
 	UPROPERTY(EditAnywhere)
-	FVector COMOffset = FVector(0.0f, 0.0f, -0.3f);
+	FVector COMOffset = FVector(-0.22f, 0.0f, -0.25f);
+
+	UPROPERTY(EditAnywhere, meta=(ClampMin=-1.0, ClampMax=1.0, Delta=0.05))
+	float COMLongitudinalBias = -0.22f;
 
 	UPROPERTY(EditAnywhere)
-	FVector ChassisDimensions = FVector(4.0f, 1.8f, 1.2f);
+	FVector ChassisDimensions = FVector(4.519f, 1.852f, 1.300f);
 
 	UPROPERTY(EditAnywhere)
 	bool bAutoDetectWheelBones = true;
+
+	UPROPERTY(EditAnywhere)
+	bool bAllWheelDrive = false;
 
 	TArray<FWheelSetup> WheelSetups;
 
@@ -140,57 +147,70 @@ private:
 	bool bRawHandbrake = false;
 
 public:
-	// PxVehicleDriveSimDataNW mapping property
+	// PxVehicleDriveSimDataNW mapping property (2019 Porsche 911 Carrera S Cabriolet 992.1)
 	UPROPERTY(EditAnywhere, meta=(ClampMin=10.0, ClampMax=10000.0, Delta=10.0))
-	float PeakTorque = 500.0f;
+	float PeakTorque = 530.0f;
 
 	UPROPERTY(EditAnywhere, meta=(ClampMin=100.0, ClampMax=2000.0, Delta=10.0))
-	float MaxEngineOmega = 600.0f;
+	float MaxEngineOmega = 785.4f;
 
 	UPROPERTY(EditAnywhere, meta=(ClampMin=0.05, ClampMax=2.0, Delta=0.05))
-	float GearSwitchTime = 0.5f;
+	float GearSwitchTime = 0.12f;
 
 	UPROPERTY(EditAnywhere, meta=(ClampMin=1.0, ClampMax=100.0, Delta=1.0))
-	float ClutchStrength = 10.0f;
+	float ClutchStrength = 22.0f;
 
 	// PxVehicleWheelsSimData mapping property
 	UPROPERTY(EditAnywhere, meta=(ClampMin=1.0, ClampMax=500.0, Delta=1.0))
-	float DefaultWheelMass = 20.0f;
+	float DefaultWheelMass = 22.0f;
 
 	UPROPERTY(EditAnywhere, meta=(ClampMin=1000.0, ClampMax=200000.0, Delta=500.0))
-	float DefaultSpringStrength = 35000.0f;
+	float DefaultSpringStrength = 55000.0f;
 
 	UPROPERTY(EditAnywhere, meta=(ClampMin=100.0, ClampMax=50000.0, Delta=100.0))
-	float DefaultSpringDamperRate = 4500.0f;
+	float DefaultSpringDamperRate = 6200.0f;
 
 	UPROPERTY(EditAnywhere, meta=(ClampMin=0.01, ClampMax=1.0, Delta=0.01))
-	float DefaultSuspensionMaxRaise = 0.15f;
+	float DefaultSuspensionMaxRaise = 0.10f;
 
 	UPROPERTY(EditAnywhere, meta=(ClampMin=0.01, ClampMax=1.0, Delta=0.01))
-	float DefaultSuspensionMaxDrop = 0.15f;
+	float DefaultSuspensionMaxDrop = 0.12f;
 
 	UPROPERTY(EditAnywhere, meta=(ClampMin=0.0, ClampMax=70.0, Delta=1.0))
-	float DefaultMaxSteerAngle = 40.0f;
+	float DefaultMaxSteerAngle = 35.0f;
 
 	UPROPERTY(EditAnywhere, meta=(ClampMin=0.0, ClampMax=20000.0, Delta=50.0))
-	float MaxBrakeTorque = 1500.0f;
+	float MaxBrakeTorque = 2400.0f;
 
 	UPROPERTY(EditAnywhere, meta=(ClampMin=0.0, ClampMax=20000.0, Delta=100.0))
-	float MaxHandBrakeTorque = 4000.0f;
+	float MaxHandBrakeTorque = 4500.0f;
 
 	// PxVehicleTireData mapping property
 	UPROPERTY(EditAnywhere, meta=(ClampMin=0.1, ClampMax=10.0, Delta=0.1))
 	float TireLateralStiffnessX = 2.0f;
 
 	UPROPERTY(EditAnywhere, meta=(ClampMin=1.0, ClampMax=100.0, Delta=0.5))
-	float TireLateralStiffnessY = 17.9f;
+	float TireLateralStiffnessY = 24.0f;
 
 	UPROPERTY(EditAnywhere, meta=(ClampMin=10.0, ClampMax=10000.0, Delta=50.0))
-	float TireLongitudinalStiffness = 1000.0f;
+	float TireLongitudinalStiffness = 1500.0f;
 
 	UPROPERTY(EditAnywhere, meta=(ClampMin=0.1, ClampMax=5.0, Delta=0.05))
-	float TireFrictionPeak = 1.0f;
+	float TireFrictionPeak = 1.25f;
 
 	UPROPERTY(EditAnywhere, meta=(ClampMin=0.1, ClampMax=5.0, Delta=0.05))
-	float TireFrictionSlip = 1.0f;
+	float TireFrictionSlip = 1.05f;
+
+	// High-Speed Stability & Drift Assist
+	UPROPERTY(EditAnywhere, meta=(ClampMin=0.5, ClampMax=2.0, Delta=0.05))
+	float RearTireGripMultiplier = 1.12f;
+
+	UPROPERTY(EditAnywhere, meta=(ClampMin=0.0, ClampMax=5.0, Delta=0.05))
+	float AeroDragCoeff = 0.37f;
+
+	UPROPERTY(EditAnywhere, meta=(ClampMin=0.0, ClampMax=5.0, Delta=0.05))
+	float AeroDownforceCoeff = 0.45f;
+
+	UPROPERTY(EditAnywhere, meta=(ClampMin=0.0, ClampMax=3.0, Delta=0.1))
+	float DriftStabilityStrength = 1.0f;
 };

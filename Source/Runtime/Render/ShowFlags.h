@@ -24,6 +24,8 @@ struct FEngineShowFlags
 	bool Particles = true;
 	// 래그돌(Physics Asset) 바디 와이어. 실제 PhysX 바디 위치로 그린다. UE의 Physics 쇼 플래그
 	bool Physics = false;
+	// 차량 휠·서스펜션·접지점·COM 디버그 와이어
+	bool VehicleDebug = false;
 };
 
 // 뷰포트가 씬을 어떤 방식으로 보여 줄지. 한 번에 하나만 고른다.

@@ -4,11 +4,19 @@
 #include "Camera/CameraComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/WheeledVehicleMovementComponent.h"
+#include "Components/AudioComponent.h"
+#include "Components/ParticleSystemComponent.h"
+#include "Components/TireSkidMarkComponent.h"
+#include "Asset/AssetManager.h"
 #include "Physics/BodySetup.h"
 #include "UObject/UObjectGlobals.h"
+#include <cmath>
+#include <string>
 
 AWheeledVehicle::AWheeledVehicle()
 {
+	PrimaryActorTick.bCanEverTick = true;
+
 	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>("Mesh");
 	Mesh->bUseArticulatedPhysics = false;
 	Mesh->BodyInstance.bSimulatePhysics = true;
@@ -34,6 +42,19 @@ AWheeledVehicle::AWheeledVehicle()
 	CameraComponent->SetupAttachment(SpringArmComponent);
 	CameraComponent->SetExternalInputManaged(true);
 	CameraComponent->bUsePawnControlRotation = false;
+
+	EngineAudioComponent = CreateDefaultSubobject<UAudioComponent>("EngineAudioComponent");
+	EngineAudioComponent->SetupAttachment(Mesh);
+	EngineAudioComponent->bLooping = true;
+	EngineAudioComponent->SetAutoActivate(false);
+
+	SkidAudioComponent = CreateDefaultSubobject<UAudioComponent>("SkidAudioComponent");
+	SkidAudioComponent->SetupAttachment(Mesh);
+	SkidAudioComponent->bLooping = true;
+	SkidAudioComponent->SetAutoActivate(false);
+
+	SkidMarkComponent = CreateDefaultSubobject<UTireSkidMarkComponent>("SkidMarkComponent");
+	SkidMarkComponent->SetupAttachment(Mesh);
 }
 
 void AWheeledVehicle::BeginPlay()
@@ -84,6 +105,21 @@ void AWheeledVehicle::BeginPlay()
 	}
 
 	Super::BeginPlay();
+
+	InitWheelSmokeParticles();
+	if (SkidMarkComponent && VehicleMovement)
+	{
+		SkidMarkComponent->InitializeTracks(VehicleMovement->GetWheelStates().Num());
+	}
+}
+
+void AWheeledVehicle::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	UpdateAudio(DeltaTime);
+	UpdateTireSmoke(DeltaTime);
+	UpdateSkidMarks();
 }
 
 FVector AWheeledVehicle::GetVelocity() const
@@ -94,4 +130,219 @@ FVector AWheeledVehicle::GetVelocity() const
 	}
 
 	return GetActorRotation().Quaternion().GetForwardVector() * VehicleMovement->GetForwardSpeed();
+}
+
+void AWheeledVehicle::UpdateAudio(float DeltaTime)
+{
+	if (!VehicleMovement)
+	{
+		return;
+	}
+
+	if(EngineAudioComponent && EngineAudioComponent->SoundPath.length() > 0)
+	{
+		if(!EngineAudioComponent->IsPlaying())
+		{
+			EngineAudioComponent->Play();
+		}
+		
+		float EngineRPM = VehicleMovement->GetEngineRPM();
+		float EngineMaxRPM = VehicleMovement->GetMaxEngineRPM();
+		float InvEngineMaxRPM = 1.0f / FMath::Max(EngineMaxRPM, 1.0f);
+		
+		float TimeRPM = FMath::Clamp(EngineRPM * InvEngineMaxRPM, 0.0f, 1.0f);
+
+		float TargetPitch = FMath::Lerp(EnginePitchMin, EnginePitchMax, TimeRPM);
+		float TargetVolume = FMath::Lerp(EngineVolumeMin, EngineVolumeMax, TimeRPM);
+
+		float Alpha = 1 - exp(-EngineInterpSpeed * DeltaTime);
+
+		float NewPitch = FMath::Lerp(EngineAudioComponent->PitchMultiplier, TargetPitch, Alpha);
+		float NewVolume = FMath::Lerp(EngineAudioComponent->VolumeMultiplier, TargetVolume, Alpha);
+
+		EngineAudioComponent->SetPitchMultiplier(NewPitch);
+		EngineAudioComponent->SetVolumeMultiplier(NewVolume);
+	}
+
+
+	if(SkidAudioComponent && !SkidAudioComponent->SoundPath.empty())
+	{
+		float MaxSlip = 0.0f;
+		for(const FWheelRuntimeState& State : VehicleMovement->GetWheelStates())
+		{
+			if(State.bIsInAir)
+			{
+				continue;
+			}
+			const float WheelSlip = FMath::Max(std::abs(State.LongitudinalSlip), std::abs(State.LateralSlip));
+			MaxSlip = FMath::Max(MaxSlip, WheelSlip);
+		}
+
+		const float SpeedKmh = std::abs(VehicleMovement->GetSpeedKmh());
+		const bool bShouldSkid = (SpeedKmh > SkidMinSpeedKmh) && (MaxSlip > SkidSlipThreshold);
+
+		if(bShouldSkid)
+		{
+			if(!SkidAudioComponent->IsPlaying())
+			{
+				SkidAudioComponent->SetVolumeMultiplier(0.0f);
+				SkidAudioComponent->Play();
+			}
+
+			const float Denominator = FMath::Max(1.0f - SkidSlipThreshold, 0.01f);
+			const float Intensity = FMath::Clamp((MaxSlip - SkidSlipThreshold) / Denominator, 0.0f, 1.0f);
+			const float TargetVolume = Intensity * SkidMaxVolume;
+			 
+			const float Alpha = 1.0f - std::exp(-12.0f * DeltaTime);
+			const float NewVolume = FMath::Lerp(SkidAudioComponent->VolumeMultiplier, TargetVolume, Alpha);
+			SkidAudioComponent->SetVolumeMultiplier(NewVolume);
+		}
+		else if(SkidAudioComponent->IsPlaying())
+		{
+			const float Alpha = 1.0f - std::exp(-15.0f * DeltaTime);
+			const float NewVolume = FMath::Lerp(SkidAudioComponent->VolumeMultiplier, 0.0f, Alpha);
+			if(NewVolume < 0.01f)
+			{
+				SkidAudioComponent->SetVolumeMultiplier(0.0f);
+				SkidAudioComponent->Stop();
+			}
+			else
+			{
+				SkidAudioComponent->SetVolumeMultiplier(NewVolume);
+			}
+		}
+	}
+}
+
+void AWheeledVehicle::InitWheelSmokeParticles()
+{
+	WheelSmokeComponents.Reset();
+	WheelSmokeSlipTimers.Reset();
+
+	if (!VehicleMovement || !Mesh || TireSmokeParticlePath.empty())
+	{
+		return;
+	}
+
+	UParticleSystem* SmokeTemplate = UAssetManager::LoadParticleSystem(TireSmokeParticlePath);
+	if (!SmokeTemplate)
+	{
+		return;
+	}
+
+	const int32 NumWheels = VehicleMovement->GetWheelStates().Num();
+	if (NumWheels <= 0)
+	{
+		return;
+	}
+
+	WheelSmokeComponents.SetNum(NumWheels);
+	WheelSmokeSlipTimers.SetNum(NumWheels);
+	for (int32 i = 0; i < NumWheels; ++i)
+	{
+		WheelSmokeSlipTimers[i] = 0.0f;
+
+		const FString CompName = "TireSmoke_" + std::to_string(i);
+		UParticleSystemComponent* SmokeComp = NewObject<UParticleSystemComponent>(
+			this, UParticleSystemComponent::StaticClass(), FName(CompName));
+		if (!SmokeComp)
+		{
+			continue;
+		}
+
+		SmokeComp->SetAutoActivate(false);
+		SmokeComp->SetupAttachment(Mesh);
+		SmokeComp->SetOwner(this);
+		Components.Add(SmokeComp);
+		SmokeComp->SetTemplate(SmokeTemplate);
+		SmokeComp->RegisterComponent();
+
+		WheelSmokeComponents[i] = SmokeComp;
+	}
+}
+
+void AWheeledVehicle::UpdateTireSmoke(float DeltaTime)
+{
+	if (!VehicleMovement || WheelSmokeComponents.IsEmpty())
+	{
+		return;
+	}
+
+	const TArray<FWheelRuntimeState>& States = VehicleMovement->GetWheelStates();
+	const int32 Count = std::min(States.Num(), WheelSmokeComponents.Num());
+	if (WheelSmokeSlipTimers.Num() < Count)
+	{
+		WheelSmokeSlipTimers.SetNum(Count);
+	}
+
+	const float SpeedKmh = std::abs(VehicleMovement->GetSpeedKmh());
+
+	for (int32 i = 0; i < Count; ++i)
+	{
+		UParticleSystemComponent* SmokeComp = WheelSmokeComponents[i];
+		if (!SmokeComp)
+		{
+			continue;
+		}
+
+		const FWheelRuntimeState& State = States[i];
+		const float WheelSlip = FMath::Max(std::abs(State.LongitudinalSlip), std::abs(State.LateralSlip));
+		const bool bSlippingFast = (!State.bIsInAir) && (SpeedKmh >= SmokeMinSpeedKmh) && (WheelSlip > SmokeSlipThreshold);
+
+		if (bSlippingFast)
+		{
+			WheelSmokeSlipTimers[i] += DeltaTime;
+		}
+		else
+		{
+			WheelSmokeSlipTimers[i] = 0.0f;
+		}
+
+		const bool bShouldSmoke = bSlippingFast && (WheelSmokeSlipTimers[i] >= SmokeSlipHoldTime);
+		if (bShouldSmoke)
+		{
+			SmokeComp->SetWorldLocation(State.ContactPoint, false);
+			if (!SmokeComp->IsActive())
+			{
+				SmokeComp->Activate(false);
+			}
+		}
+		else if (SmokeComp->IsActive())
+		{
+			SmokeComp->Deactivate();
+		}
+	}
+}
+
+void AWheeledVehicle::UpdateSkidMarks()
+{
+	if (!VehicleMovement || !SkidMarkComponent)
+	{
+		return;
+	}
+
+	const TArray<FWheelRuntimeState>& States = VehicleMovement->GetWheelStates();
+	const TArray<FWheelSetup>& Setups = VehicleMovement->WheelSetups;
+	const int32 Count = States.Num();
+	const float SpeedKmh = std::abs(VehicleMovement->GetSpeedKmh());
+	const float Denominator = FMath::Max(1.0f - SkidMarkSlipThreshold, 0.01f);
+
+	for (int32 i = 0; i < Count; ++i)
+	{
+		const FWheelRuntimeState& State = States[i];
+		const float WheelWidth = Setups.IsValidIndex(i) ? Setups[i].Width : 0.25f;
+		const float WheelSlip = FMath::Max(std::abs(State.LongitudinalSlip), std::abs(State.LateralSlip));
+		const bool bSkidding = (!State.bIsInAir) && (SpeedKmh >= SkidMarkMinSpeedKmh) && (WheelSlip > SkidMarkSlipThreshold);
+		const float Intensity = bSkidding
+			? FMath::Clamp((WheelSlip - SkidMarkSlipThreshold) / Denominator, 0.2f, 1.0f)
+			: 0.0f;
+
+		SkidMarkComponent->UpdateWheelTrack(
+			i,
+			bSkidding,
+			State.ContactPoint,
+			State.ContactNormal,
+			WheelWidth,
+			Intensity);
+	}
 }

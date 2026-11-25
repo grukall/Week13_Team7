@@ -44,6 +44,46 @@
                                             "Z": 0.0
                                         },
                                         "Rotation": {
+                                            "Pitch": -90.0,
+                                            "Roll": 0.0,
+                                            "Yaw": 0.0
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "Armature"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 0.0,
+                                            "Y": 0.0,
+                                            "Z": 0.0
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 90.0,
+                                            "Roll": 0.0,
+                                            "Yaw": 0.0
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "Chassis"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 1.2450411319732666,
+                                            "Y": -0.7925935983657837,
+                                            "Z": 0.33918091654777527
+                                        },
+                                        "Rotation": {
                                             "Pitch": 0.0,
                                             "Roll": 0.0,
                                             "Yaw": 0.0
@@ -54,17 +94,17 @@
                                             "Z": 1.0
                                         }
                                     },
-                                    "Name": "Root"
+                                    "Name": "Wheel_FL"
                                 },
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.0,
-                                            "Y": 0.0,
-                                            "Z": 0.0
+                                            "X": 1.244999885559082,
+                                            "Y": 0.7929999232292175,
+                                            "Z": 0.33899998664855957
                                         },
                                         "Rotation": {
-                                            "Pitch": -90.0,
+                                            "Pitch": 0.0,
                                             "Roll": 0.0,
                                             "Yaw": 0.0
                                         },
@@ -74,17 +114,17 @@
                                             "Z": 1.0
                                         }
                                     },
-                                    "Name": "PBR_BMWM635"
+                                    "Name": "Wheel_FR"
                                 },
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 1.3758081197738647,
-                                            "Y": -0.6979779601097107,
-                                            "Z": 0.32403838634490967
+                                            "X": -1.213289737701416,
+                                            "Y": -0.7755456566810608,
+                                            "Z": 0.3535054922103882
                                         },
                                         "Rotation": {
-                                            "Pitch": -90.0,
+                                            "Pitch": 0.0,
                                             "Roll": 0.0,
                                             "Yaw": 0.0
                                         },
@@ -94,17 +134,17 @@
                                             "Z": 1.0
                                         }
                                     },
-                                    "Name": "PBR_Wheel_BMW-M635.rf"
+                                    "Name": "Wheel_RL"
                                 },
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": -1.2349110841751099,
-                                            "Y": -0.6979779601097107,
-                                            "Z": 0.32403838634490967
+                                            "X": -1.2130000591278076,
+                                            "Y": 0.7760000228881836,
+                                            "Z": 0.3540000021457672
                                         },
                                         "Rotation": {
-                                            "Pitch": -90.0,
+                                            "Pitch": 0.0,
                                             "Roll": 0.0,
                                             "Yaw": 0.0
                                         },
@@ -114,47 +154,7 @@
                                             "Z": 1.0
                                         }
                                     },
-                                    "Name": "PBR_Wheel_BMW-M635.rb"
-                                },
-                                {
-                                    "Local": {
-                                        "Location": {
-                                            "X": 1.3758081197738647,
-                                            "Y": 0.6979780197143555,
-                                            "Z": 0.32403838634490967
-                                        },
-                                        "Rotation": {
-                                            "Pitch": -89.99999237060547,
-                                            "Roll": 0.0,
-                                            "Yaw": 179.99998474121094
-                                        },
-                                        "Scale": {
-                                            "X": 1.0,
-                                            "Y": 1.0,
-                                            "Z": 1.0
-                                        }
-                                    },
-                                    "Name": "PBR_Wheel_BMW-M635.lf"
-                                },
-                                {
-                                    "Local": {
-                                        "Location": {
-                                            "X": -1.2349110841751099,
-                                            "Y": 0.6979780197143555,
-                                            "Z": 0.32403838634490967
-                                        },
-                                        "Rotation": {
-                                            "Pitch": -89.99999237060547,
-                                            "Roll": 0.0,
-                                            "Yaw": 179.99998474121094
-                                        },
-                                        "Scale": {
-                                            "X": 1.0,
-                                            "Y": 1.0,
-                                            "Z": 1.0
-                                        }
-                                    },
-                                    "Name": "PBR_Wheel_BMW-M635.lb"
+                                    "Name": "Wheel_RR"
                                 }
                             ],
                             "Class": "USkeletalMeshComponent",
@@ -169,6 +169,7 @@
                                     "CollisionEnabled": "QueryAndPhysics",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -184,7 +185,7 @@
                                     "bUseCCD": false
                                 },
                                 "Mobility": "Movable",
-                                "SkeletalMesh": "FBX/Coupe_1Packed/Coupe_1Packed.fbx.bin",
+                                "SkeletalMesh": "FBX/FINAL_MODEL_S19_rigged/FINAL_MODEL_S19_rigged.fbx.bin",
                                 "Transform": {
                                     "Location": {
                                         "X": 0.0,
@@ -210,6 +211,7 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
+                                "bSimulateRagdoll": false,
                                 "bUseArticulatedPhysics": false,
                                 "bVisible": true
                             }
@@ -219,23 +221,46 @@
                             "Name": "VehicleMovement",
                             "Parent": "",
                             "Properties": {
+                                "AeroDownforceCoeff": 0.44999998807907104,
+                                "AeroDragCoeff": 0.3700000047683716,
+                                "COMLongitudinalBias": -0.2199999988079071,
                                 "COMOffset": {
                                     "X": 0.0,
                                     "Y": 0.0,
                                     "Z": -0.30000001192092896
                                 },
                                 "ChassisDimensions": {
-                                    "X": 4.0,
-                                    "Y": 1.8000000715255737,
-                                    "Z": 1.2000000476837158
+                                    "X": 4.519000053405762,
+                                    "Y": 1.8519999980926514,
+                                    "Z": 1.2999999523162842
                                 },
-                                "ChassisMass": 1500.0,
+                                "ChassisMass": 1585.0,
+                                "ClutchStrength": 22.0,
+                                "DefaultMaxSteerAngle": 35.0,
+                                "DefaultSpringDamperRate": 6200.0,
+                                "DefaultSpringStrength": 55000.0,
+                                "DefaultSuspensionMaxDrop": 0.11999999731779099,
+                                "DefaultSuspensionMaxRaise": 0.10000000149011612,
+                                "DefaultWheelMass": 22.0,
+                                "DriftStabilityStrength": 1.0,
+                                "GearSwitchTime": 0.11999999731779099,
                                 "Gravity": 9.8100004196167,
+                                "MaxBrakeTorque": 2400.0,
+                                "MaxEngineOmega": 785.4000244140625,
+                                "MaxHandBrakeTorque": 4500.0,
+                                "PeakTorque": 530.0,
+                                "RearTireGripMultiplier": 1.1200000047683716,
+                                "TireFrictionPeak": 1.25,
+                                "TireFrictionSlip": 1.0499999523162842,
+                                "TireLateralStiffnessX": 2.0,
+                                "TireLateralStiffnessY": 24.0,
+                                "TireLongitudinalStiffness": 1500.0,
                                 "Velocity": {
                                     "X": 0.0,
                                     "Y": 0.0,
                                     "Z": 0.0
                                 },
+                                "bAllWheelDrive": false,
                                 "bAutoActivate": true,
                                 "bAutoDetectWheelBones": true,
                                 "bConstrainToPlane": false,
@@ -332,7 +357,7 @@
                                     "Y": 0.0,
                                     "Z": 0.0
                                 },
-                                "TargetArmLength": 8.0,
+                                "TargetArmLength": 4.0,
                                 "TargetOffset": {
                                     "X": 0.0,
                                     "Y": 0.0,
@@ -374,10 +399,13 @@
                             "Name": "CameraComponent",
                             "Parent": "SpringArmComponent",
                             "Properties": {
+                                "FStop": 2.799999952316284,
+                                "FocusDistanceMeters": 5.0,
                                 "Mobility": "Movable",
+                                "SensorWidthMM": 36.0,
                                 "Transform": {
                                     "Location": {
-                                        "X": -8.0,
+                                        "X": -4.0,
                                         "Y": 0.0,
                                         "Z": 1.7999999523162842
                                     },
@@ -398,11 +426,156 @@
                                 "bUsePawnControlRotation": false,
                                 "bVisible": true
                             }
+                        },
+                        {
+                            "Class": "UAudioComponent",
+                            "Name": "EngineAudioComponent",
+                            "Parent": "Mesh",
+                            "Properties": {
+                                "AttenuationFalloffDistance": 3600.0,
+                                "AttenuationInnerRadius": 400.0,
+                                "Mobility": "Movable",
+                                "PitchMultiplier": 1.0,
+                                "SoundPath": "",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "VolumeMultiplier": 1.0,
+                                "bAllowSpatialization": true,
+                                "bAutoActivate": false,
+                                "bHiddenInGame": false,
+                                "bIsUISound": false,
+                                "bLooping": true,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UAudioComponent",
+                            "Name": "SkidAudioComponent",
+                            "Parent": "Mesh",
+                            "Properties": {
+                                "AttenuationFalloffDistance": 3600.0,
+                                "AttenuationInnerRadius": 400.0,
+                                "Mobility": "Movable",
+                                "PitchMultiplier": 1.0,
+                                "SoundPath": "",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "VolumeMultiplier": 1.0,
+                                "bAllowSpatialization": true,
+                                "bAutoActivate": false,
+                                "bHiddenInGame": false,
+                                "bIsUISound": false,
+                                "bLooping": true,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UTireSkidMarkComponent",
+                            "Name": "SkidMarkComponent",
+                            "Parent": "Mesh",
+                            "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
+                                "FadeOutDuration": 3.0,
+                                "GroundOffset": 0.019999999552965164,
+                                "MarkLifetime": 15.0,
+                                "MaxOpacity": 0.7799999713897705,
+                                "MinSegmentLength": 0.20000000298023224,
+                                "Mobility": "Movable",
+                                "SkidTexturePath": "Assets/Textures/T_TireSkidMark.png",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "TranslucencySortPriority": -10,
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": false,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": true,
+                                "bReceivesDecals": false,
+                                "bVisible": true
+                            }
                         }
                     ],
                     "Name": "TestVehicle",
                     "Properties": {
+                        "EngineInterpSpeed": 15.0,
+                        "EnginePitchMax": 2.200000047683716,
+                        "EnginePitchMin": 0.699999988079071,
+                        "EngineVolumeMax": 1.0,
+                        "EngineVolumeMin": 0.4000000059604645,
                         "ScriptPath": "",
+                        "SkidMarkMinSpeedKmh": 25.0,
+                        "SkidMarkSlipThreshold": 0.550000011920929,
+                        "SkidMaxVolume": 0.800000011920929,
+                        "SkidMinSpeedKmh": 25.0,
+                        "SkidSlipThreshold": 0.550000011920929,
+                        "SmokeMinSpeedKmh": 35.0,
+                        "SmokeSlipHoldTime": 0.07999999821186066,
+                        "SmokeSlipThreshold": 0.6499999761581421,
+                        "TireSmokeParticlePath": "Assets/Particles/P_TireSmoke.particle",
                         "bActorEnableCollision": true
                     }
                 },
@@ -446,6 +619,7 @@
                                     "CollisionEnabled": "QueryAndPhysics",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -539,6 +713,7 @@
                                     "CollisionEnabled": "NoCollision",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -630,6 +805,7 @@
                                     "CollisionEnabled": "QueryAndPhysics",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -723,6 +899,7 @@
                                     "CollisionEnabled": "NoCollision",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -814,6 +991,7 @@
                                     "CollisionEnabled": "QueryAndPhysics",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -907,6 +1085,7 @@
                                     "CollisionEnabled": "NoCollision",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -998,6 +1177,7 @@
                                     "CollisionEnabled": "QueryAndPhysics",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -1091,6 +1271,7 @@
                                     "CollisionEnabled": "NoCollision",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -1198,9 +1379,9 @@
                                         "Z": 15.0
                                     },
                                     "Rotation": {
-                                        "Pitch": -45.00000762939453,
-                                        "Roll": 0.0,
-                                        "Yaw": -35.0
+                                        "Pitch": -45.00001907348633,
+                                        "Roll": -2.4148371267074253e-06,
+                                        "Yaw": -34.999996185302734
                                     },
                                     "Scale": {
                                         "X": 1.0,
@@ -1254,6 +1435,7 @@
                                     "CollisionEnabled": "QueryAndPhysics",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -1311,6 +1493,7 @@
                                     "CollisionEnabled": "QueryAndPhysics",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -1468,6 +1651,7 @@
                                     "CollisionEnabled": "QueryAndPhysics",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",

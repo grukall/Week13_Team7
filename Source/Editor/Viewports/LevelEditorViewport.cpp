@@ -9,6 +9,7 @@
 #include "Components/PointLightComponent.h"
 #include "Components/SpotLightComponent.h"
 #include "Components/RectLightComponent.h"
+#include "Components/WheeledVehicleMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/Actor/DecalActor.h"
 #include "GameFramework/Actor/PointLightActor.h"
@@ -62,6 +63,7 @@ void FLevelEditorViewportClient::Draw(FViewport* InViewport, FUIRenderer* Canvas
 		SettingsFlags.SkeletalMeshes = S.bShowSkeletalMesh;
 		SettingsFlags.Rendering = S.bDrawPrimitives;
 		SettingsFlags.Decals = S.bDrawDecals;
+		SettingsFlags.VehicleDebug = S.bShowVehicleDebug;
 		auto SyncFlag = [this, &SettingsFlags](bool FEngineShowFlags::* Flag)
 		{
 			if (!bSettingsShowFlagsSynced || SettingsFlags.*Flag != LastSettingsShowFlags.*Flag)
@@ -74,6 +76,7 @@ void FLevelEditorViewportClient::Draw(FViewport* InViewport, FUIRenderer* Canvas
 		SyncFlag(&FEngineShowFlags::SkeletalMeshes);
 		SyncFlag(&FEngineShowFlags::Rendering);
 		SyncFlag(&FEngineShowFlags::Decals);
+		SyncFlag(&FEngineShowFlags::VehicleDebug);
 		LastSettingsShowFlags = SettingsFlags;
 		bSettingsShowFlagsSynced = true;
 
@@ -194,11 +197,14 @@ void FLevelEditorViewportClient::Draw(const FSceneView* View, FScenePassCallback
 
 				LineBatcher->OnRender(SceneView.ViewProjectionMatrix);
 
-				// Show > Physics: 래그돌 바디는 메시 안에 있어 가려지므로 깊이 테스트 없이 따로 그린다
-				if (EngineShowFlags.Physics)
+				// Show > Physics / Vehicle Debug: 메시 안에 있어 가려지므로 깊이 테스트 없이 따로 그린다
+				if (EngineShowFlags.Physics || EngineShowFlags.VehicleDebug)
 				{
 					LineBatcher->BeginFrame();
-					DrawSkeletalPhysicsDebug(GetWorld(), LineBatcher);
+					if (EngineShowFlags.Physics)
+						DrawSkeletalPhysicsDebug(GetWorld(), LineBatcher);
+					if (EngineShowFlags.VehicleDebug)
+						DrawVehicleDebug(GetWorld(), LineBatcher);
 					LineBatcher->SetDepthTest(false);
 					LineBatcher->OnRender(SceneView.ViewProjectionMatrix);
 					LineBatcher->SetDepthTest(true);

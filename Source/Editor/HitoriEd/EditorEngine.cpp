@@ -710,7 +710,7 @@ void UEditorEngine::Tick(const float DeltaTime)
 					ShowFlags.SkeletalMeshes = S.bShowSkeletalMesh;
 				}
 
-				// Show > Physics는 설정 창에 없고 뷰포트 Show 메뉴에만 있다. PIE를 시작한 레벨 뷰포트의 값을 따른다
+				// Show > Physics / Vehicle Debug는 PIE를 시작한 레벨 뷰포트의 Show 메뉴 값을 따른다
 				// (새 창 PIE면 지금 활성 뷰포트)
 				if (ViewportsPanel)
 				{
@@ -718,6 +718,7 @@ void UEditorEngine::Tick(const float DeltaTime)
 					if (FLevelEditorViewportClient* SourceClient = ViewportsPanel->GetViewportClient(SourceView))
 					{
 						Context->GameViewport->EngineShowFlags.Physics = SourceClient->GetEngineShowFlags().Physics;
+						Context->GameViewport->EngineShowFlags.VehicleDebug = SourceClient->GetEngineShowFlags().VehicleDebug;
 					}
 				}
 			}
@@ -1185,12 +1186,12 @@ void UEditorEngine::SaveSceneAs()
 	FEditorFileUtils::SaveSceneAs(EditorWorld);
 }
 
-// PIE 디버그 표시 (Settings > Debug Draw (PIE))
+// PIE 디버그 표시 (Settings > Debug Draw (PIE) + Viewport Show Flags)
 void UEditorEngine::DrawPIEDebug(UWorld* World, const FMatrix& ViewProjection, const FEngineShowFlags& ShowFlags)
 {
 	const FEditorSettings& Settings = SettingsPanel->GetSettings();
 	GShowSkeletalRootDebug = Settings.bShowRootDebug;  // 런타임 "root" 라벨 표시용
-	GShowVehicleDebug = Settings.bShowVehicleDebug;
+	GShowVehicleDebug = ShowFlags.VehicleDebug;
 
 	FLineBatcher* LineBatcher = World->LineBatcher.get();
 	LineBatcher->BeginFrame();
@@ -1200,12 +1201,12 @@ void UEditorEngine::DrawPIEDebug(UWorld* World, const FMatrix& ViewProjection, c
 
 	// root 및 차량 디버그(휠/서스펜션/COM)는 메시에 가려지기 쉬우므로 깊이 테스트 없이 따로 그린다 (항상 위에 보임)
 	// Show > Physics 래그돌 바디도 메시 안에 있어 같은 패스로 그린다
-	if (Settings.bShowRootDebug || Settings.bShowVehicleDebug || ShowFlags.Physics)
+	if (Settings.bShowRootDebug || ShowFlags.VehicleDebug || ShowFlags.Physics)
 	{
 		LineBatcher->BeginFrame();
 		if (Settings.bShowRootDebug)
 			DrawSkeletalRootDebug(World, LineBatcher);
-		if (Settings.bShowVehicleDebug)
+		if (ShowFlags.VehicleDebug)
 			DrawVehicleDebug(World, LineBatcher);
 		if (ShowFlags.Physics)
 			DrawSkeletalPhysicsDebug(World, LineBatcher);

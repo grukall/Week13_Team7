@@ -361,8 +361,10 @@ void USkeletalMeshComponent::PostEditChangeProperty(const FProperty& Property)
 	Super::PostEditChangeProperty(Property);
 	if (Property.Name == "bUseArticulatedPhysics")
 		RecreatePhysicsState();
-	else if (Property.Name == "bSimulateRagdoll")
-		SetSimulatePhysics(bSimulateRagdoll);
+	// Details는 BodyInstance 멤버가 바뀌면 구조체 프로퍼티 이름("BodyInstance")으로 알린다.
+	// Simulate Physics 체크가 지금 래그돌 상태와 다를 때만 적용한다 (충돌 설정 등 다른 멤버 변경은 무시)
+	else if (Property.Name == "BodyInstance" && bUseArticulatedPhysics && BodyInstance.bSimulatePhysics != bRagdollActive)
+		SetSimulatePhysics(BodyInstance.bSimulatePhysics);
 }
 
 bool USkeletalMeshComponent::ShouldCreatePhysicsState()
@@ -398,8 +400,8 @@ void USkeletalMeshComponent::OnCreatePhysicsState()
 	PostPhysicsTick.RegisterTickFunction(GetWorld()->GetTickTaskManager());
 
 	// 바디마다 시뮬레이션 여부를 정한다. Ragdoll OFF여도 PhysicsType = Simulated 바디는 여기서 켜진다
-	// (씬에 Ragdoll ON으로 저장돼 있었으면 모든 Default 바디도 켜진다)
-	SetSimulatePhysics(bSimulateRagdoll);
+	// (씬에 Simulate Physics ON으로 저장돼 있었으면 모든 Default 바디도 켜진다)
+	SetSimulatePhysics(BodyInstance.bSimulatePhysics);
 
 	UActorComponent::OnCreatePhysicsState();
 }
@@ -432,10 +434,11 @@ void USkeletalMeshComponent::SetSimulatePhysics(bool bSimulate)
 		return;
 	}
 
-	bSimulateRagdoll = bSimulate;
+	// 관절 모드의 컴포넌트 BodyInstance는 PhysX 바디가 없으므로 값만 저장된다 (래그돌 요청값)
+	BodyInstance.bSimulatePhysics = bSimulate;
 	if (Bodies.IsEmpty())
 	{
-		// 아직 물리 상태가 없다. OnCreatePhysicsState가 bSimulateRagdoll을 보고 적용한다
+		// 아직 물리 상태가 없다. OnCreatePhysicsState가 BodyInstance.bSimulatePhysics를 보고 적용한다
 		bRagdollActive = false;
 		bAnyBodySimulating = false;
 		return;
@@ -460,6 +463,64 @@ void USkeletalMeshComponent::SetSimulatePhysics(bool bSimulate)
 		bAnyBodySimulating |= bSimulateBody;
 	}
 	bRagdollActive = bSimulate;
+
+	// 루트 바디가 이제 시뮬레이션되면, 지금 이 순간의 "루트 바디 → 컴포넌트" 오프셋을 저장한다.
+	// SetInstanceSimulatePhysics가 대기 중이던 Kinematic 목표로 바디를 옮긴 뒤라야 오프셋이 맞다
+	if (IsRootBodySimulating())
+		CacheRootBodyOffset();
+}
+
+int32 USkeletalMeshComponent::FindRootBodyIndex() const
+{
+	// 부모가 항상 앞 인덱스이므로 0번부터 처음 만나는 바디가 계층상 가장 위(보통 pelvis)다
+	for (int32 BoneIndex = 0; BoneIndex < BoneToBody.Num(); ++BoneIndex)
+	{
+		if (BoneToBody[BoneIndex] != -1)
+			return BoneToBody[BoneIndex];
+	}
+	return -1;
+}
+
+bool USkeletalMeshComponent::IsRootBodySimulating() const
+{
+	return Bodies.IsValidIndex(RootBodyIndex) && Bodies[RootBodyIndex] &&
+		Bodies[RootBodyIndex]->IsValidBodyInstance() && Bodies[RootBodyIndex]->bSimulatePhysics;
+}
+
+void USkeletalMeshComponent::CacheRootBodyOffset()
+{
+	if (!Bodies.IsValidIndex(RootBodyIndex) || !Bodies[RootBodyIndex] || !Bodies[RootBodyIndex]->IsValidBodyInstance())
+	{
+		ComponentToRootBody = FMatrix::Identity;
+		return;
+	}
+	// 행 벡터 규약: CompWorld = ComponentToRootBody × RootBodyWorld  →  ComponentToRootBody = CompWorld × RootBodyWorld⁻¹
+	// 예) 컴포넌트 (0,0,0), pelvis (0,0,90) → 오프셋 (0,0,-90). 컴포넌트 스케일은 오프셋 쪽에 남는다
+	const FMatrix RootBodyWorld = Bodies[RootBodyIndex]->GetUnrealWorldTransform().GetLocalMatrix();
+	ComponentToRootBody = GetWorldMatrix() * RootBodyWorld.Inverse();
+}
+
+void USkeletalMeshComponent::SyncComponentToRBPhysics()
+{
+	if (!bSimulationUpdatesComponentTransform || !IsRootBodySimulating())
+		return;
+
+	// 예) 시뮬레이션 후 pelvis (50,0,20) → 컴포넌트 = (0,0,-90) × (50,0,20) = (50,0,-70). pelvis가 돌면 오프셋도 같이 돈다
+	const FMatrix RootBodyWorld = Bodies[RootBodyIndex]->GetUnrealWorldTransform().GetLocalMatrix();
+	const FMatrix NewWorld = ComponentToRootBody * RootBodyWorld;
+
+	// 바디가 잠들어 거의 그대로면 Transform을 건드리지 않는다 (자식 · 렌더 dirty 방지)
+	const FTransform Current(GetWorldMatrix());
+	const FTransform Target(NewWorld);
+	const FQuat& A = Current.Rotation;
+	const FQuat& B = Target.Rotation;
+	const float QuatDot = std::abs(A.X * B.X + A.Y * B.Y + A.Z * B.Z + A.W * B.W);
+	if ((Target.Location - Current.Location).SizeSquared() < 1e-6f && QuatDot > 1.0f - 1e-6f)
+		return;
+
+	// 컴포넌트 단일 BodyInstance는 Articulated 모드에서 없으므로 OnUpdateTransform이 바디를 되밀지 않는다.
+	// 부모(캡슐 등)에 붙어 있으면 상대 Transform이 바뀐다 (Unreal도 래그돌은 부착을 유지한 채 메시만 따라간다)
+	SetWorldTransform(NewWorld, false);
 }
 
 // 애니메이션 포즈의 본 월드 위치로 Kinematic 바디를 끌고 간다 (StartFrame이 서브스텝마다 보간)
@@ -488,6 +549,10 @@ void USkeletalMeshComponent::BlendInPhysics()
 	const int32 NumBones = Bones.Num();
 	if (BoneSpaceTransforms.Num() != NumBones || BoneToBody.Num() != NumBones)
 		return;
+
+	// 컴포넌트를 먼저 루트 바디 위치로 옮긴다. 아래 WorldToComponent가 옮겨진 새 Transform을 기준으로 해야
+	// 본 CS 값이 작게 유지된다 (Unreal EndPhysicsTickComponent: SyncComponentToRBPhysics → BlendInPhysicsInternal)
+	SyncComponentToRBPhysics();
 
 	const FMatrix WorldToComponent = GetWorldMatrix().Inverse();
 	const FVector ComponentScale = GetWorldScale3D();
@@ -593,6 +658,8 @@ void USkeletalMeshComponent::InitArticulated(FPhysScene* Scene)
 		if (Bodies[i] && Bodies[i]->IsValidBodyInstance() && BoneToBody.IsValidIndex(Bodies[i]->InstanceBoneIndex))
 			BoneToBody[Bodies[i]->InstanceBoneIndex] = i;
 	}
+	RootBodyIndex = FindRootBodyIndex();
+	ComponentToRootBody = FMatrix::Identity;
 }
 
 void USkeletalMeshComponent::TermArticulated()
@@ -612,6 +679,8 @@ void USkeletalMeshComponent::TermArticulated()
 	}
 	Bodies.Empty();
 	BoneToBody.Empty();
+	RootBodyIndex = -1;
+	ComponentToRootBody = FMatrix::Identity;
 }
 
 UAnimSingleNodeInstance* USkeletalMeshComponent::GetSingleNodeInstance() const

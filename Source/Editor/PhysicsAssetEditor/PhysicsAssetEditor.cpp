@@ -228,7 +228,9 @@ namespace
 		float Sc = 0.0f, Tc = 0.0f;
 		if (a < 1e-8f)
 		{
-			Tc = std::max(-e / c, 0.0f);   // 길이 0 = 구: 중심에서 레이로 수선
+			// 길이 0 = 구: 중심에서 레이로 수선. W = 중심 - O 이므로 수선의 발 t = D·W / D·D = e / c
+			// (아래 일반식 Tc = (b·Sc + e) / c 에 Sc = 0을 넣은 것과 같다)
+			Tc = std::max(e / c, 0.0f);
 		}
 		else
 		{

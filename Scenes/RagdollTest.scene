@@ -43,6 +43,7 @@
                                     "CollisionEnabled": "QueryAndPhysics",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -136,6 +137,7 @@
                                     "CollisionEnabled": "NoCollision",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -243,9 +245,9 @@
                                         "Z": 30.0
                                     },
                                     "Rotation": {
-                                        "Pitch": 34.00000762939453,
-                                        "Roll": 6.179024239827413e-06,
-                                        "Yaw": 125.00003051757813
+                                        "Pitch": 34.000003814697266,
+                                        "Roll": -1.0298372217221186e-06,
+                                        "Yaw": 125.00005340576172
                                     },
                                     "Scale": {
                                         "X": 1.0,
@@ -299,6 +301,7 @@
                                     "CollisionEnabled": "QueryAndPhysics",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -356,6 +359,7 @@
                                     "CollisionEnabled": "QueryAndPhysics",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -513,6 +517,7 @@
                                     "CollisionEnabled": "QueryAndPhysics",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -576,7 +581,7 @@
                                     "Location": {
                                         "X": -1.5,
                                         "Y": 0.0,
-                                        "Z": 0.05929827690124512
+                                        "Z": 0.0
                                     },
                                     "Rotation": {
                                         "Pitch": 0.0,
@@ -704,7 +709,7 @@
                                             "Z": 6.916248129762437e-10
                                         },
                                         "Rotation": {
-                                            "Pitch": 0.030778246000409126,
+                                            "Pitch": 0.03077825717628002,
                                             "Roll": 0.0,
                                             "Yaw": 0.0
                                         },
@@ -764,9 +769,9 @@
                                             "Z": 0.08089502900838852
                                         },
                                         "Rotation": {
-                                            "Pitch": 30.4686222076416,
-                                            "Roll": 87.86389923095703,
-                                            "Yaw": 88.94808959960938
+                                            "Pitch": 30.46862030029297,
+                                            "Roll": 87.8639144897461,
+                                            "Yaw": 88.94808197021484
                                         },
                                         "Scale": {
                                             "X": 1.0000001192092896,
@@ -785,8 +790,8 @@
                                         },
                                         "Rotation": {
                                             "Pitch": -0.031827837228775024,
-                                            "Roll": -90.0169448852539,
-                                            "Yaw": 29.503725051879883
+                                            "Roll": -90.01695251464844,
+                                            "Yaw": 29.503732681274414
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -824,9 +829,9 @@
                                             "Z": -7.902235532597501e-10
                                         },
                                         "Rotation": {
-                                            "Pitch": 0.9877546429634094,
+                                            "Pitch": 0.9877549409866333,
                                             "Roll": 4.781351890414953e-05,
-                                            "Yaw": 1.6097612842713716e-07
+                                            "Yaw": 1.6097604316200886e-07
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -924,7 +929,7 @@
                                             "Z": 0.005200000945478678
                                         },
                                         "Rotation": {
-                                            "Pitch": 2.7070095539093018,
+                                            "Pitch": 2.707009792327881,
                                             "Roll": -90.00045013427734,
                                             "Yaw": -1.8162961623602314e-06
                                         },
@@ -1024,9 +1029,9 @@
                                             "Z": 1.1919735953824784e-07
                                         },
                                         "Rotation": {
-                                            "Pitch": -6.750196916982532e-07,
+                                            "Pitch": -6.750198622285097e-07,
                                             "Roll": 1.165788034995785e-06,
-                                            "Yaw": 0.09560080617666245
+                                            "Yaw": 0.09560082852840424
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -1044,9 +1049,9 @@
                                             "Z": 2.3841860752327193e-07
                                         },
                                         "Rotation": {
-                                            "Pitch": 5.042625161877368e-07,
-                                            "Roll": -7.811162827664475e-10,
-                                            "Yaw": -0.06984670460224152
+                                            "Pitch": 5.042626867179933e-07,
+                                            "Roll": -7.8111639378875e-10,
+                                            "Yaw": -0.0698467269539833
                                         },
                                         "Scale": {
                                             "X": 0.9999999403953552,
@@ -1084,8 +1089,8 @@
                                             "Z": -0.017100008204579353
                                         },
                                         "Rotation": {
-                                            "Pitch": 2.04020619392395,
-                                            "Roll": -90.0004653930664,
+                                            "Pitch": 2.0402064323425293,
+                                            "Roll": -90.00045776367188,
                                             "Yaw": -1.1746835753001506e-06
                                         },
                                         "Scale": {
@@ -1124,8 +1129,8 @@
                                             "Z": 8.881784197001252e-16
                                         },
                                         "Rotation": {
-                                            "Pitch": -8.829226771922549e-07,
-                                            "Roll": -7.08179737074488e-10,
+                                            "Pitch": -8.829229614093492e-07,
+                                            "Roll": -7.081799036079417e-10,
                                             "Yaw": 0.12227671593427658
                                         },
                                         "Scale": {
@@ -1159,14 +1164,14 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.027299880981445313,
+                                            "X": 0.027299880981445312,
                                             "Y": 0.02279975637793541,
                                             "Z": 0.03359999507665634
                                         },
                                         "Rotation": {
-                                            "Pitch": -24.289167404174805,
+                                            "Pitch": -24.289155960083008,
                                             "Roll": -179.95655822753906,
-                                            "Yaw": 29.30998420715332
+                                            "Yaw": 29.309980392456055
                                         },
                                         "Scale": {
                                             "X": 1.0000001192092896,
@@ -1224,8 +1229,8 @@
                                             "Z": 1.3471069593151697e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": -1.7424095858586952e-05,
-                                            "Roll": -60.81916046142578,
+                                            "Pitch": -1.7424092220608145e-05,
+                                            "Roll": -60.81915283203125,
                                             "Yaw": -2.8644017220358364e-05
                                         },
                                         "Scale": {
@@ -1244,9 +1249,9 @@
                                             "Z": 0.08089502900838852
                                         },
                                         "Rotation": {
-                                            "Pitch": 30.4686222076416,
-                                            "Roll": -87.86389923095703,
-                                            "Yaw": -88.94808959960938
+                                            "Pitch": 30.46862030029297,
+                                            "Roll": -87.8639144897461,
+                                            "Yaw": -88.94808197021484
                                         },
                                         "Scale": {
                                             "X": 1.0000001192092896,
@@ -1264,9 +1269,9 @@
                                             "Z": -0.016968511044979095
                                         },
                                         "Rotation": {
-                                            "Pitch": -0.03182784095406532,
+                                            "Pitch": -0.031827837228775024,
                                             "Roll": 90.01696014404297,
-                                            "Yaw": -29.503721237182617
+                                            "Yaw": -29.503732681274414
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -1304,9 +1309,9 @@
                                             "Z": 8.434106746335601e-09
                                         },
                                         "Rotation": {
-                                            "Pitch": 0.9877546429634094,
-                                            "Roll": -6.147468229755759e-05,
-                                            "Yaw": -2.787214441468677e-07
+                                            "Pitch": 0.9877549409866333,
+                                            "Roll": -6.147466046968475e-05,
+                                            "Yaw": -2.7872130203832057e-07
                                         },
                                         "Scale": {
                                             "X": 0.9999999403953552,
@@ -1324,7 +1329,7 @@
                                             "Z": 0.030899997800588608
                                         },
                                         "Rotation": {
-                                            "Pitch": 7.86646251071943e-06,
+                                            "Pitch": 7.866461601224728e-06,
                                             "Roll": 90.0004653930664,
                                             "Yaw": 0.0
                                         },
@@ -1404,7 +1409,7 @@
                                             "Z": 0.005200000945478678
                                         },
                                         "Rotation": {
-                                            "Pitch": 2.7070088386535645,
+                                            "Pitch": 2.7070095539093018,
                                             "Roll": 90.0004653930664,
                                             "Yaw": 2.136818920916994e-06
                                         },
@@ -1445,7 +1450,7 @@
                                         },
                                         "Rotation": {
                                             "Pitch": -9.380826782035001e-07,
-                                            "Roll": -1.5298524669304925e-09,
+                                            "Roll": -1.5298532440866097e-09,
                                             "Yaw": -0.12944935262203217
                                         },
                                         "Scale": {
@@ -1486,7 +1491,7 @@
                                         "Rotation": {
                                             "Pitch": 3.842461109161377,
                                             "Roll": 90.00045776367188,
-                                            "Yaw": 3.4227894047944574e-06
+                                            "Yaw": 3.2088653370010434e-06
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -1504,9 +1509,9 @@
                                             "Z": 1.1917562403596094e-07
                                         },
                                         "Rotation": {
-                                            "Pitch": -6.44184922293789e-07,
+                                            "Pitch": -6.441850928240456e-07,
                                             "Roll": 3.344910908253951e-07,
-                                            "Yaw": -0.09559980779886246
+                                            "Yaw": -0.09559983015060425
                                         },
                                         "Scale": {
                                             "X": 0.9999998211860657,
@@ -1525,8 +1530,8 @@
                                         },
                                         "Rotation": {
                                             "Pitch": 5.060884404883836e-07,
-                                            "Roll": 2.1394148674858116e-09,
-                                            "Yaw": 0.06984654814004898
+                                            "Roll": 2.1394150895304165e-09,
+                                            "Yaw": 0.06984657049179077
                                         },
                                         "Scale": {
                                             "X": 1.0000001192092896,
@@ -1566,7 +1571,7 @@
                                         "Rotation": {
                                             "Pitch": 2.0402064323425293,
                                             "Roll": 90.0004653930664,
-                                            "Yaw": 1.7086307479985408e-06
+                                            "Yaw": 1.6018414044083329e-06
                                         },
                                         "Scale": {
                                             "X": 0.9999997615814209,
@@ -1644,7 +1649,7 @@
                                             "Z": 0.03359999507665634
                                         },
                                         "Rotation": {
-                                            "Pitch": -24.28917121887207,
+                                            "Pitch": -24.289155960083008,
                                             "Roll": 179.95655822753906,
                                             "Yaw": -29.30998420715332
                                         },
@@ -1665,8 +1670,8 @@
                                         },
                                         "Rotation": {
                                             "Pitch": 0.015547668561339378,
-                                            "Roll": -0.008480463176965714,
-                                            "Yaw": 0.0054823183454573154
+                                            "Roll": -0.00848046038299799,
+                                            "Yaw": 0.0054823169484734535
                                         },
                                         "Scale": {
                                             "X": 0.9999999403953552,
@@ -1684,8 +1689,8 @@
                                             "Z": 1.7437683297316653e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": -0.028396693989634514,
-                                            "Roll": 0.009296206757426262,
+                                            "Pitch": -0.02839670516550541,
+                                            "Roll": 0.009296209551393986,
                                             "Yaw": -0.061344895511865616
                                         },
                                         "Scale": {
@@ -1929,6 +1934,7 @@
                                     "CollisionEnabled": "QueryAndPhysics",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -1940,7 +1946,7 @@
                                     "ObjectType": "ECC_WorldDynamic",
                                     "PhysMaterialOverride": null,
                                     "bNotifyRigidBodyCollision": false,
-                                    "bSimulatePhysics": false,
+                                    "bSimulatePhysics": true,
                                     "bUseCCD": false
                                 },
                                 "Mobility": "Movable",
@@ -1970,7 +1976,8 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
-                                "bSimulateRagdoll": true,
+                                "bSimulationUpdatesComponentTransform": true,
+                                "bUseArticulatedPhysics": true,
                                 "bVisible": true
                             }
                         }
@@ -2182,7 +2189,7 @@
                                             "Z": 0.0808950662612915
                                         },
                                         "Rotation": {
-                                            "Pitch": 24.239944458007813,
+                                            "Pitch": 24.239944458007812,
                                             "Roll": 89.85874938964844,
                                             "Yaw": 91.86041259765625
                                         },
@@ -2518,7 +2525,7 @@
                                     "Local": {
                                         "Location": {
                                             "X": 0.039325010031461716,
-                                            "Y": 2.9802322387695313e-08,
+                                            "Y": 2.9802322387695312e-08,
                                             "Z": -9.499490261077881e-08
                                         },
                                         "Rotation": {
@@ -2698,7 +2705,7 @@
                                     "Local": {
                                         "Location": {
                                             "X": 0.27444031834602356,
-                                            "Y": -2.9802322387695313e-08,
+                                            "Y": -2.9802322387695312e-08,
                                             "Z": 2.2351741790771484e-08
                                         },
                                         "Rotation": {
@@ -2743,7 +2750,7 @@
                                         },
                                         "Rotation": {
                                             "Pitch": -0.0004439624026417732,
-                                            "Roll": 89.99990844726563,
+                                            "Roll": 89.99990844726562,
                                             "Yaw": -78.04080963134766
                                         },
                                         "Scale": {
@@ -2999,7 +3006,7 @@
                                         "Location": {
                                             "X": 0.03932497277855873,
                                             "Y": -3.166496753692627e-08,
-                                            "Z": 2.9802322387695313e-08
+                                            "Z": 2.9802322387695312e-08
                                         },
                                         "Rotation": {
                                             "Pitch": -77.12105560302734,
@@ -3142,9 +3149,9 @@
                                             "Z": 0.04602380096912384
                                         },
                                         "Rotation": {
-                                            "Pitch": -27.603775024414063,
+                                            "Pitch": -27.603775024414062,
                                             "Roll": -174.8434295654297,
-                                            "Yaw": 165.66604614257813
+                                            "Yaw": 165.66604614257812
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -3243,7 +3250,7 @@
                                         },
                                         "Rotation": {
                                             "Pitch": -1.1303575038909912,
-                                            "Roll": 178.24160766601563,
+                                            "Roll": 178.24160766601562,
                                             "Yaw": -166.83615112304688
                                         },
                                         "Scale": {
@@ -3347,6 +3354,7 @@
                                     "CollisionEnabled": "QueryAndPhysics",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -3388,7 +3396,8 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
-                                "bSimulateRagdoll": false,
+                                "bSimulationUpdatesComponentTransform": true,
+                                "bUseArticulatedPhysics": true,
                                 "bVisible": true
                             },
                             "SingleAnimation": {
@@ -3405,7 +3414,7 @@
                     }
                 },
                 {
-                    "Class": "ACharacter",
+                    "Class": "AMyCharacter",
                     "Components": [
                         {
                             "Class": "USceneComponent",
@@ -3444,6 +3453,7 @@
                                     "CollisionEnabled": "QueryAndPhysics",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -3997,7 +4007,7 @@
                                     "Local": {
                                         "Location": {
                                             "X": 0.039325010031461716,
-                                            "Y": 2.9802322387695313e-08,
+                                            "Y": 2.9802322387695312e-08,
                                             "Z": -9.499490261077881e-08
                                         },
                                         "Rotation": {
@@ -4177,7 +4187,7 @@
                                     "Local": {
                                         "Location": {
                                             "X": 0.27444031834602356,
-                                            "Y": -2.9802322387695313e-08,
+                                            "Y": -2.9802322387695312e-08,
                                             "Z": 2.2351741790771484e-08
                                         },
                                         "Rotation": {
@@ -4222,7 +4232,7 @@
                                         },
                                         "Rotation": {
                                             "Pitch": -0.0004439624026417732,
-                                            "Roll": 89.99990844726563,
+                                            "Roll": 89.99990844726562,
                                             "Yaw": -78.04080963134766
                                         },
                                         "Scale": {
@@ -4478,7 +4488,7 @@
                                         "Location": {
                                             "X": 0.03932497277855873,
                                             "Y": -3.166496753692627e-08,
-                                            "Z": 2.9802322387695313e-08
+                                            "Z": 2.9802322387695312e-08
                                         },
                                         "Rotation": {
                                             "Pitch": -77.12105560302734,
@@ -4621,9 +4631,9 @@
                                             "Z": 0.04602380096912384
                                         },
                                         "Rotation": {
-                                            "Pitch": -27.603775024414063,
+                                            "Pitch": -27.603775024414062,
                                             "Roll": -174.8434295654297,
-                                            "Yaw": 165.66604614257813
+                                            "Yaw": 165.66604614257812
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -4722,7 +4732,7 @@
                                         },
                                         "Rotation": {
                                             "Pitch": -1.1303575038909912,
-                                            "Roll": 178.24160766601563,
+                                            "Roll": 178.24160766601562,
                                             "Yaw": -166.83615112304688
                                         },
                                         "Scale": {
@@ -4826,6 +4836,7 @@
                                     "CollisionEnabled": "QueryAndPhysics",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -4867,7 +4878,8 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
-                                "bSimulateRagdoll": false,
+                                "bSimulationUpdatesComponentTransform": true,
+                                "bUseArticulatedPhysics": true,
                                 "bVisible": true
                             }
                         },
@@ -4888,7 +4900,7 @@
                                 "RotationRate": {
                                     "Pitch": 0.0,
                                     "Roll": 0.0,
-                                    "Yaw": 360.0
+                                    "Yaw": 500.0
                                 },
                                 "TerminalVelocity": 4000.0,
                                 "Velocity": {
@@ -4899,12 +4911,97 @@
                                 "bAutoActivate": true,
                                 "bConstrainToPlane": false,
                                 "bHiddenInGame": false,
-                                "bOrientRotationToMovement": false,
+                                "bOrientRotationToMovement": true,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "USpringArmComponent",
+                            "Name": "SpringArmComponent",
+                            "Parent": "CapsuleComponent",
+                            "Properties": {
+                                "CameraLagMaxDistance": 0.0,
+                                "CameraLagSpeed": 10.0,
+                                "CameraRotationLagSpeed": 10.0,
+                                "Mobility": "Movable",
+                                "ProbeSize": 0.11999999731779099,
+                                "SocketOffset": {
+                                    "X": 0.0,
+                                    "Y": 0.0,
+                                    "Z": 0.0
+                                },
+                                "TargetArmLength": 4.0,
+                                "TargetOffset": {
+                                    "X": 0.0,
+                                    "Y": 0.0,
+                                    "Z": 0.0
+                                },
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bDoCollisionTest": true,
+                                "bDrawDebug": true,
+                                "bDrawOnlyIfSelected": false,
+                                "bEnableCameraLag": false,
+                                "bEnableCameraRotationLag": false,
+                                "bHiddenInGame": false,
+                                "bInheritPitch": false,
+                                "bInheritRoll": true,
+                                "bInheritYaw": true,
+                                "bUsePawnControlRotation": true,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UCameraComponent",
+                            "Name": "CameraComponent",
+                            "Parent": "SpringArmComponent",
+                            "Properties": {
+                                "FStop": 2.799999952316284,
+                                "FocusDistanceMeters": 5.0,
+                                "Mobility": "Movable",
+                                "SensorWidthMM": 36.0,
+                                "Transform": {
+                                    "Location": {
+                                        "X": -4.000000476837158,
+                                        "Y": 0.0,
+                                        "Z": -1.1920928955078125e-07
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 1.3340216042934117e-08
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bExternalInputManaged": true,
+                                "bHiddenInGame": false,
+                                "bUsePawnControlRotation": false,
                                 "bVisible": true
                             }
                         }
                     ],
-                    "Name": "ACharacter_0",
+                    "Name": "AMyCharacter_0",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true

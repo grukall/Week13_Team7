@@ -1,5 +1,5 @@
 {
-    "Version": 4,
+    "Version": 5,
     "World": {
         "PersistentLevel": {
             "Actors": [
@@ -11,6 +11,7 @@
                             "Name": "DefaultSceneRoot",
                             "Parent": "",
                             "Properties": {
+                                "Mobility": "Movable",
                                 "Transform": {
                                     "Location": {
                                         "X": 0.0,
@@ -38,8 +39,28 @@
                             "Name": "CapsuleComponent",
                             "Parent": "",
                             "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_Pawn",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": true,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
                                 "CapsuleHalfHeight": 1.0,
                                 "CapsuleRadius": 0.5,
+                                "Mobility": "Movable",
                                 "ShapeColor": 4286105710,
                                 "Transform": {
                                     "Location": {
@@ -49,7 +70,7 @@
                                     },
                                     "Rotation": {
                                         "Pitch": 0.0,
-                                        "Roll": 0.0,
+                                        "Roll": 5.386418067132581e-08,
                                         "Yaw": 0.0
                                     },
                                     "Scale": {
@@ -58,6 +79,7 @@
                                         "Z": 1.0
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": true,
                                 "bCastShadow": false,
@@ -1400,6 +1422,26 @@
                                 "AnimBlueprintPath": "FBX/UAL1_Standard/MyAnimInstance.animblueprint",
                                 "AnimInstance": null,
                                 "BlendSpaceInput": 300.0,
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Ignore",
+                                        "Cloth": "ECR_Block",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
+                                "Mobility": "Movable",
                                 "SkeletalMesh": "FBX/UAL1_Standard/UAL1_Standard.fbx.bin",
                                 "Transform": {
                                     "Location": {
@@ -1418,6 +1460,7 @@
                                         "Z": 0.009999999776482582
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": false,
                                 "bCastShadow": true,
@@ -1425,6 +1468,8 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
+                                "bSimulateRagdoll": false,
+                                "bUseArticulatedPhysics": true,
                                 "bVisible": true
                             }
                         },
@@ -1468,6 +1513,7 @@
                                 "CameraLagMaxDistance": 0.0,
                                 "CameraLagSpeed": 10.0,
                                 "CameraRotationLagSpeed": 10.0,
+                                "Mobility": "Movable",
                                 "ProbeSize": 0.11999999731779099,
                                 "SocketOffset": {
                                     "X": 0.0,
@@ -1516,6 +1562,10 @@
                             "Name": "CameraComponent",
                             "Parent": "SpringArmComponent",
                             "Properties": {
+                                "FStop": 2.799999952316284,
+                                "FocusDistanceMeters": 5.0,
+                                "Mobility": "Movable",
+                                "SensorWidthMM": 36.0,
                                 "Transform": {
                                     "Location": {
                                         "X": -4.0,
@@ -1539,6 +1589,129 @@
                                 "bUsePawnControlRotation": false,
                                 "bVisible": true
                             }
+                        },
+                        {
+                            "Class": "UClothComponent",
+                            "Name": "UClothComponent_0",
+                            "OverrideMaterials": [
+                                {
+                                    "Base": "DefaultMaterial",
+                                    "Instance": {
+                                        "BaseColor": {
+                                            "W": 1.0,
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        },
+                                        "BlendState": "Opaque",
+                                        "FlipNormalY": false,
+                                        "PSOType": 0,
+                                        "Properties": {
+                                            "PhysMaterial": null
+                                        },
+                                        "SamplerState": "LinearClamp",
+                                        "Shininess": 32.0,
+                                        "SpecularColor": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        },
+                                        "Textures": [
+                                            "Assets/Models/cape_fabric_1024.png",
+                                            "FlatNormalTexture"
+                                        ],
+                                        "UVScrollSpeed": [
+                                            0.0,
+                                            0.0
+                                        ]
+                                    }
+                                }
+                            ],
+                            "Parent": "CapsuleComponent",
+                            "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
+                                "GridSettings": {
+                                    "CapeBottomWidth": 0.800000011920929,
+                                    "CapeFreeDistance": 0.5,
+                                    "CapeFreeExponent": 1.5,
+                                    "CapeLength": 1.0,
+                                    "CapeTopWidth": 0.4000000059604645,
+                                    "Cols": 33,
+                                    "Rows": 33,
+                                    "Shape": "Cape",
+                                    "Spacing": 0.11999999731779099
+                                },
+                                "Mobility": "Movable",
+                                "PinSettings": {
+                                    "FreeMaxDistance": 10000.0,
+                                    "bCornersOnly": false,
+                                    "bPinColFirst": false,
+                                    "bPinColLast": false,
+                                    "bPinRowFirst": false,
+                                    "bPinRowLast": false
+                                },
+                                "RenderThickness": 0.0,
+                                "SelfCollision": {
+                                    "Distance": 0.05999999865889549,
+                                    "Stiffness": 1.0,
+                                    "bEnabled": true
+                                },
+                                "SimSettings": {
+                                    "AngularInertia": 0.20000000298023224,
+                                    "CentrifugalInertia": 0.20000000298023224,
+                                    "Friction": 3.0,
+                                    "LinearInertia": 0.0,
+                                    "SolverFrequency": 300.0,
+                                    "TeleportDistance": 2.0,
+                                    "WindStrength": 3.0,
+                                    "bEnableGravity": true,
+                                    "bEnableWind": false
+                                },
+                                "Transform": {
+                                    "Location": {
+                                        "X": -0.118,
+                                        "Y": 0.0,
+                                        "Z": 0.511
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 180.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "TranslucencySortPriority": 0,
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": true,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": true,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
                         }
                     ],
                     "Name": "AMyCharacter_0",
@@ -1555,6 +1728,7 @@
                             "Name": "DefaultSceneRoot",
                             "Parent": "",
                             "Properties": {
+                                "Mobility": "Movable",
                                 "Transform": {
                                     "Location": {
                                         "X": 4.0,
@@ -1593,7 +1767,9 @@
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
                                         "PSOType": 0,
-                                        "Properties": {},
+                                        "Properties": {
+                                            "PhysMaterial": null
+                                        },
                                         "SamplerState": "LinearClamp",
                                         "Shininess": 32.0,
                                         "SpecularColor": {
@@ -1613,6 +1789,26 @@
                             ],
                             "Parent": "DefaultSceneRoot",
                             "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Ignore",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
+                                "Mobility": "Movable",
                                 "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
@@ -1631,6 +1827,7 @@
                                         "Z": 1.0
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": false,
                                 "bCastShadow": true,
@@ -1656,6 +1853,7 @@
                             "Name": "DefaultSceneRoot",
                             "Parent": "",
                             "Properties": {
+                                "Mobility": "Movable",
                                 "Transform": {
                                     "Location": {
                                         "X": 0.0,
@@ -1690,6 +1888,7 @@
                                 "DynamicShadowDistanceMovableLight": 1000.0,
                                 "Intensity": 1.0,
                                 "LightColor": 4294967295,
+                                "Mobility": "Movable",
                                 "ShadowBias": 0.5,
                                 "ShadowDistanceFadeoutFraction": 0.10000000149011612,
                                 "ShadowResolutionScale": 1.0,
@@ -1732,7 +1931,9 @@
                                     "BlendState": "AlphaBlend",
                                     "FlipNormalY": false,
                                     "PSOType": 14,
-                                    "Properties": {},
+                                    "Properties": {
+                                        "PhysMaterial": null
+                                    },
                                     "SamplerState": "LinearClamp",
                                     "Shininess": 32.0,
                                     "SpecularColor": {
@@ -1752,6 +1953,26 @@
                             "Name": "UBillboardComponent",
                             "Parent": "UDirectionalLightComponent",
                             "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Ignore",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
+                                "Mobility": "Movable",
                                 "Transform": {
                                     "Location": {
                                         "X": 0.0,
@@ -1769,6 +1990,7 @@
                                         "Z": 1.0
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": false,
                                 "bCastShadow": false,
@@ -1789,6 +2011,26 @@
                             ],
                             "Parent": "UDirectionalLightComponent",
                             "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Ignore",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
+                                "Mobility": "Movable",
                                 "StaticMesh": "Arrow",
                                 "Transform": {
                                     "Location": {
@@ -1807,6 +2049,7 @@
                                         "Z": 0.5
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": false,
                                 "bCastShadow": false,
@@ -1832,6 +2075,7 @@
                             "Name": "DefaultSceneRoot",
                             "Parent": "",
                             "Properties": {
+                                "Mobility": "Movable",
                                 "Transform": {
                                     "Location": {
                                         "X": 0.0,
@@ -1861,6 +2105,7 @@
                             "Properties": {
                                 "Intensity": 1.0,
                                 "LightColor": 4294967295,
+                                "Mobility": "Movable",
                                 "ShadowBias": 0.5,
                                 "ShadowResolutionScale": 1.0,
                                 "ShadowSharpen": 0.0,
@@ -1869,7 +2114,7 @@
                                     "Location": {
                                         "X": 0.0,
                                         "Y": 0.0,
-                                        "Z": 0.0
+                                        "Z": 1.9569637775421143
                                     },
                                     "Rotation": {
                                         "Pitch": 0.0,
@@ -1902,7 +2147,9 @@
                                     "BlendState": "AlphaBlend",
                                     "FlipNormalY": false,
                                     "PSOType": 14,
-                                    "Properties": {},
+                                    "Properties": {
+                                        "PhysMaterial": null
+                                    },
                                     "SamplerState": "LinearClamp",
                                     "Shininess": 32.0,
                                     "SpecularColor": {
@@ -1922,6 +2169,26 @@
                             "Name": "UBillboardComponent",
                             "Parent": "USkyLightComponent",
                             "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Ignore",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
+                                "Mobility": "Movable",
                                 "Transform": {
                                     "Location": {
                                         "X": 0.0,
@@ -1939,6 +2206,7 @@
                                         "Z": 1.0
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": false,
                                 "bCastShadow": false,
@@ -1964,6 +2232,7 @@
                             "Name": "DefaultSceneRoot",
                             "Parent": "",
                             "Properties": {
+                                "Mobility": "Movable",
                                 "Transform": {
                                     "Location": {
                                         "X": 0.0,
@@ -1991,8 +2260,28 @@
                             "Name": "CapsuleComponent",
                             "Parent": "",
                             "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Ignore",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_Pawn",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
                                 "CapsuleHalfHeight": 1.0,
                                 "CapsuleRadius": 0.5,
+                                "Mobility": "Movable",
                                 "ShapeColor": 4286105710,
                                 "Transform": {
                                     "Location": {
@@ -2011,6 +2300,7 @@
                                         "Z": 1.0
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": false,
                                 "bCastShadow": false,
@@ -3353,6 +3643,26 @@
                                 "AnimBlueprintPath": "FBX/UAL1_Standard/MyAnimInstance.animblueprint",
                                 "AnimInstance": null,
                                 "BlendSpaceInput": 300.0,
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": true,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
+                                "Mobility": "Movable",
                                 "SkeletalMesh": "FBX/UAL1_Standard/UAL1_Standard.fbx.bin",
                                 "Transform": {
                                     "Location": {
@@ -3371,6 +3681,7 @@
                                         "Z": 0.009999999776482582
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": true,
                                 "bCastShadow": true,
@@ -3378,6 +3689,8 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
+                                "bSimulateRagdoll": false,
+                                "bUseArticulatedPhysics": true,
                                 "bVisible": true
                             }
                         },
@@ -3421,6 +3734,7 @@
                                 "CameraLagMaxDistance": 0.0,
                                 "CameraLagSpeed": 10.0,
                                 "CameraRotationLagSpeed": 10.0,
+                                "Mobility": "Movable",
                                 "ProbeSize": 0.11999999731779099,
                                 "SocketOffset": {
                                     "X": 0.0,
@@ -3469,6 +3783,10 @@
                             "Name": "CameraComponent",
                             "Parent": "SpringArmComponent",
                             "Properties": {
+                                "FStop": 2.799999952316284,
+                                "FocusDistanceMeters": 5.0,
+                                "Mobility": "Movable",
+                                "SensorWidthMM": 36.0,
                                 "Transform": {
                                     "Location": {
                                         "X": -4.0,
@@ -3508,6 +3826,7 @@
                             "Name": "DefaultSceneRoot",
                             "Parent": "",
                             "Properties": {
+                                "Mobility": "Movable",
                                 "Transform": {
                                     "Location": {
                                         "X": 0.0,
@@ -3535,8 +3854,28 @@
                             "Name": "CapsuleComponent",
                             "Parent": "",
                             "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Ignore",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_Pawn",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
                                 "CapsuleHalfHeight": 1.0,
                                 "CapsuleRadius": 0.5,
+                                "Mobility": "Movable",
                                 "ShapeColor": 4286105710,
                                 "Transform": {
                                     "Location": {
@@ -3555,6 +3894,7 @@
                                         "Z": 1.0
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": false,
                                 "bCastShadow": false,
@@ -4897,6 +5237,26 @@
                                 "AnimBlueprintPath": "",
                                 "AnimInstance": null,
                                 "BlendSpaceInput": 300.0,
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Ignore",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
+                                "Mobility": "Movable",
                                 "SkeletalMesh": "FBX/UAL1_Standard/UAL1_Standard.fbx.bin",
                                 "Transform": {
                                     "Location": {
@@ -4915,6 +5275,7 @@
                                         "Z": 0.009999999776482582
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": false,
                                 "bCastShadow": true,
@@ -4922,6 +5283,8 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
+                                "bSimulateRagdoll": false,
+                                "bUseArticulatedPhysics": true,
                                 "bVisible": true
                             },
                             "SingleAnimation": {
@@ -4977,6 +5340,7 @@
                             "Name": "DefaultSceneRoot",
                             "Parent": "",
                             "Properties": {
+                                "Mobility": "Movable",
                                 "Transform": {
                                     "Location": {
                                         "X": 21.75,
@@ -5015,7 +5379,9 @@
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
                                         "PSOType": 0,
-                                        "Properties": {},
+                                        "Properties": {
+                                            "PhysMaterial": null
+                                        },
                                         "SamplerState": "LinearClamp",
                                         "Shininess": 32.0,
                                         "SpecularColor": {
@@ -5035,6 +5401,26 @@
                             ],
                             "Parent": "DefaultSceneRoot",
                             "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": true,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
+                                "Mobility": "Movable",
                                 "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
@@ -5053,6 +5439,7 @@
                                         "Z": 1.0
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": true,
                                 "bCastShadow": true,
@@ -5078,6 +5465,7 @@
                             "Name": "DefaultSceneRoot",
                             "Parent": "",
                             "Properties": {
+                                "Mobility": "Movable",
                                 "Transform": {
                                     "Location": {
                                         "X": -13.75,
@@ -5116,7 +5504,9 @@
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
                                         "PSOType": 0,
-                                        "Properties": {},
+                                        "Properties": {
+                                            "PhysMaterial": null
+                                        },
                                         "SamplerState": "LinearClamp",
                                         "Shininess": 32.0,
                                         "SpecularColor": {
@@ -5136,6 +5526,26 @@
                             ],
                             "Parent": "DefaultSceneRoot",
                             "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": true,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
+                                "Mobility": "Movable",
                                 "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
@@ -5154,6 +5564,7 @@
                                         "Z": 1.0
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": true,
                                 "bCastShadow": true,
@@ -5179,6 +5590,7 @@
                             "Name": "DefaultSceneRoot",
                             "Parent": "",
                             "Properties": {
+                                "Mobility": "Movable",
                                 "Transform": {
                                     "Location": {
                                         "X": 4.0,
@@ -5217,7 +5629,9 @@
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
                                         "PSOType": 0,
-                                        "Properties": {},
+                                        "Properties": {
+                                            "PhysMaterial": null
+                                        },
                                         "SamplerState": "LinearClamp",
                                         "Shininess": 32.0,
                                         "SpecularColor": {
@@ -5237,6 +5651,26 @@
                             ],
                             "Parent": "DefaultSceneRoot",
                             "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": true,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
+                                "Mobility": "Movable",
                                 "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
@@ -5255,6 +5689,7 @@
                                         "Z": 1.0
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": true,
                                 "bCastShadow": true,
@@ -5280,6 +5715,7 @@
                             "Name": "DefaultSceneRoot",
                             "Parent": "",
                             "Properties": {
+                                "Mobility": "Movable",
                                 "Transform": {
                                     "Location": {
                                         "X": 4.0,
@@ -5318,7 +5754,9 @@
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
                                         "PSOType": 0,
-                                        "Properties": {},
+                                        "Properties": {
+                                            "PhysMaterial": null
+                                        },
                                         "SamplerState": "LinearClamp",
                                         "Shininess": 32.0,
                                         "SpecularColor": {
@@ -5338,6 +5776,26 @@
                             ],
                             "Parent": "DefaultSceneRoot",
                             "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": true,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
+                                "Mobility": "Movable",
                                 "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
@@ -5356,6 +5814,7 @@
                                         "Z": 1.0
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": true,
                                 "bCastShadow": true,
@@ -5381,6 +5840,7 @@
                             "Name": "DefaultSceneRoot",
                             "Parent": "",
                             "Properties": {
+                                "Mobility": "Movable",
                                 "Transform": {
                                     "Location": {
                                         "X": 5.300000190734863,
@@ -5419,7 +5879,9 @@
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
                                         "PSOType": 0,
-                                        "Properties": {},
+                                        "Properties": {
+                                            "PhysMaterial": null
+                                        },
                                         "SamplerState": "LinearClamp",
                                         "Shininess": 32.0,
                                         "SpecularColor": {
@@ -5439,6 +5901,26 @@
                             ],
                             "Parent": "DefaultSceneRoot",
                             "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Ignore",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
+                                "Mobility": "Movable",
                                 "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
@@ -5457,6 +5939,7 @@
                                         "Z": 1.0
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": false,
                                 "bCastShadow": true,
@@ -5482,6 +5965,7 @@
                             "Name": "DefaultSceneRoot",
                             "Parent": "",
                             "Properties": {
+                                "Mobility": "Movable",
                                 "Transform": {
                                     "Location": {
                                         "X": 5.300000190734863,
@@ -5509,7 +5993,27 @@
                             "Name": "TextRenderComponent",
                             "Parent": "DefaultSceneRoot",
                             "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Ignore",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
                                 "Font": "Engine/Fonts/CookieRun.json",
+                                "Mobility": "Movable",
                                 "Text": "애니메이션 ",
                                 "TextSize": 0.4000000059604645,
                                 "Transform": {
@@ -5529,6 +6033,7 @@
                                         "Z": 1.0
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": false,
                                 "bCastShadow": true,
@@ -5554,6 +6059,7 @@
                             "Name": "DefaultSceneRoot",
                             "Parent": "",
                             "Properties": {
+                                "Mobility": "Movable",
                                 "Transform": {
                                     "Location": {
                                         "X": 5.300000190734863,
@@ -5581,7 +6087,27 @@
                             "Name": "TextRenderComponent",
                             "Parent": "DefaultSceneRoot",
                             "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Ignore",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
                                 "Font": "Engine/Fonts/CookieRun.json",
+                                "Mobility": "Movable",
                                 "Text": "WASD 이동 / Space 점프 / 좌클릭 공격",
                                 "TextSize": 0.20000000298023224,
                                 "Transform": {
@@ -5601,6 +6127,7 @@
                                         "Z": 1.0
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": false,
                                 "bCastShadow": true,
@@ -5626,6 +6153,7 @@
                             "Name": "DefaultSceneRoot",
                             "Parent": "",
                             "Properties": {
+                                "Mobility": "Movable",
                                 "Transform": {
                                     "Location": {
                                         "X": 5.300000190734863,
@@ -5653,7 +6181,27 @@
                             "Name": "TextRenderComponent",
                             "Parent": "DefaultSceneRoot",
                             "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Ignore",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
                                 "Font": "Engine/Fonts/CookieRun.json",
+                                "Mobility": "Movable",
                                 "Text": "공격 더미",
                                 "TextSize": 0.25999999046325684,
                                 "Transform": {
@@ -5673,6 +6221,7 @@
                                         "Z": 1.0
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": false,
                                 "bCastShadow": true,
@@ -5698,6 +6247,7 @@
                             "Name": "DefaultSceneRoot",
                             "Parent": "",
                             "Properties": {
+                                "Mobility": "Movable",
                                 "Transform": {
                                     "Location": {
                                         "X": 5.300000190734863,
@@ -5725,7 +6275,27 @@
                             "Name": "TextRenderComponent",
                             "Parent": "DefaultSceneRoot",
                             "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Ignore",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
                                 "Font": "Engine/Fonts/CookieRun.json",
+                                "Mobility": "Movable",
                                 "Text": "피격 더미",
                                 "TextSize": 0.25999999046325684,
                                 "Transform": {
@@ -5745,6 +6315,7 @@
                                         "Z": 1.0
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": false,
                                 "bCastShadow": true,
@@ -5770,6 +6341,7 @@
                             "Name": "DefaultSceneRoot",
                             "Parent": "",
                             "Properties": {
+                                "Mobility": "Movable",
                                 "Transform": {
                                     "Location": {
                                         "X": 5.300000190734863,
@@ -5797,7 +6369,27 @@
                             "Name": "TextRenderComponent",
                             "Parent": "DefaultSceneRoot",
                             "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Ignore",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
                                 "Font": "Engine/Fonts/CookieRun.json",
+                                "Mobility": "Movable",
                                 "Text": "정방향 재생",
                                 "TextSize": 0.25999999046325684,
                                 "Transform": {
@@ -5817,6 +6409,7 @@
                                         "Z": 1.0
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": false,
                                 "bCastShadow": true,
@@ -5842,6 +6435,7 @@
                             "Name": "DefaultSceneRoot",
                             "Parent": "",
                             "Properties": {
+                                "Mobility": "Movable",
                                 "Transform": {
                                     "Location": {
                                         "X": 5.300000190734863,
@@ -5869,7 +6463,27 @@
                             "Name": "TextRenderComponent",
                             "Parent": "DefaultSceneRoot",
                             "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Ignore",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
                                 "Font": "Engine/Fonts/CookieRun.json",
+                                "Mobility": "Movable",
                                 "Text": "역방향 재생",
                                 "TextSize": 0.25999999046325684,
                                 "Transform": {
@@ -5889,6 +6503,7 @@
                                         "Z": 1.0
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": false,
                                 "bCastShadow": true,
@@ -5914,6 +6529,7 @@
                             "Name": "DefaultSceneRoot",
                             "Parent": "",
                             "Properties": {
+                                "Mobility": "Movable",
                                 "Transform": {
                                     "Location": {
                                         "X": 0.0,
@@ -5941,8 +6557,28 @@
                             "Name": "CapsuleComponent",
                             "Parent": "",
                             "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Ignore",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_Pawn",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
                                 "CapsuleHalfHeight": 1.0,
                                 "CapsuleRadius": 0.5,
+                                "Mobility": "Movable",
                                 "ShapeColor": 4286105710,
                                 "Transform": {
                                     "Location": {
@@ -5961,6 +6597,7 @@
                                         "Z": 1.0
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": false,
                                 "bCastShadow": false,
@@ -7303,6 +7940,26 @@
                                 "AnimBlueprintPath": "",
                                 "AnimInstance": null,
                                 "BlendSpaceInput": 300.0,
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Ignore",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
+                                "Mobility": "Movable",
                                 "SkeletalMesh": "FBX/UAL1_Standard/UAL1_Standard.fbx.bin",
                                 "Transform": {
                                     "Location": {
@@ -7321,6 +7978,7 @@
                                         "Z": 0.009999999776482582
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": false,
                                 "bCastShadow": true,
@@ -7328,6 +7986,8 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
+                                "bSimulateRagdoll": false,
+                                "bUseArticulatedPhysics": true,
                                 "bVisible": true
                             },
                             "SingleAnimation": {
@@ -7383,6 +8043,7 @@
                             "Name": "DefaultSceneRoot",
                             "Parent": "",
                             "Properties": {
+                                "Mobility": "Movable",
                                 "Transform": {
                                     "Location": {
                                         "X": 0.0,
@@ -7410,8 +8071,28 @@
                             "Name": "CapsuleComponent",
                             "Parent": "",
                             "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Ignore",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_Pawn",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
                                 "CapsuleHalfHeight": 1.0,
                                 "CapsuleRadius": 0.5,
+                                "Mobility": "Movable",
                                 "ShapeColor": 4286105710,
                                 "Transform": {
                                     "Location": {
@@ -7430,6 +8111,7 @@
                                         "Z": 1.0
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": false,
                                 "bCastShadow": false,
@@ -8772,6 +9454,26 @@
                                 "AnimBlueprintPath": "",
                                 "AnimInstance": null,
                                 "BlendSpaceInput": 300.0,
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Ignore",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
+                                "Mobility": "Movable",
                                 "SkeletalMesh": "FBX/UAL1_Standard/UAL1_Standard.fbx.bin",
                                 "Transform": {
                                     "Location": {
@@ -8790,6 +9492,7 @@
                                         "Z": 0.009999999776482582
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": false,
                                 "bCastShadow": true,
@@ -8797,6 +9500,8 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
+                                "bSimulateRagdoll": false,
+                                "bUseArticulatedPhysics": true,
                                 "bVisible": true
                             },
                             "SingleAnimation": {
@@ -8852,6 +9557,7 @@
                             "Name": "DefaultSceneRoot",
                             "Parent": "",
                             "Properties": {
+                                "Mobility": "Movable",
                                 "Transform": {
                                     "Location": {
                                         "X": 0.0,
@@ -8879,8 +9585,28 @@
                             "Name": "CapsuleComponent",
                             "Parent": "",
                             "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Ignore",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_Pawn",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
                                 "CapsuleHalfHeight": 1.0,
                                 "CapsuleRadius": 0.5,
+                                "Mobility": "Movable",
                                 "ShapeColor": 4286105710,
                                 "Transform": {
                                     "Location": {
@@ -8899,6 +9625,7 @@
                                         "Z": 1.0
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": false,
                                 "bCastShadow": false,
@@ -8955,14 +9682,14 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.05010004714131355,
-                                            "Y": 0.0,
-                                            "Z": 0.916700005531311
+                                            "X": 0.04995099455118179,
+                                            "Y": -0.009291760623455048,
+                                            "Z": 0.8936703205108643
                                         },
                                         "Rotation": {
-                                            "Pitch": -75.54135131835938,
-                                            "Roll": 180.0,
-                                            "Yaw": 180.0
+                                            "Pitch": -75.50251007080078,
+                                            "Roll": -175.1667938232422,
+                                            "Yaw": 174.3201904296875
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -8976,13 +9703,13 @@
                                     "Local": {
                                         "Location": {
                                             "X": 0.1381763368844986,
-                                            "Y": 0.0,
-                                            "Z": 3.725290298461914e-09
+                                            "Y": 1.2223608791828156e-09,
+                                            "Z": 3.3905962482094765e-09
                                         },
                                         "Rotation": {
-                                            "Pitch": 7.419563293457031,
-                                            "Roll": 1.1380476852330576e-31,
-                                            "Yaw": -2.3281154623685346e-31
+                                            "Pitch": 7.4195661544799805,
+                                            "Roll": -5.537148339840314e-08,
+                                            "Yaw": -1.30854999724761e-07
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -8995,19 +9722,19 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.12403485924005508,
-                                            "Y": 0.0,
-                                            "Z": 7.596099749207497e-09
+                                            "X": 0.12403479218482971,
+                                            "Y": 2.4801920517347753e-09,
+                                            "Z": 5.660695023834705e-09
                                         },
                                         "Rotation": {
-                                            "Pitch": 8.864472389221191,
-                                            "Roll": -1.858043923113124e-30,
-                                            "Yaw": 1.0112137255702941e-31
+                                            "Pitch": 4.705575942993164,
+                                            "Roll": -0.6359620094299316,
+                                            "Yaw": -0.7617488503456116
                                         },
                                         "Scale": {
                                             "X": 1.0,
                                             "Y": 1.0,
-                                            "Z": 0.9999999403953552
+                                            "Z": 1.0
                                         }
                                     },
                                     "Name": "spine_02"
@@ -9015,19 +9742,19 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.14127163589000702,
-                                            "Y": 0.0,
-                                            "Z": 1.862645149230957e-09
+                                            "X": 0.14127172529697418,
+                                            "Y": -4.94765117764473e-10,
+                                            "Z": 1.8699211068451405e-09
                                         },
                                         "Rotation": {
-                                            "Pitch": 0.03078366257250309,
-                                            "Roll": 0.0,
-                                            "Yaw": 0.0
+                                            "Pitch": -4.145222187042236,
+                                            "Roll": -1.5925042629241943,
+                                            "Yaw": 1.5376918315887451
                                         },
                                         "Scale": {
                                             "X": 0.9999998807907104,
-                                            "Y": 1.0,
-                                            "Z": 0.9999998807907104
+                                            "Y": 0.9999998807907104,
+                                            "Z": 0.9999998211860657
                                         }
                                     },
                                     "Name": "spine_03"
@@ -9035,19 +9762,19 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.1728907823562622,
-                                            "Y": 0.0,
-                                            "Z": 3.725290298461914e-09
+                                            "X": 0.17289073765277863,
+                                            "Y": -2.0954757928848267e-09,
+                                            "Z": 2.444721758365631e-09
                                         },
                                         "Rotation": {
-                                            "Pitch": -12.744305610656738,
-                                            "Roll": 0.0,
-                                            "Yaw": 0.0
+                                            "Pitch": -8.5541353225708,
+                                            "Roll": 1.0317763090133667,
+                                            "Yaw": -1.1073321104049683
                                         },
                                         "Scale": {
-                                            "X": 0.9999999403953552,
+                                            "X": 1.0,
                                             "Y": 1.0,
-                                            "Z": 0.9999999403953552
+                                            "Z": 1.0000001192092896
                                         }
                                     },
                                     "Name": "neck_01"
@@ -9055,19 +9782,19 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.08258677273988724,
-                                            "Y": 0.0,
-                                            "Z": -2.514570951461792e-08
+                                            "X": 0.08258681744337082,
+                                            "Y": 2.0954757928848267e-09,
+                                            "Z": -3.6670826375484467e-09
                                         },
                                         "Rotation": {
-                                            "Pitch": 9.024702072143555,
-                                            "Roll": 1.6485726400578925e-32,
-                                            "Yaw": 3.2242117331190162e-31
+                                            "Pitch": 6.513611316680908,
+                                            "Roll": 0.7218138575553894,
+                                            "Yaw": -1.1080453395843506
                                         },
                                         "Scale": {
-                                            "X": 1.0,
+                                            "X": 0.9999998807907104,
                                             "Y": 1.0,
-                                            "Z": 1.0
+                                            "Z": 0.9999999403953552
                                         }
                                     },
                                     "Name": "Head"
@@ -9080,9 +9807,9 @@
                                             "Z": 0.08089503645896912
                                         },
                                         "Rotation": {
-                                            "Pitch": 30.4686222076416,
-                                            "Roll": 87.8638687133789,
-                                            "Yaw": 88.94804382324219
+                                            "Pitch": 32.96683120727539,
+                                            "Roll": 87.80548858642578,
+                                            "Yaw": 88.83702087402344
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -9096,17 +9823,17 @@
                                     "Local": {
                                         "Location": {
                                             "X": 0.21858176589012146,
-                                            "Y": -0.030072323977947235,
-                                            "Z": -0.01696868985891342
+                                            "Y": -0.030072342604398727,
+                                            "Z": -0.01696864515542984
                                         },
                                         "Rotation": {
-                                            "Pitch": -0.0318363793194294,
-                                            "Roll": -90.01696014404297,
-                                            "Yaw": 29.502885818481445
+                                            "Pitch": 37.68663024902344,
+                                            "Roll": -90.79727935791016,
+                                            "Yaw": 27.215843200683594
                                         },
                                         "Scale": {
-                                            "X": 0.9999999403953552,
-                                            "Y": 0.9999999403953552,
+                                            "X": 1.0,
+                                            "Y": 1.0,
                                             "Z": 1.0
                                         }
                                     },
@@ -9115,18 +9842,18 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.2744402587413788,
-                                            "Y": 1.6335908981091052e-07,
-                                            "Z": 6.049958756193519e-09
+                                            "X": 0.27444034814834595,
+                                            "Y": 6.864102886083856e-08,
+                                            "Z": 2.165143087040633e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": -1.9690325260162354,
-                                            "Roll": 0.0023468362633138895,
-                                            "Yaw": -9.111965482588857e-05
+                                            "Pitch": -16.632476806640625,
+                                            "Roll": -2.3766067028045654,
+                                            "Yaw": 3.880066394805908
                                         },
                                         "Scale": {
-                                            "X": 1.0,
-                                            "Y": 1.0,
+                                            "X": 0.9999998807907104,
+                                            "Y": 0.9999998807907104,
                                             "Z": 1.0
                                         }
                                     },
@@ -9136,13 +9863,13 @@
                                     "Local": {
                                         "Location": {
                                             "X": 0.27264052629470825,
-                                            "Y": 2.4659840391905163e-08,
-                                            "Z": 6.3397771477013976e-09
+                                            "Y": 2.3505791091338324e-08,
+                                            "Z": -7.07465952487496e-09
                                         },
                                         "Rotation": {
-                                            "Pitch": 0.9877612590789795,
-                                            "Roll": -4.710491623427515e-07,
-                                            "Yaw": -2.7324813345330767e-05
+                                            "Pitch": -5.0788373947143555,
+                                            "Roll": -0.9326193928718567,
+                                            "Yaw": 0.6819946765899658
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -9155,14 +9882,14 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.11989999562501907,
-                                            "Y": 0.0020000741351395845,
-                                            "Z": 0.03089999035000801
+                                            "X": 0.11990006268024445,
+                                            "Y": 0.0020000385120511055,
+                                            "Z": 0.030899975448846817
                                         },
                                         "Rotation": {
-                                            "Pitch": -2.7846400185715936e-10,
-                                            "Roll": -89.99958801269531,
-                                            "Yaw": 3.847666084766388e-05
+                                            "Pitch": -0.0002817454223986715,
+                                            "Roll": -89.9996566772461,
+                                            "Yaw": 39.020416259765625
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -9175,14 +9902,14 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.04070001840591431,
-                                            "Y": 1.3742713633746462e-09,
-                                            "Z": 1.3554185329667234e-08
+                                            "X": 0.04070001095533371,
+                                            "Y": 1.558829687553498e-08,
+                                            "Z": -3.746072962940161e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": 6.361127309574208e-14,
-                                            "Roll": 1.3660400327353273e-05,
-                                            "Yaw": -3.564689871851465e-19
+                                            "Pitch": -38.56057357788086,
+                                            "Roll": 4.281971268937923e-05,
+                                            "Yaw": -2.8075815862393938e-05
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -9195,19 +9922,19 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.03479999303817749,
-                                            "Y": -1.1409078126689565e-09,
-                                            "Z": 5.328741892185462e-09
+                                            "X": 0.03479999676346779,
+                                            "Y": 3.620497679435175e-09,
+                                            "Z": -3.971080531073312e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": 5.823768721594771e-19,
-                                            "Roll": 4.853140709034785e-20,
-                                            "Yaw": 1.345371913942964e-19
+                                            "Pitch": -38.5605583190918,
+                                            "Roll": 4.550336598185822e-06,
+                                            "Yaw": 1.4798756637901533e-05
                                         },
                                         "Scale": {
-                                            "X": 1.0,
+                                            "X": 0.9999999403953552,
                                             "Y": 1.0,
-                                            "Z": 1.0
+                                            "Z": 0.9999999403953552
                                         }
                                     },
                                     "Name": "index_03_l"
@@ -9215,14 +9942,14 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.030099986121058464,
-                                            "Y": 1.7480417113802105e-10,
-                                            "Z": 5.3287472212559805e-09
+                                            "X": 0.030099984258413315,
+                                            "Y": -1.248545267173995e-08,
+                                            "Z": -8.045835997450013e-09
                                         },
                                         "Rotation": {
-                                            "Pitch": -2.4038212397733077e-19,
+                                            "Pitch": 6.403315637726337e-07,
                                             "Roll": -179.9995880126953,
-                                            "Yaw": -2.3645851164889853e-17
+                                            "Yaw": -3.7352359072428953e-07
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -9235,14 +9962,14 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.12159998714923859,
-                                            "Y": -0.00040008456562645733,
-                                            "Z": 0.0051999944262206554
+                                            "X": 0.12160001695156097,
+                                            "Y": -0.00040005799382925034,
+                                            "Z": 0.005199989303946495
                                         },
                                         "Rotation": {
-                                            "Pitch": 2.707000732421875,
-                                            "Roll": -90.00042724609375,
-                                            "Yaw": 4.316374543122947e-05
+                                            "Pitch": 2.103095531463623,
+                                            "Roll": -88.29524230957031,
+                                            "Yaw": 39.05181121826172
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -9256,17 +9983,17 @@
                                     "Local": {
                                         "Location": {
                                             "X": 0.04234730452299118,
-                                            "Y": 3.798959369305521e-09,
-                                            "Z": 2.1425279328468605e-08
+                                            "Y": 5.1591086958069354e-09,
+                                            "Z": -3.4922166491924145e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": 1.3764206414634828e-06,
-                                            "Roll": 1.3658124771609437e-05,
-                                            "Yaw": -0.1734456568956375
+                                            "Pitch": -38.56056213378906,
+                                            "Roll": 2.1982061298331246e-05,
+                                            "Yaw": -0.17345230281352997
                                         },
                                         "Scale": {
                                             "X": 1.0,
-                                            "Y": 0.9999998807907104,
+                                            "Y": 0.9999999403953552,
                                             "Z": 1.0
                                         }
                                     },
@@ -9275,17 +10002,17 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.03393314406275749,
-                                            "Y": -8.076312951743603e-10,
-                                            "Z": 1.5706797285020002e-07
+                                            "X": 0.03393317013978958,
+                                            "Y": 8.443748811259866e-09,
+                                            "Z": 4.593769631355826e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": -9.14600775558938e-07,
-                                            "Roll": -1.0201856026625933e-09,
-                                            "Yaw": 0.12945261597633362
+                                            "Pitch": -38.56055450439453,
+                                            "Roll": 6.248295903787948e-06,
+                                            "Yaw": 0.12945067882537842
                                         },
                                         "Scale": {
-                                            "X": 0.9999998807907104,
+                                            "X": 0.9999999403953552,
                                             "Y": 1.0,
                                             "Z": 1.0
                                         }
@@ -9295,18 +10022,18 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.03443717956542969,
-                                            "Y": -4.53474058303982e-09,
-                                            "Z": 2.287561073899269e-08
+                                            "X": 0.0344371572136879,
+                                            "Y": 3.320565156172961e-09,
+                                            "Z": 1.4231773093342781e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": -3.4276377309377937e-12,
+                                            "Pitch": 1.4407399930860265e-06,
                                             "Roll": -179.9995880126953,
-                                            "Yaw": 9.604952992958715e-07
+                                            "Yaw": 9.60500415203569e-07
                                         },
                                         "Scale": {
                                             "X": 0.9999996423721313,
-                                            "Y": 0.9999999403953552,
+                                            "Y": 1.0,
                                             "Z": 1.0
                                         }
                                     },
@@ -9315,18 +10042,18 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.10769999772310257,
-                                            "Y": 0.001599880401045084,
-                                            "Z": -0.040800005197525024
+                                            "X": 0.10770002007484436,
+                                            "Y": 0.0015998969320207834,
+                                            "Z": -0.04080002009868622
                                         },
                                         "Rotation": {
-                                            "Pitch": 3.8424530029296875,
-                                            "Roll": -90.00041198730469,
-                                            "Yaw": 3.9362079405691475e-05
+                                            "Pitch": -1.3576719760894775,
+                                            "Roll": -89.05422973632813,
+                                            "Yaw": 41.65788650512695
                                         },
                                         "Scale": {
-                                            "X": 1.0000001192092896,
-                                            "Y": 1.0000001192092896,
+                                            "X": 1.0,
+                                            "Y": 1.0,
                                             "Z": 1.0
                                         }
                                     },
@@ -9335,19 +10062,19 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.04029051214456558,
-                                            "Y": -1.496118784416467e-09,
-                                            "Z": -2.3677432636759477e-07
+                                            "X": 0.04029053822159767,
+                                            "Y": 8.565166353946552e-09,
+                                            "Z": -9.789806654225686e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": -6.811060870859365e-07,
-                                            "Roll": 1.3659818250744138e-05,
-                                            "Yaw": 0.09560219198465347
+                                            "Pitch": -38.53617477416992,
+                                            "Roll": 1.8308099508285522,
+                                            "Yaw": -1.5463148355484009
                                         },
                                         "Scale": {
-                                            "X": 0.9999998211860657,
-                                            "Y": 0.9999998211860657,
-                                            "Z": 1.0
+                                            "X": 0.9999998807907104,
+                                            "Y": 0.9999998807907104,
+                                            "Z": 0.9999999403953552
                                         }
                                     },
                                     "Name": "pinky_02_l"
@@ -9355,18 +10082,18 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.027665339410305023,
-                                            "Y": -9.350515028927475e-09,
-                                            "Z": -2.034306589848711e-08
+                                            "X": 0.027665331959724426,
+                                            "Y": -1.2125838111387566e-08,
+                                            "Z": -1.2965500673089991e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": 4.934643698106811e-07,
-                                            "Roll": -3.008787108349509e-10,
-                                            "Yaw": -0.06984593719244003
+                                            "Pitch": -38.560550689697266,
+                                            "Roll": -4.5422763150781975e-07,
+                                            "Yaw": -0.06984030455350876
                                         },
                                         "Scale": {
-                                            "X": 1.0,
-                                            "Y": 1.0,
+                                            "X": 0.9999999403953552,
+                                            "Y": 0.9999998807907104,
                                             "Z": 1.0
                                         }
                                     },
@@ -9375,14 +10102,14 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.028164207935333252,
-                                            "Y": -9.351424523629248e-09,
-                                            "Z": 1.0678832040866837e-07
+                                            "X": 0.028164178133010864,
+                                            "Y": -1.957687345566228e-08,
+                                            "Z": 7.481457942049019e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": -1.242291339242918e-11,
+                                            "Pitch": -8.537810458619788e-07,
                                             "Roll": -179.9995880126953,
-                                            "Yaw": 2.5613205707486486e-06
+                                            "Yaw": 1.6008223155949963e-06
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -9395,14 +10122,14 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.11909998208284378,
-                                            "Y": -0.00010003645729739219,
-                                            "Z": -0.017100006341934204
+                                            "X": 0.11910001188516617,
+                                            "Y": -0.00010002070484915748,
+                                            "Z": -0.01710001938045025
                                         },
                                         "Rotation": {
-                                            "Pitch": 2.0401995182037354,
-                                            "Roll": -90.00041198730469,
-                                            "Yaw": 3.8444191886810586e-05
+                                            "Pitch": 1.585202932357788,
+                                            "Roll": -88.71548461914063,
+                                            "Yaw": 39.03826141357422
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -9415,18 +10142,18 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.03932492062449455,
-                                            "Y": -3.980858309660107e-09,
-                                            "Z": 2.0044154780407553e-08
+                                            "X": 0.03932493180036545,
+                                            "Y": -1.5247678675223142e-09,
+                                            "Z": -5.8104063782593585e-09
                                         },
                                         "Rotation": {
-                                            "Pitch": 9.935630629342995e-08,
-                                            "Roll": 1.3660359400091693e-05,
-                                            "Yaw": -0.0013998685171827674
+                                            "Pitch": -38.56053924560547,
+                                            "Roll": 2.860137465177104e-05,
+                                            "Yaw": -0.001399393193423748
                                         },
                                         "Scale": {
                                             "X": 1.0,
-                                            "Y": 0.9999998807907104,
+                                            "Y": 0.9999999403953552,
                                             "Z": 1.0
                                         }
                                     },
@@ -9435,18 +10162,18 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.030919604003429413,
-                                            "Y": 6.384652806445956e-09,
-                                            "Z": 9.224635277860216e-09
+                                            "X": 0.03091956302523613,
+                                            "Y": 1.3902536011300981e-08,
+                                            "Z": -4.235246819916938e-09
                                         },
                                         "Rotation": {
-                                            "Pitch": -8.639319730718853e-07,
-                                            "Roll": -9.479834695014233e-10,
-                                            "Yaw": 0.1222807839512825
+                                            "Pitch": -38.560577392578125,
+                                            "Roll": -4.358881142252358e-06,
+                                            "Yaw": 0.12227962166070938
                                         },
                                         "Scale": {
-                                            "X": 0.9999999403953552,
-                                            "Y": 1.0,
+                                            "X": 0.9999998807907104,
+                                            "Y": 0.9999999403953552,
                                             "Z": 1.0
                                         }
                                     },
@@ -9455,14 +10182,14 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.031822532415390015,
-                                            "Y": 6.384652806445956e-09,
-                                            "Z": 1.1440056368883234e-07
+                                            "X": 0.031822606921195984,
+                                            "Y": 5.986294127069414e-09,
+                                            "Z": 7.117012046364835e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": -4.8939806200631875e-12,
+                                            "Pitch": -1.0672415839962923e-07,
                                             "Roll": -179.9995880126953,
-                                            "Yaw": 1.0672169281633614e-07
+                                            "Yaw": 5.336046626780444e-08
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -9475,18 +10202,18 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.027299996465444565,
-                                            "Y": 0.022800005972385406,
-                                            "Z": 0.033599987626075745
+                                            "X": 0.027300022542476654,
+                                            "Y": 0.02280000038444996,
+                                            "Z": 0.03359998017549515
                                         },
                                         "Rotation": {
-                                            "Pitch": -24.2891845703125,
-                                            "Roll": -179.95652770996094,
-                                            "Yaw": 29.30998992919922
+                                            "Pitch": -18.808380126953125,
+                                            "Roll": 179.10797119140625,
+                                            "Yaw": 31.853792190551758
                                         },
                                         "Scale": {
                                             "X": 1.0,
-                                            "Y": 1.0,
+                                            "Y": 0.9999999403953552,
                                             "Z": 1.0
                                         }
                                     },
@@ -9495,54 +10222,14 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.04302980750799179,
-                                            "Y": -5.392575985752046e-08,
-                                            "Z": -1.4901161193847656e-08
+                                            "X": 0.04302988946437836,
+                                            "Y": -9.034920367412269e-09,
+                                            "Z": -1.0244548320770264e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": 0.015570459887385368,
-                                            "Roll": 0.00849053356796503,
-                                            "Yaw": -0.0054947384633123875
-                                        },
-                                        "Scale": {
-                                            "X": 1.0000001192092896,
-                                            "Y": 1.0000001192092896,
-                                            "Z": 1.0
-                                        }
-                                    },
-                                    "Name": "thumb_02_l"
-                                },
-                                {
-                                    "Local": {
-                                        "Location": {
-                                            "X": 0.04907796531915665,
-                                            "Y": -9.297173164668493e-08,
-                                            "Z": -3.585591912269592e-08
-                                        },
-                                        "Rotation": {
-                                            "Pitch": -0.028409043326973915,
-                                            "Roll": -0.009289052337408066,
-                                            "Yaw": 0.06134403124451637
-                                        },
-                                        "Scale": {
-                                            "X": 0.9999999403953552,
-                                            "Y": 1.0000001192092896,
-                                            "Z": 1.0000001192092896
-                                        }
-                                    },
-                                    "Name": "thumb_03_l"
-                                },
-                                {
-                                    "Local": {
-                                        "Location": {
-                                            "X": 0.040862224996089935,
-                                            "Y": -2.6724592316895723e-08,
-                                            "Z": 0.0
-                                        },
-                                        "Rotation": {
-                                            "Pitch": -1.8304706827620976e-05,
-                                            "Roll": -60.81914520263672,
-                                            "Yaw": -2.580932959972415e-05
+                                            "Pitch": -12.661737442016602,
+                                            "Roll": -1.4278680086135864,
+                                            "Yaw": 0.46338775753974915
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -9550,19 +10237,59 @@
                                             "Z": 0.9999999403953552
                                         }
                                     },
+                                    "Name": "thumb_02_l"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 0.04907800257205963,
+                                            "Y": -2.1805817596032284e-08,
+                                            "Z": -1.6996636986732483e-08
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -43.437923431396484,
+                                            "Roll": -0.012775304727256298,
+                                            "Yaw": 0.07011543214321136
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "thumb_03_l"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 0.04086226224899292,
+                                            "Y": -1.7207639757543802e-09,
+                                            "Z": -3.306195139884949e-08
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -1.8160839317715727e-05,
+                                            "Roll": -60.81914520263672,
+                                            "Yaw": -2.6969910322804935e-05
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 0.9999998807907104,
+                                            "Z": 0.9999998807907104
+                                        }
+                                    },
                                     "Name": "thumb_04_leaf_l"
                                 },
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.1405535638332367,
-                                            "Y": -0.018799999728798866,
-                                            "Z": 0.08089503645896912
+                                            "X": 0.1405535340309143,
+                                            "Y": -0.018799997866153717,
+                                            "Z": 0.08089504390954971
                                         },
                                         "Rotation": {
-                                            "Pitch": 30.4686222076416,
-                                            "Roll": -87.8638687133789,
-                                            "Yaw": -88.94804382324219
+                                            "Pitch": 30.468616485595703,
+                                            "Roll": -87.8638916015625,
+                                            "Yaw": -88.94807434082031
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -9575,18 +10302,18 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.21858176589012146,
-                                            "Y": 0.030072323977947235,
-                                            "Z": -0.01696868985891342
+                                            "X": 0.21858173608779907,
+                                            "Y": 0.030072320252656937,
+                                            "Z": -0.016968611627817154
                                         },
                                         "Rotation": {
-                                            "Pitch": -0.03183722868561745,
-                                            "Roll": 90.0169677734375,
-                                            "Yaw": -29.50316619873047
+                                            "Pitch": 32.12733459472656,
+                                            "Roll": 85.60905456542969,
+                                            "Yaw": -44.74232482910156
                                         },
                                         "Scale": {
                                             "X": 1.0,
-                                            "Y": 0.9999999403953552,
+                                            "Y": 1.0,
                                             "Z": 1.0
                                         }
                                     },
@@ -9595,18 +10322,18 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.2744402587413788,
-                                            "Y": -5.155231974640628e-08,
-                                            "Z": 2.863089321181178e-09
+                                            "X": 0.2744401693344116,
+                                            "Y": -8.08103095550905e-09,
+                                            "Z": 7.01948010828346e-09
                                         },
                                         "Rotation": {
-                                            "Pitch": -1.9690393209457397,
-                                            "Roll": -0.002353787189349532,
-                                            "Yaw": 9.818796388572082e-05
+                                            "Pitch": -21.017681121826172,
+                                            "Roll": -11.526652336120605,
+                                            "Yaw": 0.23199796676635742
                                         },
                                         "Scale": {
                                             "X": 1.0,
-                                            "Y": 1.0,
+                                            "Y": 0.9999998807907104,
                                             "Z": 1.0
                                         }
                                     },
@@ -9615,14 +10342,14 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.27264052629470825,
-                                            "Y": 6.4657115217414685e-09,
-                                            "Z": 3.3788829512104712e-09
+                                            "X": 0.27264049649238586,
+                                            "Y": -1.1668305432976922e-08,
+                                            "Z": -5.04646244792184e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": 0.9877612590789795,
-                                            "Roll": 4.710491623427515e-07,
-                                            "Yaw": 2.7324813345330767e-05
+                                            "Pitch": -8.255931854248047,
+                                            "Roll": 0.7898488640785217,
+                                            "Yaw": -0.6544815301895142
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -9635,14 +10362,14 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.11989999562501907,
-                                            "Y": -0.0019999381620436907,
-                                            "Z": 0.03089999035000801
+                                            "X": 0.11990001797676086,
+                                            "Y": -0.0019999914802610874,
+                                            "Z": 0.03089998848736286
                                         },
                                         "Rotation": {
-                                            "Pitch": -3.2731733989876943e-10,
-                                            "Roll": 89.99958801269531,
-                                            "Yaw": -4.5306846004677936e-05
+                                            "Pitch": -0.0002868680458050221,
+                                            "Roll": 89.99964904785156,
+                                            "Yaw": -39.02040481567383
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -9655,19 +10382,19 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.04070001840591431,
-                                            "Y": -1.375180858076419e-09,
-                                            "Z": 1.3554542377391954e-08
+                                            "X": 0.0407000333070755,
+                                            "Y": -4.412880727500124e-09,
+                                            "Z": 1.2365206636388848e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": 7.886352367789754e-19,
-                                            "Roll": -1.3660376680491026e-05,
-                                            "Yaw": -1.7766083091307066e-19
+                                            "Pitch": -38.5605583190918,
+                                            "Roll": 4.296297902328661e-06,
+                                            "Yaw": -3.762330152312643e-06
                                         },
                                         "Scale": {
                                             "X": 1.0,
                                             "Y": 1.0,
-                                            "Z": 1.0
+                                            "Z": 0.9999999403953552
                                         }
                                     },
                                     "Name": "index_02_r"
@@ -9675,14 +10402,14 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.03479999303817749,
-                                            "Y": 1.1390888232654106e-09,
-                                            "Z": 5.329102048534651e-09
+                                            "X": 0.03479999676346779,
+                                            "Y": -3.1557458868292088e-09,
+                                            "Z": 2.12910027386215e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": 1.3649455921753828e-20,
-                                            "Roll": -4.853140709034785e-20,
-                                            "Yaw": 5.1147475637471905e-20
+                                            "Pitch": -38.560604095458984,
+                                            "Roll": 2.707832209125627e-05,
+                                            "Yaw": -1.6978190615191124e-05
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -9695,14 +10422,14 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.030099986121058464,
-                                            "Y": -1.766231605415669e-10,
-                                            "Z": 5.329111374408058e-09
+                                            "X": 0.030100010335445404,
+                                            "Y": 1.1087559315114959e-08,
+                                            "Z": 1.0115136284127857e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": -4.2464986616271267e-19,
+                                            "Pitch": 2.1344186507121776e-07,
                                             "Roll": 179.9995880126953,
-                                            "Yaw": 2.452699342169066e-19
+                                            "Yaw": -4.2688751022978977e-07
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -9715,18 +10442,18 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.12159997969865799,
-                                            "Y": 0.00040010118391364813,
-                                            "Z": 0.0051999944262206554
+                                            "X": 0.12160000205039978,
+                                            "Y": 0.00040008564246818423,
+                                            "Z": 0.005200015380978584
                                         },
                                         "Rotation": {
-                                            "Pitch": 2.707000732421875,
-                                            "Roll": 90.00042724609375,
-                                            "Yaw": -5.064261131337844e-05
+                                            "Pitch": 2.103107452392578,
+                                            "Roll": 88.29524993896484,
+                                            "Yaw": -39.05176544189453
                                         },
                                         "Scale": {
                                             "X": 1.0,
-                                            "Y": 1.0000001192092896,
+                                            "Y": 1.0,
                                             "Z": 1.0
                                         }
                                     },
@@ -9735,18 +10462,18 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.04234730824828148,
-                                            "Y": -3.799868864007294e-09,
-                                            "Z": 2.3072715293892543e-08
+                                            "X": 0.042347293347120285,
+                                            "Y": -1.899934432003647e-09,
+                                            "Z": -1.5021583976704278e-09
                                         },
                                         "Rotation": {
-                                            "Pitch": 1.2721161510853563e-06,
-                                            "Roll": -1.3658442185260355e-05,
-                                            "Yaw": 0.1734456568956375
+                                            "Pitch": -38.56057357788086,
+                                            "Roll": -2.1965004634694196e-05,
+                                            "Yaw": 0.17346322536468506
                                         },
                                         "Scale": {
                                             "X": 1.0,
-                                            "Y": 0.9999998807907104,
+                                            "Y": 0.9999999403953552,
                                             "Z": 1.0
                                         }
                                     },
@@ -9755,17 +10482,17 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.03393314406275749,
-                                            "Y": 8.067218004725873e-10,
-                                            "Z": 1.5706834233242262e-07
+                                            "X": 0.033933125436306,
+                                            "Y": 4.510684448177926e-08,
+                                            "Z": 7.853417116621131e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": -9.146002071247494e-07,
-                                            "Roll": 1.0201594013992121e-09,
-                                            "Yaw": -0.12945261597633362
+                                            "Pitch": -38.56055450439453,
+                                            "Roll": -3.932374511350645e-06,
+                                            "Yaw": -0.12945444881916046
                                         },
                                         "Scale": {
-                                            "X": 0.9999998807907104,
+                                            "X": 0.9999999403953552,
                                             "Y": 1.0,
                                             "Z": 1.0
                                         }
@@ -9775,18 +10502,18 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.03443717956542969,
-                                            "Y": 4.533831088338047e-09,
-                                            "Z": 2.2876008642924717e-08
+                                            "X": 0.034437146037817,
+                                            "Y": -3.12606971419882e-08,
+                                            "Z": 1.8888584918386186e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": -8.328744811880728e-12,
+                                            "Pitch": -8.537816711395863e-07,
                                             "Roll": 179.9995880126953,
-                                            "Yaw": -1.0672168855307973e-06
+                                            "Yaw": -1.6008223155949963e-06
                                         },
                                         "Scale": {
                                             "X": 0.9999999403953552,
-                                            "Y": 0.9999999403953552,
+                                            "Y": 1.0,
                                             "Z": 1.0
                                         }
                                     },
@@ -9795,18 +10522,18 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.10769999027252197,
-                                            "Y": -0.0015998621238395572,
-                                            "Z": -0.040800005197525024
+                                            "X": 0.10769999772310257,
+                                            "Y": -0.0015998664312064648,
+                                            "Z": -0.040799982845783234
                                         },
                                         "Rotation": {
-                                            "Pitch": 3.8424527645111084,
-                                            "Roll": 90.00041198730469,
-                                            "Yaw": -4.6849432692397386e-05
+                                            "Pitch": -1.3576513528823853,
+                                            "Roll": 89.05422973632813,
+                                            "Yaw": -41.657901763916016
                                         },
                                         "Scale": {
-                                            "X": 1.0000001192092896,
-                                            "Y": 1.0000001192092896,
+                                            "X": 1.0,
+                                            "Y": 1.0,
                                             "Z": 1.0
                                         }
                                     },
@@ -9815,19 +10542,19 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.04029051214456558,
-                                            "Y": 1.495209289714694e-09,
-                                            "Z": -2.372539142925234e-07
+                                            "X": 0.040290527045726776,
+                                            "Y": 4.358844307716936e-08,
+                                            "Z": -1.1117637654933787e-07
                                         },
                                         "Rotation": {
-                                            "Pitch": -6.50236700039386e-07,
-                                            "Roll": -1.3659869182447437e-05,
-                                            "Yaw": -0.09559536725282669
+                                            "Pitch": -38.53615951538086,
+                                            "Roll": -1.8308110237121582,
+                                            "Yaw": 1.5463396310806274
                                         },
                                         "Scale": {
-                                            "X": 0.9999998211860657,
-                                            "Y": 0.9999998211860657,
-                                            "Z": 1.0
+                                            "X": 0.9999998807907104,
+                                            "Y": 0.9999998807907104,
+                                            "Z": 0.9999999403953552
                                         }
                                     },
                                     "Name": "pinky_02_r"
@@ -9835,19 +10562,19 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.027665328234434128,
-                                            "Y": 1.899024937301874e-09,
-                                            "Z": -1.3955141753285716e-07
+                                            "X": 0.02766529656946659,
+                                            "Y": -2.3264874471351504e-08,
+                                            "Z": -5.673719272181188e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": 4.934222488373052e-07,
-                                            "Roll": 3.005182491744307e-10,
-                                            "Yaw": 0.06983911246061325
+                                            "Pitch": -38.56057357788086,
+                                            "Roll": 6.216309429873945e-06,
+                                            "Yaw": 0.06981594115495682
                                         },
                                         "Scale": {
                                             "X": 1.0,
-                                            "Y": 1.0,
-                                            "Z": 1.0
+                                            "Y": 0.9999999403953552,
+                                            "Z": 0.9999998807907104
                                         }
                                     },
                                     "Name": "pinky_03_r"
@@ -9855,14 +10582,14 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.0281642097979784,
-                                            "Y": 1.3076714822091162e-08,
-                                            "Z": -1.2420713346728007e-08
+                                            "X": 0.028164204210042953,
+                                            "Y": 2.3302163754124194e-08,
+                                            "Z": -2.111151786721166e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": -1.1192545154581346e-11,
+                                            "Pitch": -9.501994677196812e-12,
                                             "Roll": 179.9995880126953,
-                                            "Yaw": -2.561320798122324e-06
+                                            "Yaw": -2.347877398278797e-06
                                         },
                                         "Scale": {
                                             "X": 0.9999999403953552,
@@ -9875,14 +10602,14 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.11909997463226318,
-                                            "Y": 0.00010005338117480278,
-                                            "Z": -0.017100006341934204
+                                            "X": 0.11909998953342438,
+                                            "Y": 0.00010002567432820797,
+                                            "Z": -0.01709999144077301
                                         },
                                         "Rotation": {
-                                            "Pitch": 2.0401995182037354,
-                                            "Roll": 90.00041198730469,
-                                            "Yaw": -4.6133030991768464e-05
+                                            "Pitch": 1.5852283239364624,
+                                            "Roll": 88.71549987792969,
+                                            "Yaw": -39.03821563720703
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -9895,19 +10622,19 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.03932492434978485,
-                                            "Y": 3.979948814958334e-09,
-                                            "Z": 2.292961198691046e-08
+                                            "X": 0.039324961602687836,
+                                            "Y": -2.0361767383292317e-08,
+                                            "Z": -1.8337516394240083e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": -8.436961707047885e-08,
-                                            "Roll": -1.3660363947565202e-05,
-                                            "Yaw": 0.0013998685171827674
+                                            "Pitch": -38.56057357788086,
+                                            "Roll": 3.7623735806846526e-06,
+                                            "Yaw": 0.0013872305862605572
                                         },
                                         "Scale": {
                                             "X": 1.0,
                                             "Y": 0.9999998807907104,
-                                            "Z": 1.0
+                                            "Z": 0.9999998807907104
                                         }
                                     },
                                     "Name": "ring_02_r"
@@ -9915,17 +10642,17 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.030919605866074562,
-                                            "Y": -6.385562301147729e-09,
-                                            "Z": 9.225047392646957e-09
+                                            "X": 0.03091960772871971,
+                                            "Y": 4.2577994463499635e-09,
+                                            "Z": -3.6365669586757576e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": -8.639317456982099e-07,
-                                            "Roll": 9.479832474568184e-10,
-                                            "Yaw": -0.1222807839512825
+                                            "Pitch": -38.56056213378906,
+                                            "Roll": 2.1854109945707023e-05,
+                                            "Yaw": -0.12228915840387344
                                         },
                                         "Scale": {
-                                            "X": 0.9999999403953552,
+                                            "X": 1.0,
                                             "Y": 1.0,
                                             "Z": 1.0
                                         }
@@ -9935,14 +10662,14 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.03182253614068031,
-                                            "Y": -6.385562301147729e-09,
-                                            "Z": 1.1440093317105493e-07
+                                            "X": 0.031822569668293,
+                                            "Y": 2.2884250938659534e-08,
+                                            "Z": 4.229930539167981e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": -1.2628943030223994e-12,
+                                            "Pitch": 6.403312795555394e-07,
                                             "Roll": 179.9995880126953,
-                                            "Yaw": -4.2688685653047287e-07
+                                            "Yaw": 2.1344119716104615e-07
                                         },
                                         "Scale": {
                                             "X": 0.9999997019767761,
@@ -9955,18 +10682,18 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.02729998715221882,
-                                            "Y": -0.022799978032708168,
-                                            "Z": 0.033599983900785446
+                                            "X": 0.027299998328089714,
+                                            "Y": -0.022799987345933914,
+                                            "Z": 0.033600009977817535
                                         },
                                         "Rotation": {
-                                            "Pitch": -24.289199829101563,
-                                            "Roll": 179.95652770996094,
-                                            "Yaw": -29.30999755859375
+                                            "Pitch": -18.808395385742188,
+                                            "Roll": -179.10797119140625,
+                                            "Yaw": -31.85379981994629
                                         },
                                         "Scale": {
-                                            "X": 0.9999999403953552,
-                                            "Y": 1.0000001192092896,
+                                            "X": 1.0,
+                                            "Y": 1.0,
                                             "Z": 1.0
                                         }
                                     },
@@ -9975,19 +10702,19 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.043029848486185074,
-                                            "Y": 5.327547114575282e-08,
-                                            "Z": 1.30385160446167e-08
+                                            "X": 0.043029844760894775,
+                                            "Y": 2.2912445274414495e-08,
+                                            "Z": 3.818422555923462e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": 0.015547835268080235,
-                                            "Roll": -0.008489219471812248,
-                                            "Yaw": 0.0054894364438951015
+                                            "Pitch": -12.661770820617676,
+                                            "Roll": 1.4278680086135864,
+                                            "Yaw": -0.46338018774986267
                                         },
                                         "Scale": {
-                                            "X": 1.0,
+                                            "X": 0.9999998807907104,
                                             "Y": 0.9999998807907104,
-                                            "Z": 1.0
+                                            "Z": 0.9999998807907104
                                         }
                                     },
                                     "Name": "thumb_02_r"
@@ -9995,19 +10722,19 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.04907801374793053,
-                                            "Y": 9.340192264062352e-08,
-                                            "Z": -3.3993273973464966e-08
+                                            "X": 0.049077995121479034,
+                                            "Y": 2.993715497723315e-08,
+                                            "Z": -3.189779818058014e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": -0.02840840443968773,
-                                            "Roll": 0.009298316203057766,
-                                            "Yaw": -0.06134236231446266
+                                            "Pitch": -43.43789291381836,
+                                            "Roll": 0.012796266935765743,
+                                            "Yaw": -0.07013829052448273
                                         },
                                         "Scale": {
-                                            "X": 0.9999997615814209,
-                                            "Y": 0.9999998807907104,
-                                            "Z": 0.9999998807907104
+                                            "X": 0.9999998807907104,
+                                            "Y": 0.9999999403953552,
+                                            "Z": 0.9999999403953552
                                         }
                                     },
                                     "Name": "thumb_03_r"
@@ -10015,19 +10742,19 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.0408623181283474,
-                                            "Y": 5.478977982420474e-08,
-                                            "Z": 2.421438694000244e-08
+                                            "X": 0.04086232930421829,
+                                            "Y": 2.6929228624794632e-08,
+                                            "Z": -1.0244548320770264e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": -1.8202830688096583e-05,
-                                            "Roll": 60.81912612915039,
-                                            "Yaw": 2.6124702344532125e-05
+                                            "Pitch": -1.7894115444505587e-05,
+                                            "Roll": 60.819129943847656,
+                                            "Yaw": 2.804340692819096e-05
                                         },
                                         "Scale": {
-                                            "X": 1.0000001192092896,
+                                            "X": 1.0,
                                             "Y": 1.0,
-                                            "Z": 1.0000001192092896
+                                            "Z": 1.0
                                         }
                                     },
                                     "Name": "thumb_04_leaf_r"
@@ -10035,19 +10762,19 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.02777077816426754,
-                                            "Y": 0.08900000900030136,
-                                            "Z": 0.046023815870285034
+                                            "X": 0.027770871296525,
+                                            "Y": 0.08900000154972076,
+                                            "Z": 0.04602380841970444
                                         },
                                         "Rotation": {
-                                            "Pitch": -14.058120727539063,
-                                            "Roll": 180.0,
-                                            "Yaw": -180.0
+                                            "Pitch": -27.381711959838867,
+                                            "Roll": -179.44805908203125,
+                                            "Yaw": 178.4504852294922
                                         },
                                         "Scale": {
                                             "X": 1.0,
                                             "Y": 1.0,
-                                            "Z": 0.9999998807907104
+                                            "Z": 0.9999999403953552
                                         }
                                     },
                                     "Name": "thigh_l"
@@ -10055,18 +10782,18 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.40030980110168457,
-                                            "Y": 0.0,
-                                            "Z": -8.673617379884035e-19
+                                            "X": 0.4003097414970398,
+                                            "Y": 5.122274160385132e-09,
+                                            "Z": 9.313225746154785e-09
                                         },
                                         "Rotation": {
-                                            "Pitch": -4.193810939788818,
-                                            "Roll": 0.015041478909552097,
-                                            "Yaw": -5.72504575302446e-07
+                                            "Pitch": -9.0552339553833,
+                                            "Roll": -0.10439789295196533,
+                                            "Yaw": 0.022543439641594887
                                         },
                                         "Scale": {
-                                            "X": 0.9999999403953552,
-                                            "Y": 0.9999999403953552,
+                                            "X": 1.0,
+                                            "Y": 0.9999998807907104,
                                             "Z": 0.9999998807907104
                                         }
                                     },
@@ -10075,19 +10802,19 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.4294798970222473,
-                                            "Y": -8.113602234516293e-09,
-                                            "Z": 4.225512384437025e-09
+                                            "X": 0.4294798672199249,
+                                            "Y": -1.0314124665455893e-08,
+                                            "Z": -9.761606634128839e-09
                                         },
                                         "Rotation": {
-                                            "Pitch": 63.885738372802734,
-                                            "Roll": 0.025174615904688835,
-                                            "Yaw": -0.030683480203151703
+                                            "Pitch": 68.47042083740234,
+                                            "Roll": -3.0267302989959717,
+                                            "Yaw": -3.352764844894409
                                         },
                                         "Scale": {
-                                            "X": 1.000000238418579,
-                                            "Y": 1.0,
-                                            "Z": 1.0000001192092896
+                                            "X": 1.0000001192092896,
+                                            "Y": 0.9999998807907104,
+                                            "Z": 1.0
                                         }
                                     },
                                     "Name": "foot_l"
@@ -10095,19 +10822,19 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.173301100730896,
-                                            "Y": 3.818058758042753e-09,
-                                            "Z": -1.3329554349184036e-08
+                                            "X": 0.17330113053321838,
+                                            "Y": 5.497895472217351e-09,
+                                            "Z": -8.683855412527919e-09
                                         },
                                         "Rotation": {
                                             "Pitch": 30.708587646484375,
                                             "Roll": 179.93096923828125,
-                                            "Yaw": -0.03525976091623306
+                                            "Yaw": -0.03526006266474724
                                         },
                                         "Scale": {
-                                            "X": 0.9999998807907104,
-                                            "Y": 0.9999998807907104,
-                                            "Z": 0.9999998807907104
+                                            "X": 0.9999999403953552,
+                                            "Y": 0.9999999403953552,
+                                            "Z": 0.9999999403953552
                                         }
                                     },
                                     "Name": "ball_l"
@@ -10116,13 +10843,13 @@
                                     "Local": {
                                         "Location": {
                                             "X": 0.07890002429485321,
-                                            "Y": -1.9033785658706392e-09,
-                                            "Z": -6.216575865192198e-11
+                                            "Y": 2.7728235263424494e-09,
+                                            "Z": -5.791680468547611e-09
                                         },
                                         "Rotation": {
                                             "Pitch": 1.7075470850613783e-06,
-                                            "Roll": 2.3412071641359944e-06,
-                                            "Yaw": 3.5483060581561685e-14
+                                            "Roll": 2.34120739150967e-06,
+                                            "Yaw": -2.922134241392996e-14
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -10135,19 +10862,19 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.02777077816426754,
-                                            "Y": -0.08900000900030136,
-                                            "Z": 0.046023815870285034
+                                            "X": 0.0277707576751709,
+                                            "Y": -0.08900000154972076,
+                                            "Z": 0.046023838222026825
                                         },
                                         "Rotation": {
-                                            "Pitch": -14.058120727539063,
-                                            "Roll": -180.0,
-                                            "Yaw": 180.0
+                                            "Pitch": -3.783613443374634,
+                                            "Roll": -179.7067413330078,
+                                            "Yaw": 178.11656188964844
                                         },
                                         "Scale": {
                                             "X": 1.0,
                                             "Y": 1.0,
-                                            "Z": 0.9999998807907104
+                                            "Z": 0.9999999403953552
                                         }
                                     },
                                     "Name": "thigh_r"
@@ -10156,18 +10883,18 @@
                                     "Local": {
                                         "Location": {
                                             "X": 0.4003097414970398,
-                                            "Y": -5.003703229533585e-09,
-                                            "Z": -4.307374013023946e-09
+                                            "Y": -4.597327407651619e-09,
+                                            "Z": 1.0535583072623922e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": -4.193810939788818,
-                                            "Roll": 0.015041438862681389,
-                                            "Yaw": -6.07355445936264e-07
+                                            "Pitch": -6.7080979347229,
+                                            "Roll": -0.1004096046090126,
+                                            "Yaw": 0.01534577552229166
                                         },
                                         "Scale": {
-                                            "X": 0.9999999403953552,
-                                            "Y": 0.9999999403953552,
-                                            "Z": 0.9999998807907104
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 0.9999999403953552
                                         }
                                     },
                                     "Name": "calf_r"
@@ -10175,18 +10902,18 @@
                                 {
                                     "Local": {
                                         "Location": {
-                                            "X": 0.42947983741760254,
-                                            "Y": 1.1696101864799857e-09,
-                                            "Z": 5.1386450650170445e-09
+                                            "X": 0.4294798672199249,
+                                            "Y": 7.569724402856082e-09,
+                                            "Z": 2.1079358702991158e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": 63.88571548461914,
-                                            "Roll": 0.025174539536237717,
-                                            "Yaw": -0.0306845810264349
+                                            "Pitch": 68.35905456542969,
+                                            "Roll": -0.4883664846420288,
+                                            "Yaw": 0.7498705387115479
                                         },
                                         "Scale": {
-                                            "X": 1.000000238418579,
-                                            "Y": 1.0,
+                                            "X": 1.0000001192092896,
+                                            "Y": 0.9999999403953552,
                                             "Z": 1.0
                                         }
                                     },
@@ -10196,17 +10923,17 @@
                                     "Local": {
                                         "Location": {
                                             "X": 0.173301100730896,
-                                            "Y": -3.688910510390997e-09,
-                                            "Z": -8.09086486697197e-09
+                                            "Y": -2.8339854907244444e-09,
+                                            "Z": -1.0099029168486595e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": 30.708587646484375,
-                                            "Roll": 179.93096923828125,
-                                            "Yaw": -0.03525976091623306
+                                            "Pitch": 39.03891372680664,
+                                            "Roll": -179.95013427734375,
+                                            "Yaw": 0.22782887518405914
                                         },
                                         "Scale": {
                                             "X": 0.9999998807907104,
-                                            "Y": 0.9999998807907104,
+                                            "Y": 0.9999999403953552,
                                             "Z": 0.9999998807907104
                                         }
                                     },
@@ -10216,13 +10943,13 @@
                                     "Local": {
                                         "Location": {
                                             "X": 0.07890003174543381,
-                                            "Y": -1.9033803422274786e-09,
-                                            "Z": 6.216574477413417e-11
+                                            "Y": -1.331984189612001e-09,
+                                            "Z": -1.3326288683668253e-10
                                         },
                                         "Rotation": {
                                             "Pitch": 1.7075470850613783e-06,
-                                            "Roll": 2.3412071641359944e-06,
-                                            "Yaw": 3.5483063969693474e-14
+                                            "Roll": 2.3445420538337203e-06,
+                                            "Yaw": 6.192142203717901e-14
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -10241,6 +10968,26 @@
                                 "AnimBlueprintPath": "FBX/UAL1_Standard/TwoWayBlend.animblueprint",
                                 "AnimInstance": null,
                                 "BlendSpaceInput": 300.0,
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Ignore",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
+                                "Mobility": "Movable",
                                 "SkeletalMesh": "FBX/UAL1_Standard/UAL1_Standard.fbx.bin",
                                 "Transform": {
                                     "Location": {
@@ -10259,6 +11006,7 @@
                                         "Z": 0.009999999776482582
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": false,
                                 "bCastShadow": true,
@@ -10266,6 +11014,8 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
+                                "bSimulateRagdoll": false,
+                                "bUseArticulatedPhysics": true,
                                 "bVisible": true
                             }
                         },
@@ -10316,6 +11066,7 @@
                             "Name": "DefaultSceneRoot",
                             "Parent": "",
                             "Properties": {
+                                "Mobility": "Movable",
                                 "Transform": {
                                     "Location": {
                                         "X": 6.275775909423828,
@@ -10343,7 +11094,27 @@
                             "Name": "TextRenderComponent",
                             "Parent": "DefaultSceneRoot",
                             "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Ignore",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
                                 "Font": "Engine/Fonts/CookieRun.json",
+                                "Mobility": "Movable",
                                 "Text": "TwoWayBlend",
                                 "TextSize": 0.25999999046325684,
                                 "Transform": {
@@ -10363,6 +11134,7 @@
                                         "Z": 1.0
                                     }
                                 },
+                                "TranslucencySortPriority": 0,
                                 "bAutoActivate": true,
                                 "bBlockComponent": false,
                                 "bCastShadow": true,

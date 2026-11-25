@@ -1,19 +1,9 @@
-#include "DepthOfFieldCommon.hlsli"
-
-cbuffer LensConstants : register(b0)
+float4 mainVS(uint vertexID : SV_VertexID) : SV_Position
 {
-    float ProjectionA;
-    float ProjectionB;
-    float FocusDistance;
-    float InfinityRadius;
-};
+    float2 uv = float2((vertexID << 1) & 2, vertexID & 2);
+    return float4(uv * float2(2, -2) + float2(-1, 1), 0, 1);
+}
 
 static const int TileSize = 8;
-// Limit the gather support, while the diagnostic view keeps the physical radius.
-static const int MaxGatherRadius = 8;
-
-float GatherRadius(float depth)
-{
-    return clamp(SignedCoCRadius(depth, ProjectionA, ProjectionB, FocusDistance, InfinityRadius),
-                 -MaxGatherRadius, MaxGatherRadius);
-}
+// Setup stores the optical radius; limit only the gather footprint.
+static const int MaxGatherRadius = 4; // half-resolution texels (8 full-resolution pixels)

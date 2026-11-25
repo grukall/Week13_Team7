@@ -53,7 +53,11 @@ constexpr FPipelineTableEntry PipelineTable[] =
 	{ EPSOType::ParticleSprite_Additive,   "Resources/Shader/ParticleSpriteShader.hlsl", EPrimitiveTopology::TriangleList, ERasterizerState::SolidNone, EBlendState::Additive,   EDepthStencilState::ReadOnly },
 	{ EPSOType::ParticleTrail_AlphaBlend, "Resources/Shader/ParticleTrailShader.hlsl", EPrimitiveTopology::TriangleList, ERasterizerState::SolidNone, EBlendState::AlphaBlend, EDepthStencilState::ReadOnly },
 	{ EPSOType::ParticleTrail_Additive,   "Resources/Shader/ParticleTrailShader.hlsl", EPrimitiveTopology::TriangleList, ERasterizerState::SolidNone, EBlendState::Additive,   EDepthStencilState::ReadOnly },
+	{ EPSOType::DepthOfFieldSetup, "Resources/Shader/DepthOfFieldSetup.hlsl", EPrimitiveTopology::TriangleList, ERasterizerState::SolidNone, EBlendState::Opaque, EDepthStencilState::Disabled },
 	{ EPSOType::DepthOfFieldTiles, "Resources/Shader/DepthOfFieldTiles.hlsl", EPrimitiveTopology::TriangleList, ERasterizerState::SolidNone, EBlendState::Opaque, EDepthStencilState::Disabled },
+	{ EPSOType::DepthOfFieldRecombine, "Resources/Shader/DepthOfFieldRecombine.hlsl", EPrimitiveTopology::TriangleList, ERasterizerState::SolidNone, EBlendState::Opaque, EDepthStencilState::Disabled },
+	{ EPSOType::DepthOfFieldDownsample, "Resources/Shader/DepthOfFieldDownsample.hlsl", EPrimitiveTopology::TriangleList, ERasterizerState::SolidNone, EBlendState::Opaque, EDepthStencilState::Disabled },
+	{ EPSOType::DepthOfFieldDilate, "Resources/Shader/DepthOfFieldDilate.hlsl", EPrimitiveTopology::TriangleList, ERasterizerState::SolidNone, EBlendState::Opaque, EDepthStencilState::Disabled },
 	{ EPSOType::DepthOfFieldGather, "Resources/Shader/DepthOfFieldGather.hlsl", EPrimitiveTopology::TriangleList, ERasterizerState::SolidNone, EBlendState::Opaque, EDepthStencilState::Disabled },
 };
 

@@ -1,32 +1,27 @@
 #include "DepthOfFieldGatherCommon.hlsli"
 Texture2D<float4> SceneColor : register(t0);
-Texture2D<float> SceneDepth : register(t1);
-Texture2D<float> TileNearRadius : register(t2);
+Texture2D<float> SignedCoC : register(t1);
+Texture2D<float4> DilatedTiles : register(t2);
 
-float4 mainVS(uint vertexID : SV_VertexID) : SV_Position
+struct Layers
 {
-    float2 uv = float2((vertexID << 1) & 2, vertexID & 2);
-    return float4(uv * float2(2, -2) + float2(-1, 1), 0, 1);
-}
+    float4 nearLayer : SV_Target0;
+    float4 farLayer : SV_Target1;
+};
 
-float4 mainPS(float4 position : SV_Position) : SV_Target
+Layers mainPS(float4 position : SV_Position)
 {
     int2 pixel = int2(position.xy);
-    float4 sharp = SceneColor.Load(int3(pixel, 0));
-    float centerRadius = GatherRadius(SceneDepth.Load(int3(pixel, 0)));
+    Layers layers = (Layers)0;
+    float centerRadius = clamp(SignedCoC.Load(int3(pixel, 0)), -MaxGatherRadius, MaxGatherRadius);
     uint width, height;
-    SceneDepth.GetDimensions(width, height);
+    SignedCoC.GetDimensions(width, height);
     int2 lastPixel = int2(width, height) - 1;
 
-    // MaxGatherRadius is one tile wide. Only these tiles can scatter onto this pixel.
-    int2 firstTile = uint2(max(pixel - MaxGatherRadius, 0)) / uint(TileSize);
-    int2 lastTile = uint2(min(pixel + MaxGatherRadius, lastPixel)) / uint(TileSize);
-    float searchRadius = max(0, centerRadius);
-    for (int ty = firstTile.y; ty <= lastTile.y; ++ty)
-        for (int tx = firstTile.x; tx <= lastTile.x; ++tx)
-            searchRadius = max(searchRadius, TileNearRadius.Load(int3(tx, ty, 0)));
+    float4 bounds = DilatedTiles.Load(int3(uint2(pixel) / uint(TileSize), 0));
+    float searchRadius = max(-bounds.x, bounds.w);
     if (searchRadius <= 0.5f)
-        return sharp;
+        return layers;
 
     float3 farColor = 0, nearColor = 0;
     float farWeight = 0, coverage = 0;
@@ -39,7 +34,7 @@ float4 mainPS(float4 position : SV_Position) : SV_Target
             if (distancePx >= searchRadius + 0.5f)
                 continue;
             int2 samplePixel = clamp(pixel + int2(x, y), 0, lastPixel);
-            float radius = GatherRadius(SceneDepth.Load(int3(samplePixel, 0)));
+            float radius = clamp(SignedCoC.Load(int3(samplePixel, 0)), -MaxGatherRadius, MaxGatherRadius);
             float3 color = SceneColor.Load(int3(samplePixel, 0)).rgb;
             if (radius < -0.5f)
             {
@@ -49,18 +44,19 @@ float4 mainPS(float4 position : SV_Position) : SV_Target
                 nearColor += color * weight;
                 coverage += weight;
             }
-            else
+            else if (radius > 0.5f || centerRadius < -0.5f)
             {
-                // For a near center, adjacent visible background can fill the uncovered fraction.
-                float support = centerRadius < -0.5f ? -centerRadius : min(max(0, radius), max(0, centerRadius));
-                float weight = saturate(support + 0.5f - distancePx);
+                // Behind a near center, nearby visible background can fill uncovered area.
+                float support = centerRadius < -0.5f ? max(radius, -centerRadius) : radius;
+                float weight = saturate(support + 0.5f - distancePx) / max(1.0f, support * support);
                 farColor += color * weight;
                 farWeight += weight;
             }
         }
     }
 
-    float3 background = farWeight > 0 ? farColor / farWeight : sharp.rgb;
-    float3 foreground = nearColor / max(coverage, 1e-6f);
-    return float4(lerp(background, foreground, saturate(coverage)), sharp.a);
+    layers.nearLayer = float4(nearColor / max(coverage, 1e-6f) * saturate(coverage), saturate(coverage));
+    if (farWeight > 0)
+        layers.farLayer = float4(farColor / farWeight, 1);
+    return layers;
 }

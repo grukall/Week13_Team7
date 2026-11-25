@@ -9,6 +9,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Physics/PhysicsAsset.h"	// USkeletalBodySetup도 함께 들어온다
 #include "UObject/Casts.h"
+#include "Engine/World.h"
 #include <NvCloth/Factory.h>
 #include <NvCloth/Solver.h> 
 #include <NvCloth/Cloth.h> 
@@ -35,8 +36,16 @@ namespace
 		return (std::isfinite(LengthSquared) && LengthSquared > 1.0e-12f) ? Rotation.getNormalized() : physx::PxQuat(physx::PxIdentity);
 	}
 
-	float ComputeGridMaxDistance(int32 row, int32 col, int32 Rows, int32 Cols, const FClothPinSettings& PinSetting)
+	float ComputeGridMaxDistance(int32 row, int32 col, int32 Rows, int32 Cols, const FClothGridSettings& Grid, const FClothPinSettings& PinSetting)
 	{
+		if (Grid.Shape == EClothGridShape::Cape)
+		{
+			// 망토: 윗변(row 0)은 고정, 아래로 갈수록 반경이 커져 윗부분은 등에 붙고 밑단만 펄럭인다 (UE 천 페인팅의 MaxDistance 그라데이션)
+			if (row == 0) return 0.0f;
+			const float t = row / static_cast<float>(Rows - 1);
+			return std::max(Grid.CapeFreeDistance, 0.0f) * std::pow(t, std::max(Grid.CapeFreeExponent, 0.1f));
+		}
+
 		const bool onRowFirst = PinSetting.bPinRowFirst && row == 0;
 		const bool onRowLast  = PinSetting.bPinRowLast  && row == Rows - 1;
 		const bool onColFirst = PinSetting.bPinColFirst && col == 0;
@@ -58,9 +67,29 @@ namespace
 		return pinned ? 0.0f : std::max(PinSetting.FreeMaxDistance, 0.0f);	// 음수 반경은 NvCloth가 0(고정)으로 처리하므로 막는다
 	}
 
-	FClothBuildInput MakeDefaultGridInput(int32 Rows, int32 Cols, float Spacing, const FClothPinSettings& PinSettings)		// 에셋 등록 전 Default로 사용하는 천의 FClothBuildInput 만드는 함수
+	// 격자 한 점의 위치. 점 번호(r * Cols + c)·삼각형·UV·고정 규칙은 모양과 상관없이 같다
+	FVector MakeGridPosition(int32 r, int32 c, const FClothGridSettings& Grid)
+	{
+		if (Grid.Shape == EClothGridShape::Cape)
+		{
+			// 망토: 세로(YZ) 평면의 사다리꼴. 줄마다 폭을 TopWidth → BottomWidth로 키워 아래가 퍼진다
+			const float t = r / static_cast<float>(Grid.Rows - 1);			// 0 = 윗변, 1 = 밑단
+			const float u = c / static_cast<float>(Grid.Cols - 1) - 0.5f;	// -0.5 = 왼쪽(-Y), 0.5 = 오른쪽(+Y)
+			const float Width = Grid.CapeTopWidth + (Grid.CapeBottomWidth - Grid.CapeTopWidth) * t;
+			// 가로 단면을 포물선으로 휜다: u = 0(가운데)에서 CurveDepth, u = ±0.5(양 끝)에서 0. 예) Depth 0.15 → 가운데가 15cm 튀어나온 반원통 느낌
+			const float Curve = Grid.CapeCurveDepth * (1.0f - 4.0f * u * u);
+			return FVector(Curve, u * Width, -t * Grid.CapeLength);
+		}
+		const float Spacing = Grid.Spacing;
+		return FVector(c * Spacing, r * Spacing, 0.0f);	// 깃발: 원점 = 모서리, XY 평면
+	}
+
+	FClothBuildInput MakeDefaultGridInput(const FClothGridSettings& Grid, const FClothPinSettings& PinSettings)		// 에셋 등록 전 Default로 사용하는 천의 FClothBuildInput 만드는 함수
 	{
 		FClothBuildInput Input;
+		const int32 Rows = Grid.Rows;
+		const int32 Cols = Grid.Cols;
+		const float Spacing = Grid.Spacing;
 
 		if (Rows < 2 || Cols < 2 || Spacing <= 0.0f)
 		{
@@ -79,11 +108,11 @@ namespace
 		{
 			for (int32 c = 0; c < Cols; ++c)
 			{
-				Input.Positions.Add(FVector(c * Spacing, r * Spacing, 0.0f));
+				Input.Positions.Add(MakeGridPosition(r, c, Grid));
 				Input.InvMasses.Add(1.0f);
 				//Input.InvMasses.Add(r == 0 ? 0.0f : 1.0f);	// 첫 줄(r == 0)만 고정점. 모든 점에 하나씩 넣어야 Positions와 개수가 맞는다
 				Input.UVs.Add(FVector2(c / static_cast<float>(Cols - 1), r / static_cast<float>(Rows - 1)));	// 격자 전체를 0~1로 펼친 UV
-				Input.MaxDistances.Add(ComputeGridMaxDistance(r, c, Rows, Cols, PinSettings));	// 점마다 1개 (Positions와 같은 번호)
+				Input.MaxDistances.Add(ComputeGridMaxDistance(r, c, Rows, Cols, Grid, PinSettings));	// 점마다 1개 (Positions와 같은 번호)
 			}
 		}
 
@@ -343,13 +372,14 @@ FMatrix UClothComponent::GetSimToWorldMatrix() const
 bool UClothComponent::BuildDefaultCloth()
 {
 	// 에셋 등록 전에는 기본 격자 천 하나를 추가한다. 에셋이 생기면 그 입력으로 CreateCloth를 호출한다.
-	if (!CreateCloth(MakeDefaultGridInput(GridSettings.Rows, GridSettings.Cols, GridSettings.Spacing, PinSettings)))	// 고정 설정으로 점마다 반경(MaxDistances)을 채운다
+	if (!CreateCloth(MakeDefaultGridInput(GridSettings, PinSettings)))	// 고정 설정으로 점마다 반경(MaxDistances)을 채운다
 	{
 		return false;
 	}
 	// 실행 중 고정 설정 변경(RefreshPinsFromSettings)에서 같은 점 번호로 다시 계산하기 위해 기억
 	BuiltGridRows = GridSettings.Rows;
 	BuiltGridCols = GridSettings.Cols;
+	BuiltGridSettings = GridSettings;
 	DefaultGridClothIndex = ClothInstances.Num() - 1;	// 방금 Add된 천
 	return true;
 }
@@ -376,6 +406,7 @@ void UClothComponent::RebuildCloth(bool bRecreateSolver, bool bRegenerateGrid)
 	const int32 OldGridIndex = DefaultGridClothIndex;
 	int32 GridRows = BuiltGridRows;
 	int32 GridCols = BuiltGridCols;
+	FClothGridSettings GridBuiltWith = BuiltGridSettings;
 
 	// 1. 지우기 전에 천마다 원본 입력을 모은다. 실행 중 바뀐 고정 반경(RefreshPinsFromSettings)은 Instance 쪽이 최신이므로 덮어쓴다
 	TArray<FClothBuildInput> Inputs;
@@ -386,9 +417,10 @@ void UClothComponent::RebuildCloth(bool bRecreateSolver, bool bRegenerateGrid)
 		if (bRegenerateGrid && i == OldGridIndex)
 		{
 			// 기본 격자 천은 현재 GridSettings·PinSettings로 새 입력을 만든다 (점 개수가 바뀌므로 이전 반경은 쓰지 않는다)
-			Inputs.Add(MakeDefaultGridInput(GridSettings.Rows, GridSettings.Cols, GridSettings.Spacing, PinSettings));
+			Inputs.Add(MakeDefaultGridInput(GridSettings, PinSettings));
 			GridRows = GridSettings.Rows;
 			GridCols = GridSettings.Cols;
+			GridBuiltWith = GridSettings;
 			continue;
 		}
 		FClothBuildInput Input = Instance.SourceInput;
@@ -424,6 +456,7 @@ void UClothComponent::RebuildCloth(bool bRecreateSolver, bool bRegenerateGrid)
 			DefaultGridClothIndex = ClothInstances.Num() - 1;
 			BuiltGridRows = GridRows;
 			BuiltGridCols = GridCols;
+			BuiltGridSettings = GridBuiltWith;
 		}
 	}
 	OnTransformDirty();		// 새 정점으로 바운드 갱신
@@ -513,7 +546,7 @@ bool UClothComponent::CreateCloth(const FClothBuildInput& RawInput)
 		Configs.Add(confi);	//  Fabric의 Phase 만큼 PhaseConfig 세팅
 	}
 	Cloth->setPhaseConfig(nv::cloth::Range<const nv::cloth::PhaseConfig>(Configs.GetData(), Configs.GetData() + Configs.Num()));	// PhaseConfig 세팅
-	Cloth->setDragCoefficient(0.2f);   // 공기 저항
+	Cloth->setDragCoefficient(0.05f);   // 공기 저항
 	Cloth->setLiftCoefficient(0.2f);   // 양력 (천이 들썩이는 힘)
 
 	Cloth->setRestPositions(ParticleRange);
@@ -591,12 +624,7 @@ void UClothComponent::TickComponent(float DeltaTime)
 	// 격자 설정 변경도 같은 이유로 simulate 밖에서 다시 만든다
 	if (bGridDirty)
 	{
-		bGridDirty = false;
-		RebuildCloth(false, true);
-		if (DefaultGridClothIndex < 0 && BuildDefaultCloth())	// 격자 천이 없었거나 만들기에 실패했던 경우
-		{
-			OnTransformDirty();
-		}
+		RegenerateDefaultGrid();
 	}
 
 	if (!(DeltaTime > 0.0f) || !std::isfinite(DeltaTime)) return;
@@ -663,6 +691,7 @@ void UClothComponent::TickComponent(float DeltaTime)
 			Instance.Cloth->setLinearInertia(LinearInertia);
 			Instance.Cloth->setAngularInertia(AngularInertia);
 			Instance.Cloth->setCentrifugalInertia(CentrifugalInertia);
+			Instance.Cloth->setSolverFrequency(std::max(SimSettings.SolverFrequency, 1.0f));	// 값이 같으면 NvCloth가 바로 돌아간다 (ClothImpl.h setSolverFrequency)
 
 			Instance.Cloth->setWindVelocity(Wind);		// 월드 기준 (NvCloth가 로컬 방향으로 바꾼다)
 			Instance.Cloth->setGravity(SimSettings.bEnableGravity ? physx::PxVec3(0.0f, 0.0f, -9.81f) : physx::PxVec3(0.0f));	// 월드 기준 (회전을 알려 줬으므로 천이 기울어도 월드 아래로 걸린다)
@@ -877,7 +906,7 @@ void UClothComponent::RefreshPinsFromSettings()
 	{
 		for (int32 c = 0; c < BuiltGridCols; ++c)
 		{
-			Instance.MaxDistances[r * BuiltGridCols + c] = ComputeGridMaxDistance(r, c, BuiltGridRows, BuiltGridCols, PinSettings);
+			Instance.MaxDistances[r * BuiltGridCols + c] = ComputeGridMaxDistance(r, c, BuiltGridRows, BuiltGridCols, BuiltGridSettings, PinSettings);
 		}
 	}
 
@@ -902,6 +931,23 @@ void UClothComponent::PostEditChangeProperty(const FProperty& Property)
 	else if (Property.Name == "GridSettings")
 	{
 		bGridDirty = true;			// 점 개수가 바뀌므로 다음 Tick 시작에서 격자 천을 다시 만든다
+		// 에디터 월드는 천 Tick을 돌리지 않으므로(UWorld::EditorWorldTick) 바로 다시 만들어야 모양·위치를 보며 배치할 수 있다
+		const UWorld* World = GetWorld();
+		if (World && !World->IsGameWorld())
+		{
+			RegenerateDefaultGrid();
+		}
+	}
+}
+
+void UClothComponent::RegenerateDefaultGrid()
+{
+	bGridDirty = false;
+	if (Solver == nullptr) return;
+	RebuildCloth(false, true);
+	if (DefaultGridClothIndex < 0 && BuildDefaultCloth())	// 격자 천이 없었거나 만들기에 실패했던 경우
+	{
+		OnTransformDirty();
 	}
 }
 

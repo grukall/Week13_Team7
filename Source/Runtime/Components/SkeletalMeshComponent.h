@@ -88,7 +88,9 @@ public:
 
 	void SetSkeletalMesh(USkeletalMesh* InMesh) override;
 
-	// Ragdoll ON/OFF. ON이면 모든 본 바디를 시뮬레이션하고 PostPhysics에서 바디 → 본으로 되돌린다
+	// Ragdoll ON/OFF. ON이면 모든 본 바디를 시뮬레이션하고 PostPhysics에서 바디 → 본으로 되돌린다.
+	// Unreal처럼 요청값은 컴포넌트 BodyInstance.bSimulatePhysics (Details의 Simulate Physics)에 둔다.
+	// 관절 모드에서는 이 BodyInstance로 PhysX 바디를 만들지 않으므로 이 값은 "래그돌 요청"으로만 쓰인다
 	void SetSimulatePhysics(bool bSimulate);
 	bool IsSimulatingRagdoll() const { return bRagdollActive; }
 
@@ -106,12 +108,14 @@ public:
 
 	void PostEditChangeProperty(const FProperty& Property) override;
 
-	// 테스트용: Details에서 켜고 끈다 (PostEditChangeProperty → SetSimulatePhysics)
-	UPROPERTY(EditAnywhere)
-	bool bSimulateRagdoll = false;
-
 	UPROPERTY(EditAnywhere)
 	bool bUseArticulatedPhysics = true;
+
+	// Unreal PhysicsTransformUpdateMode::SimulationUpatesComponentTransform.
+	// 켜면 루트 바디(보통 pelvis)가 시뮬레이션될 때 컴포넌트 Transform이 그 바디를 따라간다.
+	// 끄면(ComponentTransformIsKinematic) 컴포넌트는 제자리에 있고 본만 날아간다
+	UPROPERTY(EditAnywhere)
+	bool bSimulationUpdatesComponentTransform = true;
 
 	void SetUseArticulatedPhysics(bool bInUse);
 	void SetSingleBodySetupOverride(UBodySetup* InBodySetup);
@@ -150,14 +154,23 @@ private:
 	TArray<struct FBodyInstance*>       Bodies;
 	TArray<struct FConstraintInstance*> Constraints;
 	TArray<int32> BoneToBody;                    // 본 인덱스 → Bodies 인덱스 (바디 없으면 -1)
-	bool bRagdollActive = false;                 // 실제로 시뮬레이션 중인지 (bSimulateRagdoll은 요청값)
+	bool bRagdollActive = false;                 // 실제로 시뮬레이션 중인지 (BodyInstance.bSimulatePhysics는 요청값)
 	bool bAnyBodySimulating = false;             // 시뮬레이션 중인 바디가 하나라도 있는지 (Ragdoll OFF여도 Simulated 바디면 true)
 	FSkeletalMeshPostPhysicsTickFunction PostPhysicsTick;
 	friend struct FSkeletalMeshPostPhysicsTickFunction;
+
+	// 루트 바디: 본 순서상 처음으로 바디가 있는 본의 바디 (Unreal RootBodyData.BodyIndex)
+	int32 RootBodyIndex = -1;
+	// 루트 바디 기준 컴포넌트 위치 = CompWorld × RootBodyWorld⁻¹ (Unreal RootBodyData.TransformToRoot)
+	FMatrix ComponentToRootBody = FMatrix::Identity;
 
 	UBodySetup* SingleBodySetupOverride = nullptr;
 	void InitArticulated(FPhysScene* Scene);
 	void TermArticulated();
 	void UpdateKinematicBodies();                // Ragdoll OFF: 본 → 바디 (PrePhysics, 애니메이션 직후)
 	void BlendInPhysics();                       // Ragdoll ON: 바디 → 본 (PostPhysics)
+	int32 FindRootBodyIndex() const;
+	void CacheRootBodyOffset();                  // 시뮬레이션을 켤 때 ComponentToRootBody를 저장 (Unreal SetRootBodyIndex)
+	bool IsRootBodySimulating() const;
+	void SyncComponentToRBPhysics();             // 루트 바디 위치로 컴포넌트를 옮긴다 (BlendInPhysics 직전)
 };

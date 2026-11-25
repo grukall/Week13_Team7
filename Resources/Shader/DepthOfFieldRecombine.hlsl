@@ -1,4 +1,10 @@
 #include "DepthOfFieldGatherCommon.hlsli"
+
+float4 mainVS(uint vertexID : SV_VertexID) : SV_Position
+{
+    return FullscreenTrianglePosition(vertexID);
+}
+
 Texture2D<float4> SceneColor : register(t0);
 Texture2D<float> SignedCoC : register(t1);
 Texture2D<float4> NearLayer : register(t2);

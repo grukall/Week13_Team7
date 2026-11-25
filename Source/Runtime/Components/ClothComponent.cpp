@@ -76,7 +76,9 @@ namespace
 			const float t = r / static_cast<float>(Grid.Rows - 1);			// 0 = 윗변, 1 = 밑단
 			const float u = c / static_cast<float>(Grid.Cols - 1) - 0.5f;	// -0.5 = 왼쪽(-Y), 0.5 = 오른쪽(+Y)
 			const float Width = Grid.CapeTopWidth + (Grid.CapeBottomWidth - Grid.CapeTopWidth) * t;
-			return FVector(0.0f, u * Width, -t * Grid.CapeLength);
+			// 가로 단면을 포물선으로 휜다: u = 0(가운데)에서 CurveDepth, u = ±0.5(양 끝)에서 0. 예) Depth 0.15 → 가운데가 15cm 튀어나온 반원통 느낌
+			const float Curve = Grid.CapeCurveDepth * (1.0f - 4.0f * u * u);
+			return FVector(Curve, u * Width, -t * Grid.CapeLength);
 		}
 		const float Spacing = Grid.Spacing;
 		return FVector(c * Spacing, r * Spacing, 0.0f);	// 깃발: 원점 = 모서리, XY 평면

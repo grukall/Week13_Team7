@@ -89,6 +89,7 @@ struct FClothGridSettings
 	UPROPERTY(EditAnywhere, meta=(ClampMin=0.01, Delta=0.01)) float CapeTopWidth = 0.4f;		// 윗변(어깨선) 폭
 	UPROPERTY(EditAnywhere, meta=(ClampMin=0.01, Delta=0.01)) float CapeBottomWidth = 0.8f;	// 밑단 폭
 	UPROPERTY(EditAnywhere, meta=(ClampMin=0.05, Delta=0.01)) float CapeLength = 1.0f;		// 윗변에서 밑단까지 높이
+	UPROPERTY(EditAnywhere, meta=(Delta=0.01)) float CapeCurveDepth = 0.0f;					// 가로 단면을 휘는 깊이. 가운데가 +X로 이만큼, 양 끝은 0 (포물선). 0 = 평평, 음수 = 반대로 휨
 	UPROPERTY(EditAnywhere, meta=(ClampMin=0, Delta=0.01)) float CapeFreeDistance = 0.5f;	// 밑단 점이 처음 자리에서 움직일 수 있는 최대 거리
 	UPROPERTY(EditAnywhere, meta=(ClampMin=0.1, Delta=0.05)) float CapeFreeExponent = 1.5f;	// 반경 = Free * t^Exp (t: 윗변 0 → 밑단 1). 클수록 윗부분이 등에 더 붙는다
 };

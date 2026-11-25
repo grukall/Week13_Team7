@@ -1693,6 +1693,738 @@
                         "ScriptPath": "",
                         "bActorEnableCollision": true
                     }
+                },
+                {
+                    "Class": "AActor",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Mobility": "Movable",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 5.2
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UStaticMeshComponent",
+                            "Name": "Hub",
+                            "OverrideMaterials": [
+                                {
+                                    "Base": "DefaultMaterial",
+                                    "Instance": {
+                                        "BaseColor": {
+                                            "W": 1.0,
+                                            "X": 0.45,
+                                            "Y": 0.42,
+                                            "Z": 0.38
+                                        },
+                                        "BlendState": "Opaque",
+                                        "FlipNormalY": false,
+                                        "PSOType": 0,
+                                        "Properties": {
+                                            "PhysMaterial": null
+                                        },
+                                        "SamplerState": "LinearClamp",
+                                        "Shininess": 32.0,
+                                        "SpecularColor": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        },
+                                        "Textures": [
+                                            "WhiteTexture",
+                                            "FlatNormalTexture"
+                                        ],
+                                        "UVScrollSpeed": [
+                                            0.0,
+                                            0.0
+                                        ]
+                                    }
+                                }
+                            ],
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
+                                "Mobility": "Movable",
+                                "StaticMesh": "Cube",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.03
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 0.15,
+                                        "Y": 0.15,
+                                        "Z": 0.15
+                                    }
+                                },
+                                "TranslucencySortPriority": 0,
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": true,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": true,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UStaticMeshComponent",
+                            "Name": "Arm",
+                            "OverrideMaterials": [
+                                {
+                                    "Base": "DefaultMaterial",
+                                    "Instance": {
+                                        "BaseColor": {
+                                            "W": 1.0,
+                                            "X": 0.45,
+                                            "Y": 0.42,
+                                            "Z": 0.38
+                                        },
+                                        "BlendState": "Opaque",
+                                        "FlipNormalY": false,
+                                        "PSOType": 0,
+                                        "Properties": {
+                                            "PhysMaterial": null
+                                        },
+                                        "SamplerState": "LinearClamp",
+                                        "Shininess": 32.0,
+                                        "SpecularColor": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        },
+                                        "Textures": [
+                                            "WhiteTexture",
+                                            "FlatNormalTexture"
+                                        ],
+                                        "UVScrollSpeed": [
+                                            0.0,
+                                            0.0
+                                        ]
+                                    }
+                                }
+                            ],
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
+                                "Mobility": "Movable",
+                                "StaticMesh": "Cube",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.625,
+                                        "Y": 0.0,
+                                        "Z": 0.03
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.25,
+                                        "Y": 0.04,
+                                        "Z": 0.04
+                                    }
+                                },
+                                "TranslucencySortPriority": 0,
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": true,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": true,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UClothComponent",
+                            "Name": "Cape",
+                            "OverrideMaterials": [
+                                {
+                                    "Base": "DefaultMaterial",
+                                    "Instance": {
+                                        "BaseColor": {
+                                            "W": 1.0,
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        },
+                                        "BlendState": "Opaque",
+                                        "FlipNormalY": false,
+                                        "PSOType": 0,
+                                        "Properties": {
+                                            "PhysMaterial": null
+                                        },
+                                        "SamplerState": "LinearClamp",
+                                        "Shininess": 32.0,
+                                        "SpecularColor": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        },
+                                        "Textures": [
+                                            "Assets/Models/cape_fabric_1024.png",
+                                            "FlatNormalTexture"
+                                        ],
+                                        "UVScrollSpeed": [
+                                            0.0,
+                                            0.0
+                                        ]
+                                    }
+                                }
+                            ],
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
+                                "GridSettings": {
+                                    "CapeBottomWidth": 0.9,
+                                    "CapeFreeDistance": 10.0,
+                                    "CapeFreeExponent": 1.0,
+                                    "CapeLength": 1.2,
+                                    "CapeTopWidth": 0.45,
+                                    "Cols": 17,
+                                    "Rows": 25,
+                                    "Shape": "Cape",
+                                    "Spacing": 0.075,
+                                    "CapeCurveDepth": 0.1
+                                },
+                                "Mobility": "Movable",
+                                "PinSettings": {
+                                    "FreeMaxDistance": 10000.0,
+                                    "bCornersOnly": false,
+                                    "bPinColFirst": false,
+                                    "bPinColLast": false,
+                                    "bPinRowFirst": false,
+                                    "bPinRowLast": false
+                                },
+                                "RenderThickness": 0.01,
+                                "SelfCollision": {
+                                    "Distance": 0.02,
+                                    "Stiffness": 1.0,
+                                    "bEnabled": true
+                                },
+                                "SimSettings": {
+                                    "AngularInertia": 1.0,
+                                    "CentrifugalInertia": 1.0,
+                                    "Friction": 3.0,
+                                    "LinearInertia": 1.0,
+                                    "SolverFrequency": 300.0,
+                                    "TeleportDistance": 2.0,
+                                    "WindStrength": 0.0,
+                                    "bEnableGravity": true,
+                                    "bEnableWind": false
+                                },
+                                "Transform": {
+                                    "Location": {
+                                        "X": 1.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 90.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "TranslucencySortPriority": 0,
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": true,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": true,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "URotatingMovementComponent",
+                            "Name": "RotatingMovement",
+                            "Parent": "",
+                            "Properties": {
+                                "Gravity": 9.8100004196167,
+                                "PivotTranslation": {
+                                    "X": 0.0,
+                                    "Y": 0.0,
+                                    "Z": 0.0
+                                },
+                                "RotationRate": {
+                                    "Pitch": 0.0,
+                                    "Roll": 0.0,
+                                    "Yaw": 120.0
+                                },
+                                "Velocity": {
+                                    "X": 0.0,
+                                    "Y": 0.0,
+                                    "Z": 0.0
+                                },
+                                "bAutoActivate": true,
+                                "bConstrainToPlane": false,
+                                "bHiddenInGame": false,
+                                "bRotaionInLocalSpace": true,
+                                "bVisible": true
+                            }
+                        }
+                    ],
+                    "Name": "SpinningCape",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": true
+                    }
+                },
+                {
+                    "Class": "AActor",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Mobility": "Movable",
+                                "Transform": {
+                                    "Location": {
+                                        "X": -2.5,
+                                        "Y": 0.0,
+                                        "Z": 5.2
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UStaticMeshComponent",
+                            "Name": "Hub",
+                            "OverrideMaterials": [
+                                {
+                                    "Base": "DefaultMaterial",
+                                    "Instance": {
+                                        "BaseColor": {
+                                            "W": 1.0,
+                                            "X": 0.45,
+                                            "Y": 0.42,
+                                            "Z": 0.38
+                                        },
+                                        "BlendState": "Opaque",
+                                        "FlipNormalY": false,
+                                        "PSOType": 0,
+                                        "Properties": {
+                                            "PhysMaterial": null
+                                        },
+                                        "SamplerState": "LinearClamp",
+                                        "Shininess": 32.0,
+                                        "SpecularColor": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        },
+                                        "Textures": [
+                                            "WhiteTexture",
+                                            "FlatNormalTexture"
+                                        ],
+                                        "UVScrollSpeed": [
+                                            0.0,
+                                            0.0
+                                        ]
+                                    }
+                                }
+                            ],
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
+                                "Mobility": "Movable",
+                                "StaticMesh": "Cube",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.06
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 0.15,
+                                        "Y": 0.15,
+                                        "Z": 0.15
+                                    }
+                                },
+                                "TranslucencySortPriority": 0,
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": true,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": true,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UStaticMeshComponent",
+                            "Name": "Arm",
+                            "OverrideMaterials": [
+                                {
+                                    "Base": "DefaultMaterial",
+                                    "Instance": {
+                                        "BaseColor": {
+                                            "W": 1.0,
+                                            "X": 0.45,
+                                            "Y": 0.42,
+                                            "Z": 0.38
+                                        },
+                                        "BlendState": "Opaque",
+                                        "FlipNormalY": false,
+                                        "PSOType": 0,
+                                        "Properties": {
+                                            "PhysMaterial": null
+                                        },
+                                        "SamplerState": "LinearClamp",
+                                        "Shininess": 32.0,
+                                        "SpecularColor": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        },
+                                        "Textures": [
+                                            "WhiteTexture",
+                                            "FlatNormalTexture"
+                                        ],
+                                        "UVScrollSpeed": [
+                                            0.0,
+                                            0.0
+                                        ]
+                                    }
+                                }
+                            ],
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
+                                "Mobility": "Movable",
+                                "StaticMesh": "Cube",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.03
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 0.5,
+                                        "Y": 0.04,
+                                        "Z": 0.04
+                                    }
+                                },
+                                "TranslucencySortPriority": 0,
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": true,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": true,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UClothComponent",
+                            "Name": "Cape",
+                            "OverrideMaterials": [
+                                {
+                                    "Base": "DefaultMaterial",
+                                    "Instance": {
+                                        "BaseColor": {
+                                            "W": 1.0,
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        },
+                                        "BlendState": "Opaque",
+                                        "FlipNormalY": false,
+                                        "PSOType": 0,
+                                        "Properties": {
+                                            "PhysMaterial": null
+                                        },
+                                        "SamplerState": "LinearClamp",
+                                        "Shininess": 32.0,
+                                        "SpecularColor": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        },
+                                        "Textures": [
+                                            "Assets/Models/cape_fabric_1024.png",
+                                            "FlatNormalTexture"
+                                        ],
+                                        "UVScrollSpeed": [
+                                            0.0,
+                                            0.0
+                                        ]
+                                    }
+                                }
+                            ],
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "BodyInstance": {
+                                    "CollisionEnabled": "QueryAndPhysics",
+                                    "CollisionResponses": {
+                                        "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
+                                        "Destructible": "ECR_Block",
+                                        "Pawn": "ECR_Block",
+                                        "PhysicsBody": "ECR_Block",
+                                        "Vehicle": "ECR_Block",
+                                        "Visibility": "ECR_Block",
+                                        "WorldDynamic": "ECR_Block",
+                                        "WorldStatic": "ECR_Block"
+                                    },
+                                    "ObjectType": "ECC_WorldDynamic",
+                                    "PhysMaterialOverride": null,
+                                    "bNotifyRigidBodyCollision": false,
+                                    "bSimulatePhysics": false,
+                                    "bUseCCD": false
+                                },
+                                "GridSettings": {
+                                    "CapeBottomWidth": 0.9,
+                                    "CapeFreeDistance": 10.0,
+                                    "CapeFreeExponent": 1.0,
+                                    "CapeLength": 1.2,
+                                    "CapeTopWidth": 0.45,
+                                    "Cols": 17,
+                                    "Rows": 25,
+                                    "Shape": "Cape",
+                                    "Spacing": 0.075,
+                                    "CapeCurveDepth": 0.1
+                                },
+                                "Mobility": "Movable",
+                                "PinSettings": {
+                                    "FreeMaxDistance": 10000.0,
+                                    "bCornersOnly": false,
+                                    "bPinColFirst": false,
+                                    "bPinColLast": false,
+                                    "bPinRowFirst": false,
+                                    "bPinRowLast": false
+                                },
+                                "RenderThickness": 0.01,
+                                "SelfCollision": {
+                                    "Distance": 0.02,
+                                    "Stiffness": 1.0,
+                                    "bEnabled": true
+                                },
+                                "SimSettings": {
+                                    "AngularInertia": 1.0,
+                                    "CentrifugalInertia": 1.0,
+                                    "Friction": 3.0,
+                                    "LinearInertia": 1.0,
+                                    "SolverFrequency": 300.0,
+                                    "TeleportDistance": 2.0,
+                                    "WindStrength": 0.0,
+                                    "bEnableGravity": true,
+                                    "bEnableWind": false
+                                },
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 90.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "TranslucencySortPriority": 0,
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": true,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": true,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "URotatingMovementComponent",
+                            "Name": "RotatingMovement",
+                            "Parent": "",
+                            "Properties": {
+                                "Gravity": 9.8100004196167,
+                                "PivotTranslation": {
+                                    "X": 0.0,
+                                    "Y": 0.0,
+                                    "Z": 0.0
+                                },
+                                "RotationRate": {
+                                    "Pitch": 0.0,
+                                    "Roll": 0.0,
+                                    "Yaw": 180.0
+                                },
+                                "Velocity": {
+                                    "X": 0.0,
+                                    "Y": 0.0,
+                                    "Z": 0.0
+                                },
+                                "bAutoActivate": true,
+                                "bConstrainToPlane": false,
+                                "bHiddenInGame": false,
+                                "bRotaionInLocalSpace": true,
+                                "bVisible": true
+                            }
+                        }
+                    ],
+                    "Name": "SelfSpinCape",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": true
+                    }
                 }
             ],
             "Properties": {}

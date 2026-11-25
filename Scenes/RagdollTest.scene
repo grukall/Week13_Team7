@@ -43,6 +43,7 @@
                                     "CollisionEnabled": "QueryAndPhysics",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -136,6 +137,7 @@
                                     "CollisionEnabled": "NoCollision",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -244,8 +246,8 @@
                                     },
                                     "Rotation": {
                                         "Pitch": 34.00000762939453,
-                                        "Roll": 6.179024239827413e-06,
-                                        "Yaw": 125.00003051757813
+                                        "Roll": 1.0298372217221186e-05,
+                                        "Yaw": 125.00005340576172
                                     },
                                     "Scale": {
                                         "X": 1.0,
@@ -299,6 +301,7 @@
                                     "CollisionEnabled": "QueryAndPhysics",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -356,6 +359,7 @@
                                     "CollisionEnabled": "QueryAndPhysics",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -513,6 +517,7 @@
                                     "CollisionEnabled": "QueryAndPhysics",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -704,7 +709,7 @@
                                             "Z": 6.916248129762437e-10
                                         },
                                         "Rotation": {
-                                            "Pitch": 0.030778246000409126,
+                                            "Pitch": 0.03077824041247368,
                                             "Roll": 0.0,
                                             "Yaw": 0.0
                                         },
@@ -824,9 +829,9 @@
                                             "Z": -7.902235532597501e-10
                                         },
                                         "Rotation": {
-                                            "Pitch": 0.9877546429634094,
+                                            "Pitch": 0.9877544045448303,
                                             "Roll": 4.781351890414953e-05,
-                                            "Yaw": 1.6097612842713716e-07
+                                            "Yaw": 1.6097615684884659e-07
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -1024,9 +1029,9 @@
                                             "Z": 1.1919735953824784e-07
                                         },
                                         "Rotation": {
-                                            "Pitch": -6.750196916982532e-07,
+                                            "Pitch": -6.750195780114154e-07,
                                             "Roll": 1.165788034995785e-06,
-                                            "Yaw": 0.09560080617666245
+                                            "Yaw": 0.09560079127550125
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -1044,9 +1049,9 @@
                                             "Z": 2.3841860752327193e-07
                                         },
                                         "Rotation": {
-                                            "Pitch": 5.042625161877368e-07,
-                                            "Roll": -7.811162827664475e-10,
-                                            "Yaw": -0.06984670460224152
+                                            "Pitch": 5.04262402500899e-07,
+                                            "Roll": -7.81116171744145e-10,
+                                            "Yaw": -0.06984668970108032
                                         },
                                         "Scale": {
                                             "X": 0.9999999403953552,
@@ -1124,8 +1129,8 @@
                                             "Z": 8.881784197001252e-16
                                         },
                                         "Rotation": {
-                                            "Pitch": -8.829226771922549e-07,
-                                            "Roll": -7.08179737074488e-10,
+                                            "Pitch": -8.829224498185795e-07,
+                                            "Roll": -7.081796260521855e-10,
                                             "Yaw": 0.12227671593427658
                                         },
                                         "Scale": {
@@ -1164,7 +1169,7 @@
                                             "Z": 0.03359999507665634
                                         },
                                         "Rotation": {
-                                            "Pitch": -24.289167404174805,
+                                            "Pitch": -24.289175033569336,
                                             "Roll": -179.95655822753906,
                                             "Yaw": 29.30998420715332
                                         },
@@ -1224,9 +1229,9 @@
                                             "Z": 1.3471069593151697e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": -1.7424095858586952e-05,
+                                            "Pitch": -1.7424101315555163e-05,
                                             "Roll": -60.81916046142578,
-                                            "Yaw": -2.8644017220358364e-05
+                                            "Yaw": -2.864402085833717e-05
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -1264,9 +1269,9 @@
                                             "Z": -0.016968511044979095
                                         },
                                         "Rotation": {
-                                            "Pitch": -0.03182784095406532,
+                                            "Pitch": -0.031826987862586975,
                                             "Roll": 90.01696014404297,
-                                            "Yaw": -29.503721237182617
+                                            "Yaw": -29.50371551513672
                                         },
                                         "Scale": {
                                             "X": 1.0,
@@ -1304,9 +1309,9 @@
                                             "Z": 8.434106746335601e-09
                                         },
                                         "Rotation": {
-                                            "Pitch": 0.9877546429634094,
+                                            "Pitch": 0.9877544045448303,
                                             "Roll": -6.147468229755759e-05,
-                                            "Yaw": -2.787214441468677e-07
+                                            "Yaw": -2.78721529411996e-07
                                         },
                                         "Scale": {
                                             "X": 0.9999999403953552,
@@ -1404,9 +1409,9 @@
                                             "Z": 0.005200000945478678
                                         },
                                         "Rotation": {
-                                            "Pitch": 2.7070088386535645,
+                                            "Pitch": 2.7070086002349854,
                                             "Roll": 90.0004653930664,
-                                            "Yaw": 2.136818920916994e-06
+                                            "Yaw": 2.029978304562974e-06
                                         },
                                         "Scale": {
                                             "X": 0.9999998807907104,
@@ -1445,7 +1450,7 @@
                                         },
                                         "Rotation": {
                                             "Pitch": -9.380826782035001e-07,
-                                            "Roll": -1.5298524669304925e-09,
+                                            "Roll": -1.529852133863585e-09,
                                             "Yaw": -0.12944935262203217
                                         },
                                         "Scale": {
@@ -1504,9 +1509,9 @@
                                             "Z": 1.1917562403596094e-07
                                         },
                                         "Rotation": {
-                                            "Pitch": -6.44184922293789e-07,
-                                            "Roll": 3.344910908253951e-07,
-                                            "Yaw": -0.09559980779886246
+                                            "Pitch": -6.441848086069513e-07,
+                                            "Roll": 3.344910339819762e-07,
+                                            "Yaw": -0.09559979289770126
                                         },
                                         "Scale": {
                                             "X": 0.9999998211860657,
@@ -1525,8 +1530,8 @@
                                         },
                                         "Rotation": {
                                             "Pitch": 5.060884404883836e-07,
-                                            "Roll": 2.1394148674858116e-09,
-                                            "Yaw": 0.06984654814004898
+                                            "Roll": 2.1394146454412066e-09,
+                                            "Yaw": 0.06984653323888779
                                         },
                                         "Scale": {
                                             "X": 1.0000001192092896,
@@ -1644,7 +1649,7 @@
                                             "Z": 0.03359999507665634
                                         },
                                         "Rotation": {
-                                            "Pitch": -24.28917121887207,
+                                            "Pitch": -24.289180755615234,
                                             "Roll": 179.95655822753906,
                                             "Yaw": -29.30998420715332
                                         },
@@ -1665,7 +1670,7 @@
                                         },
                                         "Rotation": {
                                             "Pitch": 0.015547668561339378,
-                                            "Roll": -0.008480463176965714,
+                                            "Roll": -0.008480464108288288,
                                             "Yaw": 0.0054823183454573154
                                         },
                                         "Scale": {
@@ -1684,8 +1689,8 @@
                                             "Z": 1.7437683297316653e-08
                                         },
                                         "Rotation": {
-                                            "Pitch": -0.028396693989634514,
-                                            "Roll": 0.009296206757426262,
+                                            "Pitch": -0.028396688401699066,
+                                            "Roll": 0.009296204894781113,
                                             "Yaw": -0.061344895511865616
                                         },
                                         "Scale": {
@@ -1929,6 +1934,7 @@
                                     "CollisionEnabled": "QueryAndPhysics",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -1971,6 +1977,8 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bSimulateRagdoll": true,
+                                "bSimulationUpdatesComponentTransform": true,
+                                "bUseArticulatedPhysics": true,
                                 "bVisible": true
                             }
                         }
@@ -3347,6 +3355,7 @@
                                     "CollisionEnabled": "QueryAndPhysics",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -3389,6 +3398,8 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bSimulateRagdoll": false,
+                                "bSimulationUpdatesComponentTransform": true,
+                                "bUseArticulatedPhysics": true,
                                 "bVisible": true
                             },
                             "SingleAnimation": {
@@ -3444,6 +3455,7 @@
                                     "CollisionEnabled": "QueryAndPhysics",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -4826,6 +4838,7 @@
                                     "CollisionEnabled": "QueryAndPhysics",
                                     "CollisionResponses": {
                                         "Camera": "ECR_Block",
+                                        "Cloth": "ECR_Ignore",
                                         "Destructible": "ECR_Block",
                                         "Pawn": "ECR_Block",
                                         "PhysicsBody": "ECR_Block",
@@ -4868,6 +4881,8 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bSimulateRagdoll": false,
+                                "bSimulationUpdatesComponentTransform": true,
+                                "bUseArticulatedPhysics": true,
                                 "bVisible": true
                             }
                         },

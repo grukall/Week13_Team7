@@ -113,6 +113,12 @@ public:
 	UPROPERTY(EditAnywhere)
 	bool bUseArticulatedPhysics = true;
 
+	// Unreal PhysicsTransformUpdateMode::SimulationUpatesComponentTransform.
+	// 켜면 루트 바디(보통 pelvis)가 시뮬레이션될 때 컴포넌트 Transform이 그 바디를 따라간다.
+	// 끄면(ComponentTransformIsKinematic) 컴포넌트는 제자리에 있고 본만 날아간다
+	UPROPERTY(EditAnywhere)
+	bool bSimulationUpdatesComponentTransform = true;
+
 	void SetUseArticulatedPhysics(bool bInUse);
 	void SetSingleBodySetupOverride(UBodySetup* InBodySetup);
 	UBodySetup* GetBodySetup() override;
@@ -155,9 +161,18 @@ private:
 	FSkeletalMeshPostPhysicsTickFunction PostPhysicsTick;
 	friend struct FSkeletalMeshPostPhysicsTickFunction;
 
+	// 루트 바디: 본 순서상 처음으로 바디가 있는 본의 바디 (Unreal RootBodyData.BodyIndex)
+	int32 RootBodyIndex = -1;
+	// 루트 바디 기준 컴포넌트 위치 = CompWorld × RootBodyWorld⁻¹ (Unreal RootBodyData.TransformToRoot)
+	FMatrix ComponentToRootBody = FMatrix::Identity;
+
 	UBodySetup* SingleBodySetupOverride = nullptr;
 	void InitArticulated(FPhysScene* Scene);
 	void TermArticulated();
 	void UpdateKinematicBodies();                // Ragdoll OFF: 본 → 바디 (PrePhysics, 애니메이션 직후)
 	void BlendInPhysics();                       // Ragdoll ON: 바디 → 본 (PostPhysics)
+	int32 FindRootBodyIndex() const;
+	void CacheRootBodyOffset();                  // 시뮬레이션을 켤 때 ComponentToRootBody를 저장 (Unreal SetRootBodyIndex)
+	bool IsRootBodySimulating() const;
+	void SyncComponentToRBPhysics();             // 루트 바디 위치로 컴포넌트를 옮긴다 (BlendInPhysics 직전)
 };

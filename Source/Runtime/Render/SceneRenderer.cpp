@@ -358,18 +358,22 @@ bool FSceneRenderer::AddDepthOfFieldPasses(FRenderGraphBuilder& Graph, FRenderer
 	FPipelineState* Setup = FRenderResourceManager::GetPSO(EPSOType::DepthOfFieldSetup);
 	FPipelineState* Tiles = FRenderResourceManager::GetPSO(EPSOType::DepthOfFieldTiles);
 	FPipelineState* Gather = FRenderResourceManager::GetPSO(EPSOType::DepthOfFieldGather);
+	FPipelineState* Downsample = FRenderResourceManager::GetPSO(EPSOType::DepthOfFieldDownsample);
 	FPipelineState* Recombine = FRenderResourceManager::GetPSO(EPSOType::DepthOfFieldRecombine);
 	FConstantBuffer* Constants = Renderer->GetDepthOfFieldConstants();
-	if (!Constants || !Constants->GetBuffer() || !Setup || !Setup->Shader || !Tiles || !Tiles->Shader || !Gather || !Gather->Shader || !Recombine || !Recombine->Shader)
+	if (!Constants || !Constants->GetBuffer() || !Setup || !Setup->Shader || !Tiles || !Tiles->Shader || !Gather || !Gather->Shader || !Recombine || !Recombine->Shader || !Downsample || !Downsample->Shader)
 		return false;
 
 	constexpr uint32 TileSize = 8; // DepthOfFieldGatherCommon.hlsli
 	const auto SignedCoC = Graph.CreateTexture({ HDRDesc.Width, HDRDesc.Height, ETextureFormat::R32_Float }, "DOFSignedCoC");
-	const auto TileRadius = Graph.CreateTexture({ (HDRDesc.Width + TileSize - 1) / TileSize, (HDRDesc.Height + TileSize - 1) / TileSize, ETextureFormat::R32_Float }, "DOFTileNearRadius");
-	const auto NearLayer = Graph.CreateTexture(HDRDesc, "DOFNearLayer");
-	const auto FarLayer = Graph.CreateTexture(HDRDesc, "DOFFarLayer");
+	const FRenderGraphTextureDesc HalfDesc{ (HDRDesc.Width + 1) / 2, (HDRDesc.Height + 1) / 2, HDRDesc.Format };
+	const auto HalfColor = Graph.CreateTexture(HalfDesc, "DOFHalfColor");
+	const auto HalfCoC = Graph.CreateTexture({ HalfDesc.Width, HalfDesc.Height, ETextureFormat::R32_Float }, "DOFHalfCoC");
+	const auto TileRadius = Graph.CreateTexture({ (HalfDesc.Width + TileSize - 1) / TileSize, (HalfDesc.Height + TileSize - 1) / TileSize, ETextureFormat::R32_Float }, "DOFTileNearRadius");
+	const auto NearLayer = Graph.CreateTexture(HalfDesc, "DOFNearLayer");
+	const auto FarLayer = Graph.CreateTexture(HalfDesc, "DOFFarLayer");
 	const auto BlurredColor = Graph.CreateTexture(HDRDesc, "DOFSceneColor");
-	if (!SignedCoC || !TileRadius || !NearLayer || !FarLayer || !BlurredColor)
+	if (!SignedCoC || !HalfColor || !HalfCoC || !TileRadius || !NearLayer || !FarLayer || !BlurredColor)
 		return false;
 
 	const FDepthOfFieldData Lens{ View.ProjectionMatrix.M[0][2], View.ProjectionMatrix.M[3][2], View.DepthOfField.FocusDistanceMeters, InfinityRadius };
@@ -387,9 +391,21 @@ bool FSceneRenderer::AddDepthOfFieldPasses(FRenderGraphBuilder& Graph, FRenderer
 		}))
 		return false;
 
+	FRenderGraphRasterPassDesc DownsamplePass{};
+	DownsamplePass.Name = "DOFDownsample";
+	DownsamplePass.ReadTextures = { Color, SignedCoC };
+	DownsamplePass.ColorAttachments = { { HalfColor }, { HalfCoC } };
+	if (!Graph.AddRasterPass(std::move(DownsamplePass), [Downsample]
+		{
+			RenderCommand::BindPipelineState(*Downsample);
+			RenderCommand::BindVertexBuffer(nullptr);
+			RenderCommand::Draw(3);
+		}))
+		return false;
+
 	FRenderGraphRasterPassDesc Reduce{};
 	Reduce.Name = "DOFNearRadiusTiles";
-	Reduce.ReadTextures = { SignedCoC };
+	Reduce.ReadTextures = { HalfCoC };
 	Reduce.ColorAttachments = { { TileRadius } };
 	if (!Graph.AddRasterPass(std::move(Reduce), [Tiles]
 		{
@@ -401,7 +417,7 @@ bool FSceneRenderer::AddDepthOfFieldPasses(FRenderGraphBuilder& Graph, FRenderer
 
 	FRenderGraphRasterPassDesc GatherPass{};
 	GatherPass.Name = "DOFGather";
-	GatherPass.ReadTextures = { Color, SignedCoC, TileRadius };
+	GatherPass.ReadTextures = { HalfColor, HalfCoC, TileRadius };
 	GatherPass.ColorAttachments = { { NearLayer }, { FarLayer } };
 	if (!Graph.AddRasterPass(std::move(GatherPass), [Gather]
 		{
@@ -418,6 +434,7 @@ bool FSceneRenderer::AddDepthOfFieldPasses(FRenderGraphBuilder& Graph, FRenderer
 	if (!Graph.AddRasterPass(std::move(Combine), [Recombine]
 		{
 			RenderCommand::BindPipelineState(*Recombine);
+			RenderCommand::BindSamplerState(0, ESamplerState::LinearClamp, EShaderBindFlagBits::Pixel);
 			RenderCommand::BindVertexBuffer(nullptr);
 			RenderCommand::Draw(3);
 		}))

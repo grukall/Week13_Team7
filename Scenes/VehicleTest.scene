@@ -211,7 +211,7 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
-                                "bSimulateRagdoll": false,
+                                "bSimulationUpdatesComponentTransform": true,
                                 "bUseArticulatedPhysics": false,
                                 "bVisible": true
                             }
@@ -436,7 +436,7 @@
                                 "AttenuationInnerRadius": 400.0,
                                 "Mobility": "Movable",
                                 "PitchMultiplier": 1.0,
-                                "SoundPath": "",
+                                "SoundPath": "Assets/Sounds/car_mid_loop.wav",
                                 "Transform": {
                                     "Location": {
                                         "X": 0.0,
@@ -472,7 +472,7 @@
                                 "AttenuationInnerRadius": 400.0,
                                 "Mobility": "Movable",
                                 "PitchMultiplier": 1.0,
-                                "SoundPath": "",
+                                "SoundPath": "Assets/Sounds/skid_long_01.wav",
                                 "Transform": {
                                     "Location": {
                                         "X": 0.0,
@@ -562,7 +562,7 @@
                     "Name": "TestVehicle",
                     "Properties": {
                         "EngineInterpSpeed": 15.0,
-                        "EnginePitchMax": 2.200000047683716,
+                        "EnginePitchMax": 1.5,
                         "EnginePitchMin": 0.699999988079071,
                         "EngineVolumeMax": 1.0,
                         "EngineVolumeMin": 0.4000000059604645,

@@ -6,15 +6,35 @@
 #include "UObject/UObjectIterator.h"
 #include "Physics/BodySetup.h"
 #include "Engine/ClothSceneProxy.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Physics/PhysicsAsset.h"	// USkeletalBodySetup도 함께 들어온다
+#include "UObject/Casts.h"
 #include <NvCloth/Factory.h>
 #include <NvCloth/Solver.h> 
 #include <NvCloth/Cloth.h> 
 #include <NvClothExt/ClothFabricCooker.h>
+#include <foundation/PxQuat.h>		// NvCloth 헤더는 PxQuat를 앞선언만 한다 (setRotation·teleportToLocation 인자)
 #include <algorithm>	
 #include <cmath>		
 
 namespace
 {
+	// NvCloth 로컬 공간(시뮬레이션 공간)의 월드 위치·회전. setTranslation / setRotation / teleportToLocation에 넣는다.
+	// 입력은 GetSimToWorldMatrix(천의 R·T). 충돌체 변환(WorldToCloth)과 같은 행렬에서 뽑아야 중력 방향과 충돌 위치가 맞는다
+	physx::PxVec3 ToClothPosition(const FMatrix& SimToWorld)
+	{
+		return physx::PxVec3(SimToWorld[3][0], SimToWorld[3][1], SimToWorld[3][2]);
+	}
+
+	// 엔진 쿼터니언은 PhysX와 같은 배치라 성분을 그대로 옮긴다 (PhysicsInterface.cpp ToPx와 같은 규칙)
+	physx::PxQuat ToClothRotation(const FMatrix& SimToWorld)
+	{
+		const FQuat Q = SimToWorld.GetRotation();
+		const physx::PxQuat Rotation(Q.X, Q.Y, Q.Z, Q.W);
+		const float LengthSquared = Rotation.magnitudeSquared();
+		return (std::isfinite(LengthSquared) && LengthSquared > 1.0e-12f) ? Rotation.getNormalized() : physx::PxQuat(physx::PxIdentity);
+	}
+
 	float ComputeGridMaxDistance(int32 row, int32 col, int32 Rows, int32 Cols, const FClothPinSettings& PinSetting)
 	{
 		const bool onRowFirst = PinSetting.bPinRowFirst && row == 0;
@@ -187,6 +207,17 @@ namespace
 		ScaledBox.Z = Size.Z;
 		return AddBox(Out, ScaledBox, RigidToCloth, Pad);
 	}
+
+	// 바디 하나의 도형 묶음을 모두 넣는다. Scale3D는 도형에 먼저 곱하고, RigidToCloth(스케일 없는 바디 포즈 → 천 로컬)로 옮긴다
+	bool AddAggGeom(FClothCollisionShapes& Out, const FKAggregateGeom& Geom, const FVector& Scale3D, const FMatrix& RigidToCloth, float Pad)
+	{
+		bool bAllAdded = true;
+		for (const FKBoxElem& Box : Geom.BoxElems)          bAllAdded &= AddBox(Out, GetScaledBox(Box, Scale3D), RigidToCloth, Pad);	// 평면 6개 + convex 1개
+		for (const FKSphereElem& Sphere : Geom.SphereElems) bAllAdded &= AddSphere(Out, Sphere, Scale3D, RigidToCloth, Pad);			// 구 1개
+		for (const FKSphylElem& Sphyl : Geom.SphylElems)    bAllAdded &= AddSphyl(Out, Sphyl, Scale3D, RigidToCloth, Pad);			// 구 2개 + 캡슐 1개
+		for (const FKConvexElem& Convex : Geom.ConvexElems) bAllAdded &= AddConvexAsBox(Out, Convex, Scale3D, RigidToCloth, Pad);	// 정점 AABB를 박스로 (임시)
+		return bAllAdded;
+	}
 }
 
 nv::cloth::ClothMeshDesc MakeClothMeshDesc(const FClothBuildInput& Input)
@@ -221,7 +252,7 @@ void UClothComponent::OnRegister()
 {
 	Super::OnRegister();
 
-	if (!CreateSolver())	// 등록할 때 전역 CPU/CUDA 설정대로 만든다	// 천 계산할 Solver 세팅 (컴포넌트의 모든 천이 공유)
+	if (!CreateSolver())	// 천 계산할 Solver 세팅 (컴포넌트의 모든 천이 공유). 등록할 때 전역 CPU/CUDA 설정대로 만든다
 	{
 		return;
 	}
@@ -487,6 +518,11 @@ bool UClothComponent::CreateCloth(const FClothBuildInput& RawInput)
 
 	Cloth->setRestPositions(ParticleRange);
 
+	// 새 천의 로컬 공간은 (원점, 회전 없음)에 있다고 NvCloth가 알고 있다. 그대로 두면 다음 Tick의 setTranslation이
+	// "원점에서 현재 위치까지 한 프레임에 이동"으로 계산되어 큰 관성이 생기므로, 처음부터 현재 위치에 있던 것으로 맞춘다
+	const FMatrix SimToWorld = GetSimToWorldMatrix();
+	Cloth->teleportToLocation(ToClothPosition(SimToWorld), ToClothRotation(SimToWorld));
+
 	FClothMeshData ClothData;	// Cloth Rendering용 데이터 생성 (앞면·뒷면 두 겹, 정점 2N개)
 	ClothData.InitTwoSided(Input.Positions, Input.UVs, Input.Indices);
 	ClothData.FinalizeTwoSided(RenderThickness);		// 시뮬레이션 공간에서 법선·두께 (월드 단위)
@@ -564,7 +600,8 @@ void UClothComponent::TickComponent(float DeltaTime)
 	}
 
 	if (!(DeltaTime > 0.0f) || !std::isfinite(DeltaTime)) return;
-	float dt = std::min(DeltaTime, 1.0f / 30.0f);
+	constexpr float MaxSimDeltaTime = 1.0f / 30.0f;
+	float dt = std::min(DeltaTime, MaxSimDeltaTime);
 
 	if (!ClothInstances.IsEmpty())
 	{
@@ -593,15 +630,42 @@ void UClothComponent::TickComponent(float DeltaTime)
 
 	// 월드 → 시뮬레이션 공간: 천의 R·T만 되돌리고 S⁻¹은 적용하지 않는다.
 	// 천 모양에 이미 S가 구워져 있으므로 충돌체 반지름·Pad를 월드 값 그대로 쓸 수 있다
-	const FMatrix WorldToCloth = GetSimToWorldMatrix().Inverse();
+	const FMatrix SimToWorld = GetSimToWorldMatrix();
+	const FMatrix WorldToCloth = SimToWorld.Inverse();
 	GatherCollisionShape(CollisionShapes, WorldToCloth);
+
+	// 천 로컬 공간이 월드에서 어디 있는지 NvCloth에 알린다 (관성, 월드 기준 중력·바람). 파티클은 계속 로컬 좌표다
+	const physx::PxVec3 FramePosition = ToClothPosition(SimToWorld);
+	const physx::PxQuat FrameRotation = ToClothRotation(SimToWorld);
+	const bool bLongFrame = DeltaTime > MaxSimDeltaTime;	// 실제 시간이 dt 상한보다 길면 속도(이동량 / dt)가 부풀어 천이 튄다
+
+	const physx::PxVec3 LinearInertia(std::clamp(SimSettings.LinearInertia, 0.0f, 1.0f));
+	const physx::PxVec3 AngularInertia(std::clamp(SimSettings.AngularInertia, 0.0f, 1.0f));
+	const physx::PxVec3 CentrifugalInertia(std::clamp(SimSettings.CentrifugalInertia, 0.0f, 1.0f));
 
 	for (FClothInstance& Instance : ClothInstances)
 	{
 		if (Instance.Cloth != nullptr)
 		{
-			Instance.Cloth->setWindVelocity(Wind);	
-			Instance.Cloth->setGravity(SimSettings.bEnableGravity ? physx::PxVec3(0.0f, 0.0f, -9.81f) : physx::PxVec3(0.0f));
+			// 지난번에 넣은 위치는 NvCloth가 갖고 있다 (getTranslation). 한 프레임에 너무 멀리 갔으면 기즈모 점프·리스폰으로 본다
+			const float MoveDistance = (FramePosition - Instance.Cloth->getTranslation()).magnitude();
+			if (bLongFrame || MoveDistance > std::max(SimSettings.TeleportDistance, 0.0f))
+			{
+				// 관성 없이 위치만 옮기고, 이번 프레임은 지난 속도를 유지한다 (속도가 0으로 끊기면 감속 관성으로 또 튄다)
+				Instance.Cloth->teleportToLocation(FramePosition, FrameRotation);
+				Instance.Cloth->ignoreVelocityDiscontinuity();
+			}
+			else
+			{
+				Instance.Cloth->setTranslation(FramePosition);	// NvCloth가 지난 값과 비교해 관성을 만들고
+				Instance.Cloth->setRotation(FrameRotation);		// 월드 기준 중력·바람을 로컬 방향으로 바꾼다
+			}
+			Instance.Cloth->setLinearInertia(LinearInertia);
+			Instance.Cloth->setAngularInertia(AngularInertia);
+			Instance.Cloth->setCentrifugalInertia(CentrifugalInertia);
+
+			Instance.Cloth->setWindVelocity(Wind);		// 월드 기준 (NvCloth가 로컬 방향으로 바꾼다)
+			Instance.Cloth->setGravity(SimSettings.bEnableGravity ? physx::PxVec3(0.0f, 0.0f, -9.81f) : physx::PxVec3(0.0f));	// 월드 기준 (회전을 알려 줬으므로 천이 기울어도 월드 아래로 걸린다)
 			Instance.Cloth->setSelfCollisionDistance(SelfCollision.bEnabled ? std::max(SelfCollision.Distance, 0.0f) : 0.0f);
 			Instance.Cloth->setSelfCollisionStiffness(std::clamp(SelfCollision.Stiffness, 0.0f, 1.0f));
 			Instance.Cloth->setFriction(std::max(SimSettings.Friction, 0.0f));
@@ -712,23 +776,34 @@ void UClothComponent::GatherCollisionShape(FClothCollisionShapes& CollisionShape
 
 		const FBodyInstance* Body = PrimComp->GetBodyInstance();
 		if (Body->CollisionEnabled == ECollisionEnabled::NoCollision) continue;
-		if (Body->CollisionResponses.Cloth != ECollisionResponse::ECR_Block) continue;	// Cloth 채널 Block만 천 충돌체
+		if (Body->CollisionResponses.Cloth != ECollisionResponse::ECR_Block) continue;
 
+		// SkeletalMesh일 경우
+		const USkeletalMeshComponent* SkelComp = Cast<USkeletalMeshComponent>(PrimComp);
+		if (SkelComp && SkelComp->bUseArticulatedPhysics)
+		{
+			bool bAllAdded = true;
+			SkelComp->ForEachBodyShape([&](const USkeletalBodySetup& BodySetup, const FTransform& Pose, const FVector& Scale)
+			{
+				if (BodySetup.CollisionEnabled == ECollisionEnabled::NoCollision) return;	// Physics Asset 에디터에서 끈 바디
+				const FMatrix RigidToCloth = Pose.GetLocalMatrix() * WorldToCloth;		// 바디 로컬(스케일 1) → 천 로컬
+				bAllAdded &= AddAggGeom(CollisionShape, BodySetup.AggGeom, Scale, RigidToCloth, Pad);
+			});
+			if (!bAllAdded)
+			{
+				HTR_LOG(Warning, "[NvCloth] Cloth collision budget exceeded or empty convex; some bodies of {} were skipped", PrimComp->GetName());
+			}
+			continue;
+		}
+
+		// StaticMesh일경우
 		const UBodySetup* Setup = PrimComp->GetBodySetup();		// 모양 없는 Primitive(스켈레탈 등)는 nullptr
 		if (Setup == nullptr || Setup->AggGeom.IsEmpty()) continue;
 
-		// PhysX body와 같은 분리: 스케일은 형상에 먼저 적용하고, 포즈는 스케일 없는 회전·이동만 쓴다 (PrimitiveComponent.cpp OnCreatePhysicsState의 BodyTransform)
 		const FVector Scale3D = PrimComp->GetWorldScale3D();
 		const FTransform BodyPose(PrimComp->GetWorldRotation(), PrimComp->GetWorldLocation());	// 스케일 1
 		const FMatrix RigidToCloth = BodyPose.GetLocalMatrix() * WorldToCloth;	// Body 로컬→ Cloth 로컬 변환 행렬
-		const FKAggregateGeom& Geom = Setup->AggGeom;		// 복사하지 않고 참조
-
-		bool bAllAdded = true;
-		for (const FKBoxElem& Box : Geom.BoxElems)          bAllAdded &= AddBox(CollisionShape, GetScaledBox(Box, Scale3D), RigidToCloth, Pad);	// 평면 6개 + convex 1개
-		for (const FKSphereElem& Sphere : Geom.SphereElems) bAllAdded &= AddSphere(CollisionShape, Sphere, Scale3D, RigidToCloth, Pad);			// 구 1개
-		for (const FKSphylElem& Sphyl : Geom.SphylElems)    bAllAdded &= AddSphyl(CollisionShape, Sphyl, Scale3D, RigidToCloth, Pad);			// 구 2개 + 캡슐 1개
-		for (const FKConvexElem& Convex : Geom.ConvexElems) bAllAdded &= AddConvexAsBox(CollisionShape, Convex, Scale3D, RigidToCloth, Pad);	// 정점 AABB를 박스로 (임시)
-
+		const bool bAllAdded = AddAggGeom(CollisionShape, Setup->AggGeom, Scale3D, RigidToCloth, Pad);
 		if (!bAllAdded)
 		{
 			HTR_LOG(Warning, "[NvCloth] Cloth collision budget exceeded or empty convex; some shapes of {} were skipped", PrimComp->GetName());

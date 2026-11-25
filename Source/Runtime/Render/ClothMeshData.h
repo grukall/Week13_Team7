@@ -34,11 +34,15 @@ struct FClothMeshData
 		Indices.Reserve(SimIndices.Num() * 2);
 		for (int32 i = 0; i + 2 < SimIndices.Num(); i += 3)		// 앞면: 원래 순서
 		{
-			Indices.Add(SimIndices[i]); Indices.Add(SimIndices[i + 1]); Indices.Add(SimIndices[i + 2]);
+			Indices.Add(SimIndices[i]); 
+			Indices.Add(SimIndices[i + 1]); 
+			Indices.Add(SimIndices[i + 2]);
 		}
 		for (int32 i = 0; i + 2 < SimIndices.Num(); i += 3)		// 뒷면: 감는 순서 반대 (b, c 교환)
 		{
-			Indices.Add(SimIndices[i] + N); Indices.Add(SimIndices[i + 2] + N); Indices.Add(SimIndices[i + 1] + N);
+			Indices.Add(SimIndices[i] + N); 
+			Indices.Add(SimIndices[i + 2] + N); 
+			Indices.Add(SimIndices[i + 1] + N);
 		}
 	}
 

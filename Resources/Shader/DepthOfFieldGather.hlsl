@@ -1,7 +1,7 @@
 #include "DepthOfFieldGatherCommon.hlsli"
 Texture2D<float4> SceneColor : register(t0);
 Texture2D<float> SignedCoC : register(t1);
-Texture2D<float> TileNearRadius : register(t2);
+Texture2D<float4> DilatedTiles : register(t2);
 
 struct Layers
 {
@@ -18,13 +18,8 @@ Layers mainPS(float4 position : SV_Position)
     SignedCoC.GetDimensions(width, height);
     int2 lastPixel = int2(width, height) - 1;
 
-    // MaxGatherRadius is one tile wide. Only these tiles can scatter onto this pixel.
-    int2 firstTile = uint2(max(pixel - MaxGatherRadius, 0)) / uint(TileSize);
-    int2 lastTile = uint2(min(pixel + MaxGatherRadius, lastPixel)) / uint(TileSize);
-    float searchRadius = max(0, centerRadius);
-    for (int ty = firstTile.y; ty <= lastTile.y; ++ty)
-        for (int tx = firstTile.x; tx <= lastTile.x; ++tx)
-            searchRadius = max(searchRadius, TileNearRadius.Load(int3(tx, ty, 0)));
+    float4 bounds = DilatedTiles.Load(int3(uint2(pixel) / uint(TileSize), 0));
+    float searchRadius = max(-bounds.x, bounds.w);
     if (searchRadius <= 0.5f)
         return layers;
 
@@ -49,11 +44,11 @@ Layers mainPS(float4 position : SV_Position)
                 nearColor += color * weight;
                 coverage += weight;
             }
-            else
+            else if (radius > 0.5f || centerRadius < -0.5f)
             {
-                // For a near center, adjacent visible background can fill the uncovered fraction.
-                float support = centerRadius < -0.5f ? -centerRadius : min(max(0, radius), max(0, centerRadius));
-                float weight = saturate(support + 0.5f - distancePx);
+                // Behind a near center, nearby visible background can fill uncovered area.
+                float support = centerRadius < -0.5f ? max(radius, -centerRadius) : radius;
+                float weight = saturate(support + 0.5f - distancePx) / max(1.0f, support * support);
                 farColor += color * weight;
                 farWeight += weight;
             }

@@ -57,6 +57,7 @@ constexpr FPipelineTableEntry PipelineTable[] =
 	{ EPSOType::DepthOfFieldTiles, "Resources/Shader/DepthOfFieldTiles.hlsl", EPrimitiveTopology::TriangleList, ERasterizerState::SolidNone, EBlendState::Opaque, EDepthStencilState::Disabled },
 	{ EPSOType::DepthOfFieldRecombine, "Resources/Shader/DepthOfFieldRecombine.hlsl", EPrimitiveTopology::TriangleList, ERasterizerState::SolidNone, EBlendState::Opaque, EDepthStencilState::Disabled },
 	{ EPSOType::DepthOfFieldDownsample, "Resources/Shader/DepthOfFieldDownsample.hlsl", EPrimitiveTopology::TriangleList, ERasterizerState::SolidNone, EBlendState::Opaque, EDepthStencilState::Disabled },
+	{ EPSOType::DepthOfFieldDilate, "Resources/Shader/DepthOfFieldDilate.hlsl", EPrimitiveTopology::TriangleList, ERasterizerState::SolidNone, EBlendState::Opaque, EDepthStencilState::Disabled },
 	{ EPSOType::DepthOfFieldGather, "Resources/Shader/DepthOfFieldGather.hlsl", EPrimitiveTopology::TriangleList, ERasterizerState::SolidNone, EBlendState::Opaque, EDepthStencilState::Disabled },
 };
 

@@ -6,4 +6,4 @@ float4 mainVS(uint vertexID : SV_VertexID) : SV_Position
 
 static const int TileSize = 8;
 // Setup stores the optical radius; limit only the gather footprint.
-static const int MaxGatherRadius = 8;
+static const int MaxGatherRadius = 4; // half-resolution texels (8 full-resolution pixels)

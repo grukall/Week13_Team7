@@ -1,6 +1,6 @@
 #include "DepthOfFieldGatherCommon.hlsli"
 Texture2D<float4> SceneColor : register(t0);
-Texture2D<float> SceneDepth : register(t1);
+Texture2D<float> SignedCoC : register(t1);
 Texture2D<float> TileNearRadius : register(t2);
 
 float4 mainVS(uint vertexID : SV_VertexID) : SV_Position
@@ -13,9 +13,9 @@ float4 mainPS(float4 position : SV_Position) : SV_Target
 {
     int2 pixel = int2(position.xy);
     float4 sharp = SceneColor.Load(int3(pixel, 0));
-    float centerRadius = GatherRadius(SceneDepth.Load(int3(pixel, 0)));
+    float centerRadius = clamp(SignedCoC.Load(int3(pixel, 0)), -MaxGatherRadius, MaxGatherRadius);
     uint width, height;
-    SceneDepth.GetDimensions(width, height);
+    SignedCoC.GetDimensions(width, height);
     int2 lastPixel = int2(width, height) - 1;
 
     // MaxGatherRadius is one tile wide. Only these tiles can scatter onto this pixel.
@@ -39,7 +39,7 @@ float4 mainPS(float4 position : SV_Position) : SV_Target
             if (distancePx >= searchRadius + 0.5f)
                 continue;
             int2 samplePixel = clamp(pixel + int2(x, y), 0, lastPixel);
-            float radius = GatherRadius(SceneDepth.Load(int3(samplePixel, 0)));
+            float radius = clamp(SignedCoC.Load(int3(samplePixel, 0)), -MaxGatherRadius, MaxGatherRadius);
             float3 color = SceneColor.Load(int3(samplePixel, 0)).rgb;
             if (radius < -0.5f)
             {

@@ -355,28 +355,42 @@ bool FSceneRenderer::AddWorldNormalPass(FRenderGraphBuilder& Graph, FRenderer* R
 
 bool FSceneRenderer::AddDepthOfFieldPasses(FRenderGraphBuilder& Graph, FRenderer* Renderer, const FRenderGraphTextureDesc& HDRDesc, FRenderGraphTextureRef Depth, float InfinityRadius, FRenderGraphTextureRef& Color)
 {
+	FPipelineState* Setup = FRenderResourceManager::GetPSO(EPSOType::DepthOfFieldSetup);
 	FPipelineState* Tiles = FRenderResourceManager::GetPSO(EPSOType::DepthOfFieldTiles);
 	FPipelineState* Gather = FRenderResourceManager::GetPSO(EPSOType::DepthOfFieldGather);
 	FConstantBuffer* Constants = Renderer->GetDepthOfFieldConstants();
-	if (!Constants || !Constants->GetBuffer() || !Tiles || !Tiles->Shader || !Gather || !Gather->Shader)
+	if (!Constants || !Constants->GetBuffer() || !Setup || !Setup->Shader || !Tiles || !Tiles->Shader || !Gather || !Gather->Shader)
 		return false;
 
 	constexpr uint32 TileSize = 8; // DepthOfFieldGatherCommon.hlsli
+	const auto SignedCoC = Graph.CreateTexture({ HDRDesc.Width, HDRDesc.Height, ETextureFormat::R32_Float }, "DOFSignedCoC");
 	const auto TileRadius = Graph.CreateTexture({ (HDRDesc.Width + TileSize - 1) / TileSize, (HDRDesc.Height + TileSize - 1) / TileSize, ETextureFormat::R32_Float }, "DOFTileNearRadius");
 	const auto BlurredColor = Graph.CreateTexture(HDRDesc, "DOFSceneColor");
-	if (!TileRadius || !BlurredColor)
+	if (!SignedCoC || !TileRadius || !BlurredColor)
 		return false;
 
 	const FDepthOfFieldData Lens{ View.ProjectionMatrix.M[0][2], View.ProjectionMatrix.M[3][2], View.DepthOfField.FocusDistanceMeters, InfinityRadius };
-	FRenderGraphRasterPassDesc Reduce{};
-	Reduce.Name = "DOFNearRadiusTiles";
-	Reduce.ReadTextures = { Depth };
-	Reduce.ColorAttachments = { { TileRadius } };
-	if (!Graph.AddRasterPass(std::move(Reduce), [Tiles, Constants, Lens]
+	FRenderGraphRasterPassDesc Prepare{};
+	Prepare.Name = "DOFSetup";
+	Prepare.ReadTextures = { Depth };
+	Prepare.ColorAttachments = { { SignedCoC } };
+	if (!Graph.AddRasterPass(std::move(Prepare), [Setup, Constants, Lens]
 		{
 			RenderCommand::UpdateBufferData(Constants, &Lens, sizeof(Lens));
-			RenderCommand::BindPipelineState(*Tiles);
+			RenderCommand::BindPipelineState(*Setup);
 			RenderCommand::BindConstantBuffer(0, Constants, EShaderBindFlagBits::Pixel);
+			RenderCommand::BindVertexBuffer(nullptr);
+			RenderCommand::Draw(3);
+		}))
+		return false;
+
+	FRenderGraphRasterPassDesc Reduce{};
+	Reduce.Name = "DOFNearRadiusTiles";
+	Reduce.ReadTextures = { SignedCoC };
+	Reduce.ColorAttachments = { { TileRadius } };
+	if (!Graph.AddRasterPass(std::move(Reduce), [Tiles]
+		{
+			RenderCommand::BindPipelineState(*Tiles);
 			RenderCommand::BindVertexBuffer(nullptr);
 			RenderCommand::Draw(3);
 		}))
@@ -384,12 +398,11 @@ bool FSceneRenderer::AddDepthOfFieldPasses(FRenderGraphBuilder& Graph, FRenderer
 
 	FRenderGraphRasterPassDesc Combine{};
 	Combine.Name = "DOFGatherAndRecombine";
-	Combine.ReadTextures = { Color, Depth, TileRadius };
+	Combine.ReadTextures = { Color, SignedCoC, TileRadius };
 	Combine.ColorAttachments = { { BlurredColor } };
-	if (!Graph.AddRasterPass(std::move(Combine), [Gather, Constants]
+	if (!Graph.AddRasterPass(std::move(Combine), [Gather]
 		{
 			RenderCommand::BindPipelineState(*Gather);
-			RenderCommand::BindConstantBuffer(0, Constants, EShaderBindFlagBits::Pixel);
 			RenderCommand::BindVertexBuffer(nullptr);
 			RenderCommand::Draw(3);
 		}))

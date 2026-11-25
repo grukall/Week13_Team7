@@ -361,8 +361,10 @@ void USkeletalMeshComponent::PostEditChangeProperty(const FProperty& Property)
 	Super::PostEditChangeProperty(Property);
 	if (Property.Name == "bUseArticulatedPhysics")
 		RecreatePhysicsState();
-	else if (Property.Name == "bSimulateRagdoll")
-		SetSimulatePhysics(bSimulateRagdoll);
+	// Details는 BodyInstance 멤버가 바뀌면 구조체 프로퍼티 이름("BodyInstance")으로 알린다.
+	// Simulate Physics 체크가 지금 래그돌 상태와 다를 때만 적용한다 (충돌 설정 등 다른 멤버 변경은 무시)
+	else if (Property.Name == "BodyInstance" && bUseArticulatedPhysics && BodyInstance.bSimulatePhysics != bRagdollActive)
+		SetSimulatePhysics(BodyInstance.bSimulatePhysics);
 }
 
 bool USkeletalMeshComponent::ShouldCreatePhysicsState()
@@ -398,8 +400,8 @@ void USkeletalMeshComponent::OnCreatePhysicsState()
 	PostPhysicsTick.RegisterTickFunction(GetWorld()->GetTickTaskManager());
 
 	// 바디마다 시뮬레이션 여부를 정한다. Ragdoll OFF여도 PhysicsType = Simulated 바디는 여기서 켜진다
-	// (씬에 Ragdoll ON으로 저장돼 있었으면 모든 Default 바디도 켜진다)
-	SetSimulatePhysics(bSimulateRagdoll);
+	// (씬에 Simulate Physics ON으로 저장돼 있었으면 모든 Default 바디도 켜진다)
+	SetSimulatePhysics(BodyInstance.bSimulatePhysics);
 
 	UActorComponent::OnCreatePhysicsState();
 }
@@ -432,10 +434,11 @@ void USkeletalMeshComponent::SetSimulatePhysics(bool bSimulate)
 		return;
 	}
 
-	bSimulateRagdoll = bSimulate;
+	// 관절 모드의 컴포넌트 BodyInstance는 PhysX 바디가 없으므로 값만 저장된다 (래그돌 요청값)
+	BodyInstance.bSimulatePhysics = bSimulate;
 	if (Bodies.IsEmpty())
 	{
-		// 아직 물리 상태가 없다. OnCreatePhysicsState가 bSimulateRagdoll을 보고 적용한다
+		// 아직 물리 상태가 없다. OnCreatePhysicsState가 BodyInstance.bSimulatePhysics를 보고 적용한다
 		bRagdollActive = false;
 		bAnyBodySimulating = false;
 		return;

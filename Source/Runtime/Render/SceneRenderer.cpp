@@ -355,41 +355,101 @@ bool FSceneRenderer::AddWorldNormalPass(FRenderGraphBuilder& Graph, FRenderer* R
 
 bool FSceneRenderer::AddDepthOfFieldPasses(FRenderGraphBuilder& Graph, FRenderer* Renderer, const FRenderGraphTextureDesc& HDRDesc, FRenderGraphTextureRef Depth, float InfinityRadius, FRenderGraphTextureRef& Color)
 {
+	FPipelineState* Setup = FRenderResourceManager::GetPSO(EPSOType::DepthOfFieldSetup);
 	FPipelineState* Tiles = FRenderResourceManager::GetPSO(EPSOType::DepthOfFieldTiles);
 	FPipelineState* Gather = FRenderResourceManager::GetPSO(EPSOType::DepthOfFieldGather);
+	FPipelineState* Dilate = FRenderResourceManager::GetPSO(EPSOType::DepthOfFieldDilate);
+	FPipelineState* Downsample = FRenderResourceManager::GetPSO(EPSOType::DepthOfFieldDownsample);
+	FPipelineState* Recombine = FRenderResourceManager::GetPSO(EPSOType::DepthOfFieldRecombine);
 	FConstantBuffer* Constants = Renderer->GetDepthOfFieldConstants();
-	if (!Constants || !Constants->GetBuffer() || !Tiles || !Tiles->Shader || !Gather || !Gather->Shader)
+	if (!Constants || !Constants->GetBuffer() || !Setup || !Setup->Shader || !Tiles || !Tiles->Shader || !Gather || !Gather->Shader || !Recombine || !Recombine->Shader || !Downsample || !Downsample->Shader || !Dilate || !Dilate->Shader)
 		return false;
 
 	constexpr uint32 TileSize = 8; // DepthOfFieldGatherCommon.hlsli
-	const auto TileRadius = Graph.CreateTexture({ (HDRDesc.Width + TileSize - 1) / TileSize, (HDRDesc.Height + TileSize - 1) / TileSize, ETextureFormat::R32_Float }, "DOFTileNearRadius");
+	const auto SignedCoC = Graph.CreateTexture({ HDRDesc.Width, HDRDesc.Height, ETextureFormat::R32_Float }, "DOFSignedCoC");
+	const FRenderGraphTextureDesc HalfDesc{ (HDRDesc.Width + 1) / 2, (HDRDesc.Height + 1) / 2, HDRDesc.Format };
+	const auto HalfColor = Graph.CreateTexture(HalfDesc, "DOFHalfColor");
+	const auto HalfCoC = Graph.CreateTexture({ HalfDesc.Width, HalfDesc.Height, ETextureFormat::R32_Float }, "DOFHalfCoC");
+	const FRenderGraphTextureDesc TileDesc{ (HalfDesc.Width + TileSize - 1) / TileSize, (HalfDesc.Height + TileSize - 1) / TileSize, ETextureFormat::R16G16B16A16_Float };
+	const auto FlattenedTiles = Graph.CreateTexture(TileDesc, "DOFFlattenedTiles");
+	const auto DilatedTiles = Graph.CreateTexture(TileDesc, "DOFDilatedTiles");
+	const auto NearLayer = Graph.CreateTexture(HalfDesc, "DOFNearLayer");
+	const auto FarLayer = Graph.CreateTexture(HalfDesc, "DOFFarLayer");
 	const auto BlurredColor = Graph.CreateTexture(HDRDesc, "DOFSceneColor");
-	if (!TileRadius || !BlurredColor)
+	if (!SignedCoC || !HalfColor || !HalfCoC || !FlattenedTiles || !DilatedTiles || !NearLayer || !FarLayer || !BlurredColor)
 		return false;
 
 	const FDepthOfFieldData Lens{ View.ProjectionMatrix.M[0][2], View.ProjectionMatrix.M[3][2], View.DepthOfField.FocusDistanceMeters, InfinityRadius };
-	FRenderGraphRasterPassDesc Reduce{};
-	Reduce.Name = "DOFNearRadiusTiles";
-	Reduce.ReadTextures = { Depth };
-	Reduce.ColorAttachments = { { TileRadius } };
-	if (!Graph.AddRasterPass(std::move(Reduce), [Tiles, Constants, Lens]
+	FRenderGraphRasterPassDesc Prepare{};
+	Prepare.Name = "DOFSetup";
+	Prepare.ReadTextures = { Depth };
+	Prepare.ColorAttachments = { { SignedCoC } };
+	if (!Graph.AddRasterPass(std::move(Prepare), [Setup, Constants, Lens]
 		{
 			RenderCommand::UpdateBufferData(Constants, &Lens, sizeof(Lens));
-			RenderCommand::BindPipelineState(*Tiles);
+			RenderCommand::BindPipelineState(*Setup);
 			RenderCommand::BindConstantBuffer(0, Constants, EShaderBindFlagBits::Pixel);
 			RenderCommand::BindVertexBuffer(nullptr);
 			RenderCommand::Draw(3);
 		}))
 		return false;
 
-	FRenderGraphRasterPassDesc Combine{};
-	Combine.Name = "DOFGatherAndRecombine";
-	Combine.ReadTextures = { Color, Depth, TileRadius };
-	Combine.ColorAttachments = { { BlurredColor } };
-	if (!Graph.AddRasterPass(std::move(Combine), [Gather, Constants]
+	FRenderGraphRasterPassDesc DownsamplePass{};
+	DownsamplePass.Name = "DOFDownsample";
+	DownsamplePass.ReadTextures = { Color, SignedCoC };
+	DownsamplePass.ColorAttachments = { { HalfColor }, { HalfCoC } };
+	if (!Graph.AddRasterPass(std::move(DownsamplePass), [Downsample]
+		{
+			RenderCommand::BindPipelineState(*Downsample);
+			RenderCommand::BindVertexBuffer(nullptr);
+			RenderCommand::Draw(3);
+		}))
+		return false;
+
+	FRenderGraphRasterPassDesc FlattenPass{};
+	FlattenPass.Name = "DOFFlatten";
+	FlattenPass.ReadTextures = { HalfCoC };
+	FlattenPass.ColorAttachments = { { FlattenedTiles } };
+	if (!Graph.AddRasterPass(std::move(FlattenPass), [Tiles]
+		{
+			RenderCommand::BindPipelineState(*Tiles);
+			RenderCommand::BindVertexBuffer(nullptr);
+			RenderCommand::Draw(3);
+		}))
+		return false;
+
+	FRenderGraphRasterPassDesc DilatePass{};
+	DilatePass.Name = "DOFDilate";
+	DilatePass.ReadTextures = { FlattenedTiles };
+	DilatePass.ColorAttachments = { { DilatedTiles } };
+	if (!Graph.AddRasterPass(std::move(DilatePass), [Dilate]
+		{
+			RenderCommand::BindPipelineState(*Dilate);
+			RenderCommand::BindVertexBuffer(nullptr);
+			RenderCommand::Draw(3);
+		}))
+		return false;
+
+	FRenderGraphRasterPassDesc GatherPass{};
+	GatherPass.Name = "DOFGather";
+	GatherPass.ReadTextures = { HalfColor, HalfCoC, DilatedTiles };
+	GatherPass.ColorAttachments = { { NearLayer }, { FarLayer } };
+	if (!Graph.AddRasterPass(std::move(GatherPass), [Gather]
 		{
 			RenderCommand::BindPipelineState(*Gather);
-			RenderCommand::BindConstantBuffer(0, Constants, EShaderBindFlagBits::Pixel);
+			RenderCommand::BindVertexBuffer(nullptr);
+			RenderCommand::Draw(3);
+		}))
+		return false;
+
+	FRenderGraphRasterPassDesc Combine{};
+	Combine.Name = "DOFRecombine";
+	Combine.ReadTextures = { Color, SignedCoC, NearLayer, FarLayer };
+	Combine.ColorAttachments = { { BlurredColor } };
+	if (!Graph.AddRasterPass(std::move(Combine), [Recombine]
+		{
+			RenderCommand::BindPipelineState(*Recombine);
+			RenderCommand::BindSamplerState(0, ESamplerState::LinearClamp, EShaderBindFlagBits::Pixel);
 			RenderCommand::BindVertexBuffer(nullptr);
 			RenderCommand::Draw(3);
 		}))
